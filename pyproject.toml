@@ -6,8 +6,6 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 packages = ["httomo_backends",
             "httomo_backends.scripts",
-            "httomo_backends.methods_database",
-            "httomo_backends.yaml_templates",
             ]
 
 [tool.setuptools.package-data]
@@ -26,6 +24,19 @@ httomo_backends = [
     "yaml_templates/tomopy/tomopy.recon.algorithm/*.yaml",
     "yaml_templates/tomopy/tomopy.recon.rotation/*.yaml",
     "yaml_templates/tomopy/tomopy.sim.project/*.yaml",   
+    "yaml_templates/httomolib/httomolib.misc.morph/*.yaml",
+    "yaml_templates/httomolib/httomolib.misc.images/*.yaml",
+    "yaml_templates/httomolib/httomolib.misc.segm/*.yaml",
+    "yaml_templates/httomolib/httomolib.prep.phase/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.misc.corr/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.misc.morph/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.misc.rescale/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.prep.alignment/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.prep.normalize/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.prep.phase/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.prep.stripe/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.recon.algorithm/*.yaml",
+    "yaml_templates/httomolibgpu/httomolibgpu.recon.rotation/*.yaml",
 ]
 
 [tool.setuptools-git-versioning]
