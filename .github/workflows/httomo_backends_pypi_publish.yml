@@ -26,10 +26,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install setuptools wheel          
+          pip install setuptools wheel  
+          pip install --no-deps httomolib==2.1
+          pip install --no-deps httomolibgpu==2.1          
           $CONDA/bin/conda install conda-forge::tomopy==1.15
-          $CONDA/bin/conda install httomo::httomolib==2.1
-          $CONDA/bin/conda install httomo::httomolibgpu==2.1
           $CONDA/bin/conda install conda-forge::pyyaml
           $CONDA/bin/conda list
       - name: Generate yaml templates
