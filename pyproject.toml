@@ -51,7 +51,7 @@ dev_template = "{tag}"
 name = "httomo-backends"
 version = "2.1.1"
 description = "Supplementary files for HTTomo backends."
-readme = "README.md"
+readme = "README.rst"
 license = {text = "BSD-3-Clause"}
 authors = [
     {name = "Daniil Kazantsev", email = "daniil.kazantsev@diamond.ac.uk"},
