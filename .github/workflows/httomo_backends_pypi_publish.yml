@@ -29,7 +29,7 @@ jobs:
           $CONDA/bin/conda install conda-forge::pyyaml
           $CONDA/bin/pip install setuptools wheel
           $CONDA/bin/pip install build          
-          $CONDA/bin/pip install --no-deps httomolib==2.1
+          $CONDA/bin/pip install httomolib==2.1s
           $CONDA/bin/pip install --no-deps httomolibgpu==2.1
           $CONDA/bin/conda list
       - name: Generate yaml templates
