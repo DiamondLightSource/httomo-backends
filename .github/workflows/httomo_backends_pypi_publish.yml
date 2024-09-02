@@ -24,13 +24,13 @@ jobs:
         with:
           python-version: "3.10"
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install setuptools wheel  
-          pip install --no-deps httomolib==2.1
-          pip install --no-deps httomolibgpu==2.1          
+        run: |        
           $CONDA/bin/conda install conda-forge::tomopy==1.15
           $CONDA/bin/conda install conda-forge::pyyaml
+          $CONDA/bin/pip install setuptools wheel
+          $CONDA/bin/pip install build          
+          $CONDA/bin/pip install --no-deps httomolib==2.1
+          $CONDA/bin/pip install --no-deps httomolibgpu==2.1
           $CONDA/bin/conda list
       - name: Generate yaml templates
         run: |
@@ -40,7 +40,6 @@ jobs:
           $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./httomo_backends/yaml_templates/httomolibgpu
       - name: Build package
         run: |
-          python -m pip install build   
           python -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
