@@ -1,10 +1,10 @@
-HTTomo-backends supports the HTTomo backends
---------------------------------------------
+HTTomo-backends
+---------------
 
 Purpose of HTTomo-backends
 ==========================
 
-**HTTomo-backends** is a package to support <https://diamondlightsource.github.io/httomo/>`_ software and it contains the following elements:
+**HTTomo-backends** is a package to support `HTTomo <https://diamondlightsource.github.io/httomo/>`_ software and it contains the following elements:
 
 * YAML templates for backends methods
 * Scripts that automatically generate YAML templates
@@ -13,7 +13,7 @@ Purpose of HTTomo-backends
 
 Install HTTomo-backends
 =======================
-HTTomo backends is released to support a specific version of <https://diamondlightsource.github.io/httomo/>`_. Install it to provide the same version of HTTomo that is currently installed. 
+HTTomo backends is released to support a specific version of `HTTomo <https://diamondlightsource.github.io/httomo/>`_. Install it to provide the same version of HTTomo that is currently installed. 
 
 .. code-block:: console
 
