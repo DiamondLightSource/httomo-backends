@@ -40,6 +40,6 @@ jobs:
           $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./httomo_backends/yaml_templates/httomolibgpu
       - name: Build package
         run: |
-          python -m build
+          $CONDA/bin/python -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
