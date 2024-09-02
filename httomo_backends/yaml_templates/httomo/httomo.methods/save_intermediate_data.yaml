@@ -1,0 +1,9 @@
+- method: save_intermediate_data
+  module_path: httomo.methods
+  parameters:
+    global_shape: REQUIRED
+    global_index: REQUIRED
+    file: REQUIRED
+    path: REQUIRED
+    detector_x: REQUIRED
+    detector_y: REQUIRED

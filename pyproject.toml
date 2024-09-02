@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools-git-versioning"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["httomo_backends",
+            "httomo_backends.scripts",
+            "httomo_backends.methods_database",
+            "httomo_backends.yaml_templates",
+            ]
+
+[tool.setuptools.package-data]
+httomo_backends = [
+    "methods_database/backends/httomolibgpu/*.yaml",
+    "methods_database/backends/httomolib/*.yaml",
+    "methods_database/backends/tomopy/*.yaml",
+    "yaml_templates/httomo/httomo.data.hdf.loaders/*.yaml",
+    "yaml_templates/httomo/httomo.methods/*.yaml",
+    "yaml_templates/tomopy/tomopy.misc.corr/*.yaml",
+    "yaml_templates/tomopy/tomopy.misc.morph/*.yaml",
+    "yaml_templates/tomopy/tomopy.prep.alignment/*.yaml",
+    "yaml_templates/tomopy/tomopy.prep.normalize/*.yaml",
+    "yaml_templates/tomopy/tomopy.prep.phase/*.yaml",
+    "yaml_templates/tomopy/tomopy.prep.stripe/*.yaml",
+    "yaml_templates/tomopy/tomopy.recon.algorithm/*.yaml",
+    "yaml_templates/tomopy/tomopy.recon.rotation/*.yaml",
+    "yaml_templates/tomopy/tomopy.sim.project/*.yaml",   
+]
+
+[tool.setuptools-git-versioning]
+enabled = true
+template = "{tag}"
+dev_template = "{tag}"
+
+[project]
+name = "httomo-backends"
+version = "2.1"
+description = "Supplementary files for HTTomo backends."
+readme = "README.md"
+license = {text = "BSD-3-Clause"}
+authors = [
+    {name = "Daniil Kazantsev", email = "daniil.kazantsev@diamond.ac.uk"},
+    {name = "Yousef Moazzam", email = "yousef.moazzam@diamond.ac.uk"},
+    {name = "Jessica Verschoyle", email = "jessica.verschoyle@diamond.ac.uk"},
+    {name = "Naman Gera", email = "naman.gera@diamond.ac.uk"},
+    {name = "Garry ODonnell"},
+    {name = "Jacob Williamson"},
+    {email = "scientificsoftware@diamond.ac.uk"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3.10",
+]
+
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "pyyaml"
+]
+
+[project.urls]
+repository = "https://github.com/DiamondLightSource/httomo-backends"
+
+[tool.mypy]
+# Ignore missing stubs for modules we use
+ignore_missing_imports = true
+python_version = "3.10"  # make sure we're compatible with 3.9
+plugins = 'numpy.typing.mypy_plugin'
+
+[tool.isort]
+profile = "black"
+float_to_top = true
+
+[tool.flake8]
+# Make flake8 respect black's line length (default 88),
+max-line-length = 88
+extend-ignore = [
+    "E203",
+    "F811"
+]
+per-file-ignores = [
+    "*pyi:E302"
+]
+
+[tool.pydocstyle]
+convention = "google"
+add-ignore = [
+    "D100", # Ignore missing docstrings in public modules
+    "D104", # Ignore missing docstrings in public packages
+    "D418", # Ignore missing docstrings in dunder methods; See: https://github.com/PyCQA/pydocstyle/issues/525
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = [
+   "-vv",
+   "-ra",
+   "-q",
+   "--tb=native",
+]
+testpaths = [
+    "tests",
+]
+filterwarnings = [
+    "ignore::ImportWarning",
+    "ignore:distutils:DeprecationWarning:numexpr"
+]
+
