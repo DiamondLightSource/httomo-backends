@@ -1,15 +1,10 @@
-name: httomo-docs
+name: httomo-backends-docs
 channels:
   - conda-forge
-  - defaults
-  - httomo
 dependencies:
   - python>=3.10
   - numpy
   - tomopy==1.15
-  - httomolibgpu==2.1
-  - httomolib==2.1
-  - cupy==12.3.0
   - sphinx
   - sphinx-book-theme
   - nbsphinx
