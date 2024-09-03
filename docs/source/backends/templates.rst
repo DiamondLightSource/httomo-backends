@@ -4,16 +4,16 @@
 Methods YAML Templates
 ======================
 
-This section contains YAML templates from :ref:`backends_list`. These are ready-to-use templates can be either copy-pasted or
-downloaded in order to build your pipeline.
+This section contains YAML templates for `backends <https://diamondlightsource.github.io/httomo/backends/list.html/>`_. These are ready-to-use templates can be either copy-pasted or
+directy accessed by installing `httomo-backends` package.
 
 .. note:: When you click on a module you can find a link to the API of that module. This is where the description of the method and its arguments can be found.
 
 
+.. _reference_templates_tomopy:
+
 TomoPy Modules
 ---------------
-v.1.15
-''''''
 
 .. toctree::
    :glob:
@@ -24,8 +24,6 @@ v.1.15
 
 HTTomolibgpu Modules
 --------------------
-v.2.1
-'''''
 
 .. toctree::
    :glob:
@@ -36,8 +34,6 @@ v.2.1
 
 HTTomolib Modules
 ------------------
-v.2.1
-'''''
 
 .. toctree::
    :glob:

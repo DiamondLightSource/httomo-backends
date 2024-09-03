@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # ---------------------------------------------------------------------------
-# Copyright 2023 Diamond Light Source Ltd.
+# Copyright 2024 Diamond Light Source Ltd.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -37,16 +37,7 @@ sys.path.insert(0, os.path.abspath("../.."))
 # Mock imports instead of full environment in readthedocs
 MOCK_MODULES = [
     "click",
-    "mpi4py",
-    "cupy",
-    "h5py",
     "yaml",
-    "skimage",
-    "skimage.exposure",
-    "nvtx",
-    "mpi4py.MPI",
-    "scipy",
-    "scipy.ndimage",
 ]
 
 for mod_name in MOCK_MODULES:
@@ -54,7 +45,7 @@ for mod_name in MOCK_MODULES:
 
 # ------------------------------------------------------------------------------
 
-project = "HTTomo"
+project = "httomo-backends"
 copyright = f"{date.today().year}, Diamond Light Source"
 
 # Specify a base language to help assistive technology
@@ -98,25 +89,21 @@ pygments_style = "sphinx"
 # -- Options for HTML output --------------------------------------------------
 
 html_theme = "sphinx_book_theme"
-html_logo = "_static/logo_light.png"
-html_title = "HTTomo Documentation page"
+html_title = "httomo-backends documentation page"
 html_copy_source = True
-html_favicon = "_static/logo_light.png"
 html_last_updated_fmt = ""
 html_static_path = ["_static"]
 html_use_smartypants = True
 
 html_theme_options = {
-    "logo": {
-        "image_dark": "_static/logo_dark.png",
-    },
     "show_toc_level": 1,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
 }
 
+
 html_context = {
     "github_user": "HTTomo",
-    "github_repo": "https://github.com/DiamondLightSource/httomo",
+    "github_repo": "https://github.com/DiamondLightSource/httomo-backends",
     "github_version": "main",
     "doc_path": "docs",
 }
