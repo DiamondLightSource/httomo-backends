@@ -35,8 +35,7 @@ jobs:
           run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomo_backends
 
         - name: Generate yaml templates
-          run: |
-            $CONDA/bin/conda activate httomo-backends-docs
+          run: |            
             pip install httomolib 
             pip install httomolibgpu --no-deps
 
