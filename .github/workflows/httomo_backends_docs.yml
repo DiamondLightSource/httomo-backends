@@ -32,7 +32,7 @@ jobs:
             environment-file: ./docs/source/doc-conda-requirements.yml
 
         - name: Build api docs
-          run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomo-backends
+          run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomo_backends
 
         - name: Generate yaml templates
           run: |            
