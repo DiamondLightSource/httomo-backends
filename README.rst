@@ -6,16 +6,15 @@ Purpose of HTTomo-backends
 
 **HTTomo-backends** is a package to support `HTTomo <https://diamondlightsource.github.io/httomo/>`_ software and it contains the following elements:
 
-* YAML templates for backends methods
-* Scripts that automatically generate YAML templates
+* YAML templates for `backends <https://diamondlightsource.github.io/httomo/backends/list.html/>`_  methods.
+* Scripts that automatically generate YAML templates during documentation build
 * Supporting scripts to calculate memory, size and padding estimators of the methods
 
 
 Install HTTomo-backends
 =======================
-HTTomo backends is released to support a specific version of `HTTomo <https://diamondlightsource.github.io/httomo/>`_. Install it to provide the same version of HTTomo that is currently installed. 
 
 .. code-block:: console
 
-   $ pip install httomo-backends==*version_number*
+   $ pip install httomo-backends
 
