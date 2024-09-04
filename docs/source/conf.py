@@ -92,7 +92,6 @@ html_theme = "sphinx_book_theme"
 html_title = "httomo-backends documentation page"
 html_copy_source = True
 html_last_updated_fmt = ""
-html_static_path = ["_static"]
 html_use_smartypants = True
 
 html_theme_options = {

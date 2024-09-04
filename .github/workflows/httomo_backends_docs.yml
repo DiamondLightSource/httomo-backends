@@ -1,0 +1,60 @@
+name: HTTomo-backends docs
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build-docs-publish:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+        - name: Checkout repository code
+          uses: actions/checkout@v4
+
+        - name: Setup Python 3.10
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.10'
+
+        - name: httomo-backends-docs
+          uses: conda-incubator/setup-miniconda@v2
+          with:
+            auto-update-conda: false
+            activate-environment: httomo-backends-docs
+            environment-file: ./docs/source/doc-conda-requirements.yml
+
+        - name: Build api docs
+          run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomo_backends
+
+        - name: Generate yaml templates
+          run: |
+            $CONDA/bin/conda activate httomo-backends-docs
+            pip install httomolib 
+            pip install httomolibgpu --no-deps
+
+        - name: Generate yaml templates
+          run: |
+            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/tomopy/tomopy_modules.yaml -o ./docs/build/yaml_templates/tomopy
+            python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./docs/build/yaml_templates/tomopy -l ./httomo_backends/methods_database/backends/tomopy/tomopy.yaml
+            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolib/httomolib_modules.yaml -o ./docs/build/yaml_templates/httomolib
+            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./docs/build/yaml_templates/httomolibgpu
+
+        - name: Generate yml docs
+          run: python ./docs/source/yaml_doc_generator.py
+
+        - name: Build html
+          run: sphinx-build -a -E -b html ./docs/source/ ./docs/build/
+
+        - name: Publish docs
+          if: github.ref_type == 'tag' || github.ref_name == 'main'
+          run: ghp-import -n -p -f ./docs/build
+          env:
+            GITHUB_TOKEN: ${{ github.token }}
