@@ -49,7 +49,7 @@ dev_template = "{tag}"
 
 [project]
 name = "httomo-backends"
-version = "2.1.2"
+version = "0.0.1"
 description = "Supplementary files for HTTomo backends."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
