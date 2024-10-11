@@ -11,3 +11,5 @@
       data_path: /entry1/tomo_entry/data/rotation_angle
     ignore_darks: false
     ignore_flats: false
+    darks: null
+    flats: null
