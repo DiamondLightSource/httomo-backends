@@ -49,6 +49,7 @@ dev_template = "{tag}"
 
 [project]
 name = "httomo-backends"
+version = "0.0.2"
 description = "Supplementary files for HTTomo backends."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
@@ -66,8 +67,8 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3.10",
 ]
+
 requires-python = ">=3.10"
-dynamic = ["version"]
 dependencies = [
     "numpy",
     "pyyaml"
