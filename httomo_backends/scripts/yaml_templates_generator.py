@@ -184,7 +184,7 @@ def _get_discard_data_out() -> List[str]:
 
 def _get_discard_keys() -> List[str]:
     """Can work with any software in principle,
-    but for TomoPy and httomolib there are additional keys
+    but for TomoPy, httomolib(gpu) there are additional keys
     that needed to be discarded in templates in order to let
     httomo work smoothly.
 
@@ -212,6 +212,8 @@ def _get_discard_keys() -> List[str]:
         "gpu_id",
         "comm",
         "offset",
+        "shift_xy",
+        "step_xy",
     ]
     return discard_keys
 

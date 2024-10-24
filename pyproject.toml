@@ -49,7 +49,6 @@ dev_template = "{tag}"
 
 [project]
 name = "httomo-backends"
-version = "0.0.1"
 description = "Supplementary files for HTTomo backends."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
@@ -67,8 +66,8 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3.10",
 ]
-
 requires-python = ">=3.10"
+dynamic = ["version"]
 dependencies = [
     "numpy",
     "pyyaml"
@@ -80,7 +79,7 @@ repository = "https://github.com/DiamondLightSource/httomo-backends"
 [tool.mypy]
 # Ignore missing stubs for modules we use
 ignore_missing_imports = true
-python_version = "3.10"  # make sure we're compatible with 3.9
+python_version = "3.11"
 plugins = 'numpy.typing.mypy_plugin'
 
 [tool.isort]
