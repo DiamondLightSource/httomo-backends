@@ -46,6 +46,7 @@ for mod_name in MOCK_MODULES:
 # ------------------------------------------------------------------------------
 
 project = "httomo-backends"
+author = "the Imaging Team"
 copyright = f"{date.today().year}, Diamond Light Source"
 
 # Specify a base language to help assistive technology
@@ -69,7 +70,7 @@ extensions = [
     # Add links to highlighted source code
     "sphinx.ext.viewcode",
     # Allows a grid layout and dropdown boxes
-    "sphinx_panels",
+    "sphinx_design",
     # copy to clipboard button
     "sphinx_copybutton",
     # use jupyter notebooks
