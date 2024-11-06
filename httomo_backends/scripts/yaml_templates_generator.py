@@ -214,6 +214,7 @@ def _get_discard_keys() -> List[str]:
         "offset",
         "shift_xy",
         "step_xy",
+        "jpeg_quality",
     ]
     return discard_keys
 
