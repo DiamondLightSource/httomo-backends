@@ -18,7 +18,7 @@ httomolibgpu = pytest.importorskip("httomolibgpu")
 import cupy as cp
 
 from httomo.methods_database.query import get_method_info
-from httomo.runner.output_ref import OutputRef
+from httomo.utils import OutputRef
 
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
