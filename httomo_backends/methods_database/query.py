@@ -5,8 +5,6 @@ from pathlib import Path
 import numpy as np
 
 import yaml
-from httomo_backends.utils import GpuMemoryRequirement, MethodQuery, MethodRepository, Pattern
-
 
 YAML_DIR = Path(__file__).parent / "backends/"
 
@@ -57,98 +55,3 @@ def get_method_info(module_path: str, method_name: str, attr: str):
         return info[attr]
     except KeyError:
         raise KeyError(f"The attribute {attr} is not present on {method_path}")
-
-
-# Implementation of methods database query class
-class MethodsDatabaseQuery(MethodQuery):
-    def __init__(self, module_path: str, method_name: str):
-        self.module_path = module_path
-        self.method_name = method_name
-
-    def get_pattern(self) -> Pattern:
-        p = get_method_info(self.module_path, self.method_name, "pattern")
-        assert p in ["projection", "sinogram", "all"], (
-            f"The pattern {p} that is listed for the method "
-            f"{self.module_path}.{self.method_name} is invalid."
-        )
-        if p == "projection":
-            return Pattern.projection
-        if p == "sinogram":
-            return Pattern.sinogram
-        return Pattern.all
-
-    def get_output_dims_change(self) -> bool:
-        p = get_method_info(self.module_path, self.method_name, "output_dims_change")
-        return bool(p)
-
-    def get_implementation(self) -> Literal["cpu", "gpu", "gpu_cupy"]:
-        p = get_method_info(self.module_path, self.method_name, "implementation")
-        assert p in [
-            "gpu",
-            "gpu_cupy",
-            "cpu",
-        ], f"The implementation arch {p} listed for method {self.module_path}.{self.method_name} is invalid"
-        return p
-
-    def save_result_default(self) -> bool:
-        return get_method_info(
-            self.module_path, self.method_name, "save_result_default"
-        )
-
-    def padding(self) -> bool:
-        return get_method_info(self.module_path, self.method_name, "padding")
-
-    def get_memory_gpu_params(
-        self,
-    ) -> Optional[GpuMemoryRequirement]:
-        p = get_method_info(self.module_path, self.method_name, "memory_gpu")
-        if p is None or p == "None":
-            return None
-        if type(p) == list:
-            # convert to dict first
-            d: dict = dict()
-            for item in p:
-                d |= item
-        else:
-            d = p
-        return GpuMemoryRequirement(multiplier=d["multiplier"], method=d["method"])
-
-    def calculate_memory_bytes(
-        self, non_slice_dims_shape: Tuple[int, int], dtype: np.dtype, **kwargs
-    ) -> Tuple[int, int]:
-        smodule = self._import_supporting_funcs_module()
-        module_mem: Callable = getattr(
-            smodule, "_calc_memory_bytes_" + self.method_name
-        )
-        memory_bytes: Tuple[int, int] = module_mem(
-            non_slice_dims_shape, dtype, **kwargs
-        )
-        return memory_bytes
-
-    def calculate_output_dims(
-        self, non_slice_dims_shape: Tuple[int, int], **kwargs
-    ) -> Tuple[int, int]:
-        smodule = self._import_supporting_funcs_module()
-        module_mem: Callable = getattr(smodule, "_calc_output_dim_" + self.method_name)
-        return module_mem(non_slice_dims_shape, **kwargs)
-
-    def calculate_padding(self, **kwargs) -> Tuple[int, int]:
-        smodule = self._import_supporting_funcs_module()
-        module_pad: Callable = getattr(smodule, "_calc_padding_" + self.method_name)
-        return module_pad(**kwargs)
-
-    def _import_supporting_funcs_module(self) -> ModuleType:
-
-        module_mem_path = "httomo.methods_database.packages.external."
-        path = self.module_path.split(".")
-        path.insert(1, "supporting_funcs")
-        module_mem_path += ".".join(path)
-        return import_module(module_mem_path)
-
-    def swap_dims_on_output(self) -> bool:
-        return self.module_path.startswith("tomopy.recon")
-
-
-class MethodDatabaseRepository(MethodRepository):
-    def query(self, module_path: str, method_name: str) -> MethodQuery:
-        return MethodsDatabaseQuery(module_path, method_name)
