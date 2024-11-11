@@ -17,8 +17,8 @@ cupy = pytest.importorskip("cupy")
 httomolibgpu = pytest.importorskip("httomolibgpu")
 import cupy as cp
 
-from httomo.methods_database.query import get_method_info
-from httomo.utils import OutputRef
+from httomo_backends.methods_database.query import get_method_info
+from httomo_backends.utils import OutputRef
 
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
@@ -35,12 +35,12 @@ from httomolibgpu.misc.corr import remove_outlier
 from httomolibgpu.recon.algorithm import FBP, SIRT, CGLS
 from httomolibgpu.misc.rescale import rescale_to_int
 
-from httomo.methods_database.packages.external.httomolibgpu.supporting_funcs.misc.morph import *
-from httomo.methods_database.packages.external.httomolibgpu.supporting_funcs.prep.phase import *
-from httomo.methods_database.packages.external.httomolibgpu.supporting_funcs.prep.stripe import *
-from httomo.methods_database.packages.external.httomolibgpu.supporting_funcs.recon.algorithm import *
-from httomo.methods_database.packages.external.httomolibgpu.supporting_funcs.misc.rescale import *
-from httomo.methods_database.packages.external.httomolibgpu.supporting_funcs.prep.normalize import *
+from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.misc.morph import *
+from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.prep.phase import *
+from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.prep.stripe import *
+from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.recon.algorithm import *
+from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.misc.rescale import *
+from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 
 from tests.testing_utils import make_test_method
 
