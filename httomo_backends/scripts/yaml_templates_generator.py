@@ -215,6 +215,7 @@ def _get_discard_keys() -> List[str]:
         "shift_xy",
         "step_xy",
         "jpeg_quality",
+        "watermark_vals",
     ]
     return discard_keys
 
