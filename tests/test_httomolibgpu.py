@@ -2,7 +2,6 @@ import dataclasses
 import inspect
 from typing import Literal
 import pytest
-from mpi4py import MPI
 import numpy as np
 from numpy import uint16, float32
 
