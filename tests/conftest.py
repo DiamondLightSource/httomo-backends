@@ -47,3 +47,10 @@ def darks(data_file, ensure_clean_memory):
     import cupy as cp
 
     return cp.asarray(data_file["darks"], dtype=cp.float32)
+
+
+@pytest.fixture
+def data(data_file, ensure_clean_memory):
+    import cupy as cp
+
+    return cp.asarray(data_file["data"], dtype=cp.float32)
