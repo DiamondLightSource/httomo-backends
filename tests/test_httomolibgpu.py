@@ -27,7 +27,6 @@ from httomolibgpu.prep.stripe import (
     remove_stripe_ti,
     remove_all_stripe,
 )
-from httomolibgpu.prep.stripe import remove_stripe_based_sorting, remove_stripe_ti
 from httomolibgpu.misc.corr import remove_outlier
 from httomolibgpu.recon.algorithm import FBP, SIRT, CGLS
 from httomolibgpu.misc.rescale import rescale_to_int
