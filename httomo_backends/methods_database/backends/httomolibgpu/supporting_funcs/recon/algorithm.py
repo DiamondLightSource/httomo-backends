@@ -23,7 +23,7 @@
 import math
 from typing import Tuple
 import numpy as np
-from httomo.cufft import CufftType, cufft_estimate_1d
+from httomo_backends.cufft import CufftType, cufft_estimate_1d
 
 __all__ = [
     "_calc_memory_bytes_FBP",

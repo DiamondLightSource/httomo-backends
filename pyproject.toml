@@ -71,7 +71,9 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
-    "pyyaml"
+    "pyyaml",
+    "httomolibgpu",
+    "tomopy",
 ]
 
 [project.urls]
@@ -121,4 +123,6 @@ filterwarnings = [
     "ignore::ImportWarning",
     "ignore:distutils:DeprecationWarning:numexpr"
 ]
-
+markers = [
+    "cupy: GPU dependent tests (deselect with '-m \"not cupy\"')",
+]
