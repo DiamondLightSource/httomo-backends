@@ -122,19 +122,8 @@ prep:
       save_result_default: False
       padding: False
       memory_gpu:
-        - datasets: [tomo]
-        - multipliers: [None]
-        - methods: [module]
-    raven_filter:
-      pattern: sinogram
-      output_dims_change: False
-      implementation: gpu_cupy
-      save_result_default: False
-      padding: False
-      memory_gpu:
-        - datasets: [tomo]
-        - multipliers: [None]
-        - methods: [module]
+        multiplier: None
+        method: module
 recon:
   algorithm:
     FBP:
