@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from enum import Enum
 from importlib import import_module
 from types import ModuleType
 from typing import Callable, List, Literal, Optional, Tuple
@@ -7,6 +9,22 @@ import numpy as np
 import yaml
 
 YAML_DIR = Path(__file__).parent / "backends/"
+
+
+class Pattern(Enum):
+    """Enum for the different slicing-orientations/"patterns" that tomographic
+    data can have.
+    """
+
+    projection = 0
+    sinogram = 1
+    all = 2
+
+
+@dataclass(frozen=True)
+class GpuMemoryRequirement:
+    multiplier: Optional[float] = 1.0
+    method: Literal["direct", "module"] = "direct"
 
 
 def get_method_info(module_path: str, method_name: str, attr: str):
