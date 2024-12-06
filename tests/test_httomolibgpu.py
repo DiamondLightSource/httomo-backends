@@ -10,7 +10,7 @@ cupy = pytest.importorskip("cupy")
 httomolibgpu = pytest.importorskip("httomolibgpu")
 import cupy as cp
 
-from httomo_backends.methods_database.query import get_method_info
+from httomo_backends.methods_database.query import MethodsDatabaseQuery
 
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
@@ -123,11 +123,12 @@ def test_remove_outlier_memoryhook(flats, ensure_clean_memory, dtype, slices):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    library_info = get_method_info(
-        "httomolibgpu.misc.corr", "remove_outlier", "memory_gpu"
-    )
+    method_query = MethodsDatabaseQuery("httomolibgpu.misc.corr", "remove_outlier")
+    memory_requirements = method_query.get_memory_gpu_params()
+    assert memory_requirements is not None
+    assert memory_requirements.multiplier is not None
     estimated_memory_bytes = (
-        library_info["multiplier"] * np.prod(cp.shape(data)) * uint16().nbytes
+        memory_requirements.multiplier * np.prod(cp.shape(data)) * uint16().nbytes
     )
 
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
@@ -245,13 +246,14 @@ def test_distortion_correction_memoryhook(
     max_mem_mb = round(max_mem / (1024**2), 2)  # now in mbs
 
     # now we estimate how much of the total memory required for this data
-    library_info = get_method_info(
-        "httomolibgpu.prep.alignment",
-        "distortion_correction_proj_discorpy",
-        "memory_gpu",
+    method_query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.alignment", "distortion_correction_proj_discorpy"
     )
+    memory_requirements = method_query.get_memory_gpu_params()
+    assert memory_requirements is not None
+    assert memory_requirements.multiplier is not None
     estimated_memory_bytes = (
-        library_info["multiplier"] * np.prod(cp.shape(data)) * float32().nbytes
+        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
     )
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
     # now we compare both memory estimations
@@ -284,11 +286,14 @@ def test_remove_stripe_based_sorting_memoryhook(
     max_mem_mb = round(max_mem / (1024**2), 2)  # now in mbs
 
     # now we estimate how much of the total memory required for this data
-    library_info = get_method_info(
-        "httomolibgpu.prep.stripe", "remove_stripe_based_sorting", "memory_gpu"
+    method_query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.stripe", "remove_stripe_based_sorting"
     )
+    memory_requirements = method_query.get_memory_gpu_params()
+    assert memory_requirements is not None
+    assert memory_requirements.multiplier is not None
     estimated_memory_bytes = (
-        library_info["multiplier"] * np.prod(cp.shape(data)) * float32().nbytes
+        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
     )
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
     # now we compare both memory estimations

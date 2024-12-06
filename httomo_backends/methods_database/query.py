@@ -27,54 +27,6 @@ class GpuMemoryRequirement:
     method: Literal["direct", "module"] = "direct"
 
 
-def get_method_info(module_path: str, method_name: str, attr: str):
-    """Get the information about the given method associated with `attr` that
-    is stored in the relevant YAML file in `httomo/methods_database/packages/`
-
-    Parameters
-    ----------
-    module_path : str
-        The full module path of the method, including the top-level package
-        name. Ie, `httomolib.misc.images.save_to_images`.
-
-    method_name : str
-        The name of the method function.
-
-    attr : str
-        The name of the piece of information about the method being requested
-        (for example, "pattern").
-
-    Returns
-    -------
-    The requested piece of information about the method.
-    """
-    method_path = f"{module_path}.{method_name}"
-    split_method_path = method_path.split(".")
-    package_name = split_method_path[0]
-
-    # open the library file for the package
-    ext_package_path = ""
-    if package_name != "httomo":
-        ext_package_path = f"{package_name}/"
-    yaml_info_path = Path(YAML_DIR, str(ext_package_path), f"{package_name}.yaml")
-    if not yaml_info_path.exists():
-        err_str = f"The YAML file {yaml_info_path} doesn't exist."
-        raise FileNotFoundError(err_str)
-
-    with open(yaml_info_path, "r") as f:
-        info = yaml.safe_load(f)
-        for key in split_method_path[1:]:
-            try:
-                info = info[key]
-            except KeyError:
-                raise KeyError(f"The key {key} is not present ({method_path})")
-
-    try:
-        return info[attr]
-    except KeyError:
-        raise KeyError(f"The attribute {attr} is not present on {method_path}")
-
-
 class MethodsDatabaseQuery:
     """
     Implements the `MethodQuery` protocol from `httomo`.
@@ -84,8 +36,55 @@ class MethodsDatabaseQuery:
         self.module_path = module_path
         self.method_name = method_name
 
+    def _get_method_info(self, attr: str):
+        """Get the information about the given method associated with `attr` that
+        is stored in the relevant YAML file in `httomo/methods_database/packages/`
+
+        Parameters
+        ----------
+        module_path : str
+            The full module path of the method, including the top-level package
+            name. Ie, `httomolib.misc.images.save_to_images`.
+
+        method_name : str
+            The name of the method function.
+
+        attr : str
+            The name of the piece of information about the method being requested
+            (for example, "pattern").
+
+        Returns
+        -------
+        The requested piece of information about the method.
+        """
+        method_path = f"{self.module_path}.{self.method_name}"
+        split_method_path = method_path.split(".")
+        package_name = split_method_path[0]
+
+        # open the library file for the package
+        ext_package_path = ""
+        if package_name != "httomo":
+            ext_package_path = f"{package_name}/"
+        yaml_info_path = Path(YAML_DIR, str(ext_package_path), f"{package_name}.yaml")
+        if not yaml_info_path.exists():
+            err_str = f"The YAML file {yaml_info_path} doesn't exist."
+            raise FileNotFoundError(err_str)
+
+        with open(yaml_info_path, "r") as f:
+            info = yaml.safe_load(f)
+            for key in split_method_path[1:]:
+                try:
+                    info = info[key]
+                except KeyError:
+                    raise KeyError(f"The key {key} is not present ({method_path})")
+
+        try:
+            return info[attr]
+        except KeyError:
+            raise KeyError(f"The attribute {attr} is not present on {method_path}")
+
     def get_pattern(self) -> Pattern:
-        p = get_method_info(self.module_path, self.method_name, "pattern")
+        p = self._get_method_info("pattern")
         assert p in ["projection", "sinogram", "all"], (
             f"The pattern {p} that is listed for the method "
             f"{self.module_path}.{self.method_name} is invalid."
@@ -97,11 +96,11 @@ class MethodsDatabaseQuery:
         return Pattern.all
 
     def get_output_dims_change(self) -> bool:
-        p = get_method_info(self.module_path, self.method_name, "output_dims_change")
+        p = self._get_method_info("output_dims_change")
         return bool(p)
 
     def get_implementation(self) -> Literal["cpu", "gpu", "gpu_cupy"]:
-        p = get_method_info(self.module_path, self.method_name, "implementation")
+        p = self._get_method_info("implementation")
         assert p in [
             "gpu",
             "gpu_cupy",
@@ -110,17 +109,15 @@ class MethodsDatabaseQuery:
         return p
 
     def save_result_default(self) -> bool:
-        return get_method_info(
-            self.module_path, self.method_name, "save_result_default"
-        )
+        return self._get_method_info("save_result_default")
 
     def padding(self) -> bool:
-        return get_method_info(self.module_path, self.method_name, "padding")
+        return self._get_method_info("padding")
 
     def get_memory_gpu_params(
         self,
     ) -> Optional[GpuMemoryRequirement]:
-        p = get_method_info(self.module_path, self.method_name, "memory_gpu")
+        p = self._get_method_info("memory_gpu")
         if p is None or p == "None":
             return None
         if type(p) == list:
