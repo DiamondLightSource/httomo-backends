@@ -9,8 +9,6 @@ from pytest_mock import MockerFixture
 from numpy.testing import assert_allclose, assert_equal
 import os
 
-from pytest_mock import MockerFixture
-
 cupy = pytest.importorskip("cupy")
 httomolibgpu = pytest.importorskip("httomolibgpu")
 import cupy as cp
