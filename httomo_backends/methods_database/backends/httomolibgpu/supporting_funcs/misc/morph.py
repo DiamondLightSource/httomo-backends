@@ -65,11 +65,7 @@ def _calc_output_dim_sino_360_to_180(
     **kwargs,
 ) -> Tuple[int, int]:
     assert "overlap" in kwargs, "Expected overlap in method parameters"
-    overlap_side_output = kwargs["overlap"]
-    assert isinstance(
-        overlap_side_output, OutputRef
-    ), "Expected overlap to be in an OutputRef"
-    overlap: float = overlap_side_output.value
+    overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
     stitched_sino_width = original_sino_width * 2 - math.ceil(overlap)
@@ -82,11 +78,7 @@ def _calc_memory_bytes_sino_360_to_180(
     **kwargs,
 ) -> Tuple[int, int]:
     assert "overlap" in kwargs, "Expected overlap in method parameters"
-    overlap_side_output = kwargs["overlap"]
-    assert isinstance(
-        overlap_side_output, OutputRef
-    ), "Expected overlap to be in an OutputRef"
-    overlap: float = overlap_side_output.value
+    overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
     stitched_sino_width = original_sino_width * 2 - math.ceil(overlap)

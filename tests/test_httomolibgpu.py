@@ -5,7 +5,6 @@ import pytest
 from mpi4py import MPI
 import numpy as np
 from numpy import uint16, float32
-from unittest import mock
 
 from pytest_mock import MockerFixture
 from numpy.testing import assert_allclose, assert_equal
@@ -18,7 +17,6 @@ httomolibgpu = pytest.importorskip("httomolibgpu")
 import cupy as cp
 
 from httomo_backends.methods_database.query import get_method_info
-from httomo_backends.utils import OutputRef
 
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
@@ -593,7 +591,6 @@ def test_rescale_to_int_memoryhook(
 @pytest.mark.parametrize("det_x", [600, 2160])
 def test_sino_360_to_180_memoryhook(
     ensure_clean_memory,
-    mocker: MockerFixture,
     det_x: int,
     slices: int,
 ):
@@ -608,20 +605,11 @@ def test_sino_360_to_180_memoryhook(
         sino_360_to_180(cp.copy(data), overlap)
 
     # Call memory estimator to estimate memory usage
-    output_ref = OutputRef(
-        method=make_test_method(mocker),
-        mapped_output_name="overlap",
+    (estimated_bytes, subtract_bytes) = _calc_memory_bytes_sino_360_to_180(
+        non_slice_dims_shape=(shape[0], shape[2]),
+        dtype=np.float32(),
+        overlap=overlap,
     )
-    with mock.patch(
-        "httomo.runner.output_ref.OutputRef.value",
-        new_callable=mock.PropertyMock,
-    ) as mock_value_property:
-        mock_value_property.return_value = overlap
-        (estimated_bytes, subtract_bytes) = _calc_memory_bytes_sino_360_to_180(
-            non_slice_dims_shape=(shape[0], shape[2]),
-            dtype=np.float32(),
-            overlap=output_ref,
-        )
     estimated_bytes *= slices
 
     max_mem = hook.max_mem - subtract_bytes
