@@ -40,8 +40,6 @@ from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.rec
 from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 
-from tests.testing_utils import make_test_method
-
 
 module_mem_path = "httomo.methods_database.packages.external."
 
