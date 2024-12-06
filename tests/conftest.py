@@ -54,3 +54,8 @@ def data(data_file, ensure_clean_memory):
     import cupy as cp
 
     return cp.asarray(data_file["data"], dtype=cp.float32)
+
+
+@pytest.fixture(scope="session")
+def distortion_correction_path(test_data_path):
+    return test_data_path / "distortion-correction"
