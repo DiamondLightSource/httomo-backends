@@ -123,4 +123,6 @@ filterwarnings = [
     "ignore::ImportWarning",
     "ignore:distutils:DeprecationWarning:numexpr"
 ]
-
+markers = [
+    "cupy: GPU dependent tests (deselect with '-m \"not cupy\"')",
+]
