@@ -65,6 +65,8 @@ class MethodsDatabaseQuery:
         ext_package_path = ""
         if package_name != "httomo":
             ext_package_path = f"backends/{package_name}/"
+        else:
+            ext_package_path = ""
         yaml_info_path = Path(YAML_DIR, str(ext_package_path), f"{package_name}.yaml")
         if not yaml_info_path.exists():
             err_str = f"The YAML file {yaml_info_path} doesn't exist."
