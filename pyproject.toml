@@ -14,6 +14,7 @@ packages = ["httomo_backends",
 
 [tool.setuptools.package-data]
 httomo_backends = [
+    "methods_database/packages/httomo.yaml",
     "methods_database/packages/backends/httomolibgpu/*.yaml",
     "methods_database/packages/backends/httomolib/*.yaml",
     "methods_database/packages/backends/tomopy/*.yaml",
