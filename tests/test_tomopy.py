@@ -1,8 +1,8 @@
-from httomo_backends.methods_database.backends.tomopy.supporting_funcs.misc.corr import (
+from httomo_backends.methods_database.packages.backends.tomopy.supporting_funcs.misc.corr import (
     _calc_padding_median_filter3d,
     _calc_padding_remove_outlier3d,
 )
-from httomo_backends.methods_database.backends.tomopy.supporting_funcs.prep.stripe import (
+from httomo_backends.methods_database.packages.backends.tomopy.supporting_funcs.prep.stripe import (
     _calc_padding_stripes_detect3d,
     _calc_padding_stripes_mask3d,
 )

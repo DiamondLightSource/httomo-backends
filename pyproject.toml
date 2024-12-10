@@ -7,16 +7,16 @@ include-package-data = true
 packages = ["httomo_backends",
             "httomo_backends.scripts",
             "httomo_backends.methods_database",
-            "httomo_backends.methods_database.backends.httomolibgpu",
-            "httomo_backends.methods_database.backends.httomolib",
-            "httomo_backends.methods_database.backends.tomopy",
+            "httomo_backends.methods_database.packages.backends.httomolibgpu",
+            "httomo_backends.methods_database.packages.backends.httomolib",
+            "httomo_backends.methods_database.packages.backends.tomopy",
             ]
 
 [tool.setuptools.package-data]
 httomo_backends = [
-    "methods_database/backends/httomolibgpu/*.yaml",
-    "methods_database/backends/httomolib/*.yaml",
-    "methods_database/backends/tomopy/*.yaml",
+    "methods_database/packages/backends/httomolibgpu/*.yaml",
+    "methods_database/packages/backends/httomolib/*.yaml",
+    "methods_database/packages/backends/tomopy/*.yaml",
     "yaml_templates/httomo/httomo.data.hdf.loaders/*.yaml",
     "yaml_templates/httomo/httomo.methods/*.yaml",
     "yaml_templates/tomopy/tomopy.misc.corr/*.yaml",

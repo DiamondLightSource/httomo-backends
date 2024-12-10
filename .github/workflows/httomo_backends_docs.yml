@@ -41,10 +41,10 @@ jobs:
 
         - name: Generate yaml templates
           run: |
-            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/tomopy/tomopy_modules.yaml -o ./docs/build/yaml_templates/tomopy
-            python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./docs/build/yaml_templates/tomopy -l ./httomo_backends/methods_database/backends/tomopy/tomopy.yaml
-            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolib/httomolib_modules.yaml -o ./docs/build/yaml_templates/httomolib
-            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./docs/build/yaml_templates/httomolibgpu
+            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./docs/build/yaml_templates/tomopy
+            python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./docs/build/yaml_templates/tomopy -l ./httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
+            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./docs/build/yaml_templates/httomolib
+            python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./docs/build/yaml_templates/httomolibgpu
 
         - name: Generate yml docs
           run: python ./docs/source/yaml_doc_generator.py

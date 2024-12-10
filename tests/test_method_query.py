@@ -71,7 +71,7 @@ def test_httomolibgpu_padding_true():
 # this is just a quick check - until we have schema validation on the DB files
 def test_all_methods_have_padding_parameter():
     for m in ["tomopy", "httomolib", "httomolibgpu"]:
-        yaml_path = Path(YAML_DIR, f"{m}/{m}.yaml")
+        yaml_path = Path(YAML_DIR, f"backends/{m}/{m}.yaml")
         with open(yaml_path, "r") as f:
             info = yaml.safe_load(f)
             # methods are on 3rd level
