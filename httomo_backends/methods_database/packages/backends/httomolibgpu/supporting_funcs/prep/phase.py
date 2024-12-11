@@ -24,7 +24,7 @@ import math
 from typing import Tuple
 import numpy as np
 
-from httomo.cufft import CufftType, cufft_estimate_2d
+from httomo_backends.cufft import CufftType, cufft_estimate_2d
 
 __all__ = [
     "_calc_memory_bytes_paganin_filter_savu",
