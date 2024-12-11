@@ -51,6 +51,7 @@ dependencies = [
     "pyyaml",
     "httomolibgpu",
     "tomopy",
+    "cupy-cuda11x==12.3.0",
 ]
 
 [project.optional-dependencies]
