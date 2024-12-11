@@ -36,7 +36,7 @@ jobs:
         run: |
           micromamba activate httomo_backends
           pip install httomolibgpu
-          pip install .       
+          pip install .[dev]
           micromamba list
                 
       - name: Run tests

@@ -53,6 +53,12 @@ dependencies = [
     "tomopy",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-mock",
+]
+
 [project.urls]
 repository = "https://github.com/DiamondLightSource/httomo-backends"
 
