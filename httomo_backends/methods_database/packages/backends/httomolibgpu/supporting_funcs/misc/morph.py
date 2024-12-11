@@ -24,8 +24,6 @@ import math
 from typing import Tuple
 import numpy as np
 
-from httomo.runner.output_ref import OutputRef
-
 __all__ = [
     "_calc_memory_bytes_data_resampler",
     "_calc_output_dim_data_resampler",
