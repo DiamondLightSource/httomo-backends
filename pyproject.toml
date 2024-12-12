@@ -52,6 +52,7 @@ dependencies = [
     "httomolibgpu",
     "tomopy",
     "cupy-cuda11x==12.3.0",
+    "nvtx",
 ]
 
 [project.optional-dependencies]
