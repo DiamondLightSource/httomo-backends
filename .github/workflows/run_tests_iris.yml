@@ -35,8 +35,7 @@ jobs:
       - name: Install httomo-backends
         run: |
           micromamba activate httomo_backends
-          pip install httomolibgpu
-          pip uninstall -y cupy
+          pip install --no-deps httomolibgpu
           pip install .[dev]
           micromamba list
                 
