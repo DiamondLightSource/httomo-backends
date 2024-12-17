@@ -50,7 +50,7 @@ dependencies = [
     "numpy",
     "pyyaml",
     "tomopy",
-    "cupy-cuda11x==12.3.0",
+    "cupy-cuda12x==12.3.0",
     "nvtx",
     "toml",
     "imageio",
