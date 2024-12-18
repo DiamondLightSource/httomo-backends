@@ -6,40 +6,17 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 packages = ["httomo_backends",
             "httomo_backends.scripts",
-            "httomo_backends.methods_database.backends.httomolibgpu",
-            "httomo_backends.methods_database.backends.httomolib",
-            "httomo_backends.methods_database.backends.tomopy",
+            "httomo_backends.methods_database",
+            "httomo_backends.methods_database.packages.backends.httomolibgpu",
+            "httomo_backends.methods_database.packages.backends.httomolib",
+            "httomo_backends.methods_database.packages.backends.tomopy",
             ]
 
 [tool.setuptools.package-data]
 httomo_backends = [
-    "methods_database/backends/httomolibgpu/*.yaml",
-    "methods_database/backends/httomolib/*.yaml",
-    "methods_database/backends/tomopy/*.yaml",
-    "yaml_templates/httomo/httomo.data.hdf.loaders/*.yaml",
-    "yaml_templates/httomo/httomo.methods/*.yaml",
-    "yaml_templates/tomopy/tomopy.misc.corr/*.yaml",
-    "yaml_templates/tomopy/tomopy.misc.morph/*.yaml",
-    "yaml_templates/tomopy/tomopy.prep.alignment/*.yaml",
-    "yaml_templates/tomopy/tomopy.prep.normalize/*.yaml",
-    "yaml_templates/tomopy/tomopy.prep.phase/*.yaml",
-    "yaml_templates/tomopy/tomopy.prep.stripe/*.yaml",
-    "yaml_templates/tomopy/tomopy.recon.algorithm/*.yaml",
-    "yaml_templates/tomopy/tomopy.recon.rotation/*.yaml",
-    "yaml_templates/tomopy/tomopy.sim.project/*.yaml",   
-    "yaml_templates/httomolib/httomolib.misc.morph/*.yaml",
-    "yaml_templates/httomolib/httomolib.misc.images/*.yaml",
-    "yaml_templates/httomolib/httomolib.misc.segm/*.yaml",
-    "yaml_templates/httomolib/httomolib.prep.phase/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.misc.corr/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.misc.morph/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.misc.rescale/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.prep.alignment/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.prep.normalize/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.prep.phase/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.prep.stripe/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.recon.algorithm/*.yaml",
-    "yaml_templates/httomolibgpu/httomolibgpu.recon.rotation/*.yaml",
+    "methods_database/packages/httomo.yaml",
+    "methods_database/packages/backends/*/*.yaml",
+    "yaml_templates/*/*/*.yaml",
 ]
 
 [tool.setuptools-git-versioning]
@@ -71,7 +48,22 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
-    "pyyaml"
+    "pyyaml",
+    "tomopy",
+    "cupy-cuda12x==12.3.0",
+    "nvtx",
+    "toml",
+    "imageio",
+    "h5py",
+    "astra-toolbox",
+    "tomobar",
+    "scikit-image",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-mock",
 ]
 
 [project.urls]
@@ -121,4 +113,6 @@ filterwarnings = [
     "ignore::ImportWarning",
     "ignore:distutils:DeprecationWarning:numexpr"
 ]
-
+markers = [
+    "cupy: GPU dependent tests (deselect with '-m \"not cupy\"')",
+]
