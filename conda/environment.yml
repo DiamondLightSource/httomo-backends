@@ -3,5 +3,6 @@ channels:
   - conda-forge
   - httomo
 dependencies:
+  - conda-forge::cuda-version
   - conda-forge::pyyaml
   - conda-forge::tomopy=1.15
