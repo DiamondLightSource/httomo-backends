@@ -47,7 +47,7 @@ classifiers = [
 
 requires-python = ">=3.10"
 dependencies = [
-    "numpy",
+    "numpy<2",
     "pyyaml",
     "tomopy",
     "cupy-cuda12x==12.3.0",
