@@ -32,10 +32,10 @@ jobs:
           $CONDA/bin/conda list
       - name: Generate yaml templates
         run: |
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./httomo_backends/yaml_templates/tomopy -l ./httomo_backends/methods_database/backends/tomopy/tomopy.yaml
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolib/httomolib_modules.yaml -o ./httomo_backends/yaml_templates/httomolib
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./httomo_backends/yaml_templates/httomolibgpu
+          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
+          $CONDA/bin/python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./httomo_backends/yaml_templates/tomopy -l ./httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
+          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./httomo_backends/yaml_templates/httomolib
+          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./httomo_backends/yaml_templates/httomolibgpu
       - name: Build package
         run: |
           $CONDA/bin/python -m build
