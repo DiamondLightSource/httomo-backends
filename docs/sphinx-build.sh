@@ -28,10 +28,10 @@ rm -rf $DIR/build/
 sphinx-apidoc -feT -t=$DIR/source/_templates -o $DIR/source/api $DIR/../httomo_backends
 
 # build yaml templates here:
-python $DIR/../httomo_backends/scripts/yaml_templates_generator.py -i $DIR/../httomo_backends/methods_database/backends/tomopy/tomopy_modules.yaml -o $DIR/build/yaml_templates/tomopy
-python $DIR/../httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t $DIR/build/yaml_templates/tomopy -l $DIR/../httomo_backends/methods_database/backends/tomopy/tomopy.yaml
-python $DIR/../httomo_backends/scripts/yaml_templates_generator.py -i $DIR/../httomo_backends/methods_database/backends/httomolibgpu/httomolibgpu_modules.yaml -o $DIR/build/yaml_templates/httomolibgpu
-python $DIR/../httomo_backends/scripts/yaml_templates_generator.py -i $DIR/../httomo_backends/methods_database/backends/httomolib/httomolib_modules.yaml -o $DIR/build/yaml_templates/httomolib
+python $DIR/../httomo_backends/scripts/yaml_templates_generator.py -i $DIR/../httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o $DIR/build/yaml_templates/tomopy
+python $DIR/../httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t $DIR/build/yaml_templates/tomopy -l $DIR/../httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
+python $DIR/../httomo_backends/scripts/yaml_templates_generator.py -i $DIR/../httomo_backends/methods_database/packages/backends/httomolibgpu/httomolibgpu_modules.yaml -o $DIR/build/yaml_templates/httomolibgpu
+python $DIR/../httomo_backends/scripts/yaml_templates_generator.py -i $DIR/../httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o $DIR/build/yaml_templates/httomolib
 
 # Append yaml link to rst files
 python -m source.yaml_doc_generator
