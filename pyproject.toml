@@ -4,13 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 include-package-data = true
-packages = ["httomo_backends",
-            "httomo_backends.scripts",
-            "httomo_backends.methods_database",
-            "httomo_backends.methods_database.packages.backends.httomolibgpu",
-            "httomo_backends.methods_database.packages.backends.httomolib",
-            "httomo_backends.methods_database.packages.backends.tomopy",
-            ]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["httomo_backends*"]
 
 [tool.setuptools.package-data]
 httomo_backends = [
