@@ -157,7 +157,7 @@ class MethodsDatabaseQuery:
 
     def _import_supporting_funcs_module(self) -> ModuleType:
 
-        module_mem_path = "httomo_backends.methods_database.backends."
+        module_mem_path = "httomo_backends.methods_database.packages.backends."
         path = self.module_path.split(".")
         path.insert(1, "supporting_funcs")
         module_mem_path += ".".join(path)

@@ -116,7 +116,7 @@ def test_database_query_calculate_memory(mocker: MockerFixture):
     mem = query.calculate_memory_bytes((42, 3), np.float32, testparam=42.0)
 
     importmock.assert_called_with(
-        "httomo_backends.methods_database.backends.sample.supporting_funcs.module.path"
+        "httomo_backends.methods_database.packages.backends.sample.supporting_funcs.module.path"
     )
     assert mem == (10, 20)
 
@@ -139,7 +139,7 @@ def test_database_query_calculate_output_dims(mocker: MockerFixture):
     dims = query.calculate_output_dims((42, 3), testparam=42.0)
 
     importmock.assert_called_with(
-        "httomo_backends.methods_database.backends.sample.supporting_funcs.module.path"
+        "httomo_backends.methods_database.packages.backends.sample.supporting_funcs.module.path"
     )
     assert dims == (10, 20)
 
@@ -161,7 +161,7 @@ def test_database_query_calculate_padding(mocker: MockerFixture):
     pads = query.calculate_padding(size=SIZE_PARAMETER)
 
     importmock.assert_called_once_with(
-        "httomo_backends.methods_database.backends.sample.supporting_funcs.module.path"
+        "httomo_backends.methods_database.packages.backends.sample.supporting_funcs.module.path"
     )
 
     assert pads == PADDING_RETURNED
