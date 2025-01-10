@@ -26,7 +26,7 @@ dev_template = "{tag}"
 
 [project]
 name = "httomo-backends"
-version = "0.1.0"
+version = "0.1.1"
 description = "Supplementary files for HTTomo backends."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
@@ -50,7 +50,7 @@ dependencies = [
     "numpy<2",
     "pyyaml",
     "tomopy",
-    "cupy-cuda12x==12.3.0",
+    "cupy==12.3.0",
     "nvtx",
     "toml",
     "imageio",
