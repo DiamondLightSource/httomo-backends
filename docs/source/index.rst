@@ -15,3 +15,9 @@
     :maxdepth: 2
 
     utilities/yaml_generator
+
+.. toctree::
+    :caption: Method Information
+    :maxdepth: 2
+
+    backends/method_info
