@@ -1,4 +1,5 @@
 - httomolibgpu.misc.corr
+- httomolibgpu.misc.denoise
 - httomolibgpu.misc.morph
 - httomolibgpu.misc.rescale
 - httomolibgpu.prep.alignment

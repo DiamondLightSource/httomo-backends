@@ -34,7 +34,7 @@ jobs:
         - name: Build api docs
           run: sphinx-apidoc -feT -t=./docs/source/_templates -o ./docs/source/api ./httomo_backends
 
-        - name: Generate yaml templates
+        - name: Install backends from PyPI
           run: |            
             pip install httomolib 
             pip install httomolibgpu --no-deps

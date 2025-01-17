@@ -24,6 +24,7 @@ from httomolibgpu.prep.stripe import (
     raven_filter,
 )
 from httomolibgpu.misc.corr import remove_outlier
+from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
 from httomolibgpu.recon.algorithm import FBP, SIRT, CGLS
 from httomolibgpu.misc.rescale import rescale_to_int
 
@@ -130,6 +131,80 @@ def test_remove_outlier_memoryhook(flats, ensure_clean_memory, dtype, slices):
     assert memory_requirements.multiplier is not None
     estimated_memory_bytes = (
         memory_requirements.multiplier * np.prod(cp.shape(data)) * uint16().nbytes
+    )
+
+    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
+
+    max_mem_mb = round(max_mem / (1024**2), 2)
+    # now compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 20
+
+
+@pytest.mark.parametrize("slices", [3, 10, 20])
+@pytest.mark.cupy
+def test_denoiser_ROF_TV_memoryhook(ensure_clean_memory, slices):
+    hook = MaxMemoryHook()
+    data = cp.random.random_sample((slices, 2560, 2560), dtype=np.float32)
+
+    with hook:
+        total_variation_ROF(cp.copy(data), regularisation_parameter=1.0, iterations=5)
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    method_query = MethodsDatabaseQuery(
+        "httomolibgpu.misc.denoise", "total_variation_ROF"
+    )
+    memory_requirements = method_query.get_memory_gpu_params()
+    assert memory_requirements is not None
+    assert memory_requirements.multiplier is not None
+    estimated_memory_bytes = (
+        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
+    )
+
+    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
+
+    max_mem_mb = round(max_mem / (1024**2), 2)
+    # now compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 20
+
+
+@pytest.mark.parametrize("slices", [3, 10, 20])
+@pytest.mark.cupy
+def test_denoiser_PD_TV_memoryhook(ensure_clean_memory, slices):
+    hook = MaxMemoryHook()
+    data = cp.random.random_sample((slices, 2560, 2560), dtype=np.float32)
+
+    with hook:
+        total_variation_PD(cp.copy(data), regularisation_parameter=1.0, iterations=5)
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    method_query = MethodsDatabaseQuery(
+        "httomolibgpu.misc.denoise", "total_variation_PD"
+    )
+    memory_requirements = method_query.get_memory_gpu_params()
+    assert memory_requirements is not None
+    assert memory_requirements.multiplier is not None
+    estimated_memory_bytes = (
+        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
     )
 
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
