@@ -18,6 +18,25 @@ misc:
       memory_gpu:
         multiplier: 2.1
         method: direct
+  denoise:
+    total_variation_ROF:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: 5
+        method: direct
+    total_variation_PD:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: 7
+        method: direct        
   morph:
     sino_360_to_180:
       pattern: sinogram

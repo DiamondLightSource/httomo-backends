@@ -4,8 +4,8 @@
 Methods YAML Templates
 ======================
 
-This section contains YAML templates for `backends <https://diamondlightsource.github.io/httomo/backends/list.html/>`_. These are ready-to-use templates can be either copy-pasted or
-directy accessed by installing `httomo-backends` package.
+This section contains YAML templates for `backends <https://diamondlightsource.github.io/httomo/backends/list.html>`_. These are ready-to-use templates can be either copy-pasted or
+directly accessed by installing the `httomo-backends` package.
 
 .. note:: When you click on a module you can find a link to the API of that module. This is where the description of the method and its arguments can be found.
 
