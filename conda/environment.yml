@@ -4,6 +4,7 @@ channels:
   - httomo
 dependencies:
   - conda-forge::astra-toolbox
+  - ccpi::ccpi-regulariser
   - conda-forge::cupy=12.3.0
   - conda-forge::h5py
   - conda-forge::imageio
