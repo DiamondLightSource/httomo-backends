@@ -12,7 +12,7 @@ jobs:
   iris-gpu:
     runs-on: iris-gpu
     container:
-      image: nvidia/cuda:12.6.3-devel-ubi8
+      image: ghcr.io/catthehacker/ubuntu:act-22.04
       env:
         NVIDIA_VISIBLE_DEVICES: ${{ env.NVIDIA_VISIBLE_DEVICES }}
 
@@ -35,7 +35,6 @@ jobs:
       - name: Install httomo-backends
         run: |
           micromamba activate httomo_backends
-          pip install --no-deps httomolibgpu
           pip install .[dev]
           micromamba list
                 

@@ -55,6 +55,7 @@ dependencies = [
     "astra-toolbox",
     "tomobar",
     "scikit-image",
+    "httomolibgpu",
 ]
 
 [project.optional-dependencies]
