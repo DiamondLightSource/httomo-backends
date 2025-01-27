@@ -1,10 +1,10 @@
-- method: standard_tomo
+- method: standard_tomo_diad
   module_path: httomo.data.hdf.loaders
   parameters:
-    data_path: entry1/tomo_entry/data/data
-    image_key_path: entry1/tomo_entry/instrument/detector/image_key
+    data_path: /entry/imaging/data
+    image_key_path: /entry/instrument/imaging/image_key
     rotation_angles:
-      data_path: /entry1/tomo_entry/data/rotation_angle
+      data_path: /entry/imaging_sum/gts_cs_theta
     preview:
       detector_x:   # horizontal data previewing/cropping.
         # when null, the full data dimension is used, i.e., no previewing
