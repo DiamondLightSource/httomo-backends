@@ -46,7 +46,6 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy<2",
     "pyyaml",
-    "tomopy",
     "cupy==12.3.0",
     "nvtx",
     "toml",
