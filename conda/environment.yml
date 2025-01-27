@@ -13,3 +13,4 @@ dependencies:
   - conda-forge::scikit-image
   - conda-forge::toml
   - conda-forge::tomopy=1.15
+  - httomo::ccpi-regulariser
