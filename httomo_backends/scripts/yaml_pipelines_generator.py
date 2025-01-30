@@ -32,6 +32,7 @@ import httomo_backends
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
+
 def __represent_none(self, data):
     return self.represent_scalar("tag:yaml.org,2002:null", "null")
 
@@ -170,6 +171,13 @@ def yaml_pipelines_generator(
                         key="algorithm",
                         comment="Select the required algorithm, e.g. `gridrec`",
                     )
+            elif "denoise" in module_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Using denoising method to reduce noise. ---",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
             elif "calculate_stats" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
