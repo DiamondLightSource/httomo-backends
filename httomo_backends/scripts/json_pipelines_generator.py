@@ -154,27 +154,63 @@ def json_pipeline_generator(input_yaml: str) -> Dict[str, Any]:
         print(f"Error occurred: {str(e)}")
         return {}
 
+# Path to the priority configuration file
+PRIORITY_FILE = os.path.join(PIPELINES_DIR, "pipeline_priority.yaml")
+
+def load_priority_order() -> list:
+    """
+    Load the pipeline priority order from the configuration file in the pipelines_full directory.
+    
+    Returns:
+        List of pipeline titles in priority order.
+    """
+    try:
+        with open(PRIORITY_FILE, 'r') as file:
+            config = yaml.safe_load(file)  # Use json.load() if using JSON
+            return config.get("pipeline_order", [])
+    except FileNotFoundError:
+        print(f"Warning: Priority file '{PRIORITY_FILE}' not found. Using default order.")
+        return []
+    except Exception as e:
+        print(f"Warning: Could not load priority file '{PRIORITY_FILE}'. Using default order. Error: {str(e)}")
+        return []
+
 def process_all_yaml_files() -> Dict[str, Any]:
     """
-    Process all YAML files in the pipelines_full directory.
+    Process all YAML files in the pipelines_full directory in the order of priority.
     
     Returns:
         Dictionary where keys are YAML file names and values are the JSON outputs
         from the json_pipeline_generator function.
     """
+    # Load the priority order
+    priority_order = load_priority_order()
+    
     # Dictionary to store results
     results = {}
     
     # List all YAML files in the pipelines_full directory
-    for yaml_file in os.listdir(PIPELINES_DIR):
-        if yaml_file.endswith(".yaml") or yaml_file.endswith(".yml"):
-            # Get the full path to the YAML file
-            yaml_path = get_yaml_path(yaml_file)
-            
-            # Process the YAML file
-            json_output = json_pipeline_generator(yaml_path)
-            
-            # Add to results
-            results[yaml_file.removesuffix("_directive.yaml")] = json_output
+    yaml_files = [f for f in os.listdir(PIPELINES_DIR) if f.endswith(".yaml") or f.endswith(".yml")]
+    
+     # Exclude the priority file from processing
+    yaml_files = [f for f in yaml_files if f != "pipeline_priority.yaml"]
+
+    # Sort YAML files based on priority order
+    if priority_order:
+        # Remove the "_directive.yaml" suffix for matching
+        yaml_files.sort(key=lambda x: priority_order.index(x.removesuffix("_directive.yaml")) 
+                        if x.removesuffix("_directive.yaml") in priority_order 
+                        else len(priority_order))
+    
+    # Process the YAML files in the sorted order
+    for yaml_file in yaml_files:
+        # Get the full path to the YAML file
+        yaml_path = get_yaml_path(yaml_file)
+        
+        # Process the YAML file
+        json_output = json_pipeline_generator(yaml_path)
+        
+        # Add to results (remove the "_directive.yaml" suffix for the key)
+        results[yaml_file.removesuffix("_directive.yaml")] = json_output
     
     return results
