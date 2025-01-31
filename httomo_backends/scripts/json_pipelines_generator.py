@@ -3,17 +3,38 @@ import importlib
 import inspect
 import yaml
 from typing import Dict, Any
+import os
 
 """This script provides a function `json_pipeline_generator` to generate JSON objects 
 containing method and module names out of directive YAML files.
 
-Usage in another project:
-from generate_pipeline_json import json_pipeline_generator
+to generate JSON for single directive yaml file : 
+from generate_pipeline_json import process_all_yaml_files
 
-json_output = json_pipeline_generator("path/to/input.yaml")
+result = json_pipeline_generator(<address to yaml_file>)
+
+to generate a JSON for all directive yaml files in the pipelines_full directory :
+from generate_pipeline_json import process_all_yaml_files
+
+result = process_all_yaml_files()
 """
 
+# Directory containing YAML files relative to this script
+PIPELINES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pipelines_full")
+
 ignored_methods = ["standard_tomo_diad", "calculate_stats", "standard_tomo"]
+
+def get_yaml_path(yaml_filename: str) -> str:
+    """
+    Get the full path to a YAML file in the pipelines_full directory.
+    
+    Args:
+        yaml_filename: Name of the YAML file (e.g., "example.yaml")
+    
+    Returns:
+        Full path to the YAML file
+    """
+    return os.path.join(PIPELINES_DIR, yaml_filename)
 
 def import_module_safely(module_name: str):
     """
@@ -132,3 +153,28 @@ def json_pipeline_generator(input_yaml: str) -> Dict[str, Any]:
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         return {}
+
+def process_all_yaml_files() -> Dict[str, Any]:
+    """
+    Process all YAML files in the pipelines_full directory.
+    
+    Returns:
+        Dictionary where keys are YAML file names and values are the JSON outputs
+        from the json_pipeline_generator function.
+    """
+    # Dictionary to store results
+    results = {}
+    
+    # List all YAML files in the pipelines_full directory
+    for yaml_file in os.listdir(PIPELINES_DIR):
+        if yaml_file.endswith(".yaml") or yaml_file.endswith(".yml"):
+            # Get the full path to the YAML file
+            yaml_path = get_yaml_path(yaml_file)
+            
+            # Process the YAML file
+            json_output = json_pipeline_generator(yaml_path)
+            
+            # Add to results
+            results[yaml_file.removesuffix("_directive.yaml")] = json_output
+    
+    return results
