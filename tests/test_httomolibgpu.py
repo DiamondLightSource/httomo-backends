@@ -523,18 +523,18 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("projections", [1801, 3601])
-@pytest.mark.parametrize("slices", [3, 5, 7, 11])
-@pytest.mark.parametrize("recon_size_it", [1200, 2560])
+@pytest.mark.parametrize("slices", [7, 11, 15])
+@pytest.mark.parametrize("detectorX", [1200, 2560])
 def test_recon_FBP_memoryhook(
-    slices, recon_size_it, projections, ensure_clean_memory, mocker: MockerFixture
+    slices, detectorX, projections, ensure_clean_memory, mocker: MockerFixture
 ):
-    data = cp.random.random_sample((projections, slices, 2560), dtype=np.float32)
+    data = cp.random.random_sample((projections, slices, detectorX), dtype=np.float32)
     kwargs = {}
     kwargs["angles"] = np.linspace(
         0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
     )
     kwargs["center"] = 500
-    kwargs["recon_size"] = recon_size_it
+    kwargs["recon_size"] = detectorX
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
@@ -555,7 +555,7 @@ def test_recon_FBP_memoryhook(
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FBP(
-        (projections, 2560), dtype=np.float32(), **kwargs
+        (projections, detectorX), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes

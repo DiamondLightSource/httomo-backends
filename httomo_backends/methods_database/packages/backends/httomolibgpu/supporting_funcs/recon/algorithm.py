@@ -139,12 +139,10 @@ def _calc_memory_bytes_FBP(
     # BUT: this swapaxis happens after the cudaArray inputs and the input swapaxis arrays are dropped,
     #      so it does not add to the memory overall
 
-    if projection_mem_size > filtersync_size:
-        tot_memory_bytes = int(filtersync_output_slice_size + projection_mem_size)
-    else:
-        # here we do not add recon_output_size as we assume that at least one fft plan will be released before the
-        # the backprojection step which is SMALLER than the current estimation.
-        tot_memory_bytes = int(filtersync_output_slice_size + filtersync_size)
+    # We assume for safety here that one FFT plan is not freed and one is freed
+    tot_memory_bytes = (
+        projection_mem_size + filtersync_size - ifftplan_slice_size + recon_output_size
+    )
 
     # this account for the memory used for filtration AND backprojection.
     return (tot_memory_bytes, fixed_amount)
