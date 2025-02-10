@@ -1,6 +1,7 @@
 {  
-    pipeline_order : ["cpu_pipeline_gridrec",
+    "pipeline_order" : [
     "gpu_pipelineFBP",
     "gpu_diad_FBP",
-    "gpu_pipelineFBP_denoising",]
+    "cpu_pipeline_gridrec",
+    "gpu_pipelineFBP_denoising"]
 }
