@@ -113,10 +113,18 @@ def yaml_pipelines_generator(
                     key="average_radius",
                     comment="Average several sinograms to improve SNR, one can try 3-5 range",
                 )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="side",
+                    comment="'None' corresponds to fully automated determination, '0' to the left side, '1' to the right side.",
+                )                
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="cor",
                     comment="A side output of the method, here a CoR scalar value",
                 )
+                pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
+                    key="overlap",
+                    comment="An overlap to use for converting 360 degrees scan to 180 degrees scan.",
+                )                
             elif "corr" in module_name and "remove_outlier" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
@@ -129,8 +137,30 @@ def yaml_pipelines_generator(
                     pipeline_full[i]["parameters"]["dif"] = 0.1
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="dif",
-                    comment="A difference between the outlier value and the median value of neighbouring pixels.",
+                    comment="A difference between the outlier value and the median value of neighboring pixels.",
                 )
+            elif "distortion" in method_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Applying optical distortion correction to projections. --- ",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="metadata_path",
+                    comment="Provide an absolute path to the text file with distortion coefficients.",
+                )
+            elif "sino_360_to_180" in method_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Using the overlap provided, converting 360 degrees scan to 180 degrees scan. --- ",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="rotation",
+                    comment="'left' if rotation center is close to the left of the field-of-view, 'right' otherwise.",
+                )          
             elif "normalize" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
