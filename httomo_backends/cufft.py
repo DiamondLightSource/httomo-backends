@@ -7,21 +7,14 @@ if "linux" not in sys.platform:
     raise RuntimeError("Linux is currently the only supported platform")
 
 _linux_version_list = [
-    "11.3.0.4",
-    11.0,
-    10.1,
-    10.0,
-    9.2,
-    9.1,
-    9.0,
-    8.0,
-    7.5,
-    7.0,
-    6.5,
-    6.0,
-    5.5,
-    5.0,
-    4.0,
+    11,
+    10,
+    9,
+    8,
+    7,
+    6,
+    5,
+    4,
 ]
 _libcufft_libname_list = ["libcufft.so"] + [
     "libcufft.so.%s" % v for v in _linux_version_list
