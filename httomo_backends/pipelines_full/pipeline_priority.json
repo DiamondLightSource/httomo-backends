@@ -4,5 +4,6 @@
     "gpu_pipelineFBP_denoising",
     "gpu_diad_FBP",
     "gpu_360_paganin_FBP",
+    "gpu_360_distortion_FBP",
     "cpu_pipeline_gridrec"]
 }

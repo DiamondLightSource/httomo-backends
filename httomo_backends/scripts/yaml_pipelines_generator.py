@@ -172,6 +172,17 @@ def yaml_pipelines_generator(
                     key="minus_log",
                     comment="If Paganin method is used bellow, set it to false.",
                 )
+            elif "phase" in module_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Apply a phase contrast filter to improve image contrast. --- ",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="alpha",
+                    comment="Controls the balance between the strength of the filter and the amount of noise reduction. Higher leads to less noise and more blur.",
+                )                
             elif "stripe" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
@@ -194,6 +205,10 @@ def yaml_pipelines_generator(
                     key="recon_mask_radius",
                     comment="Zero pixels outside the mask-circle radius.",
                 )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="neglog",
+                    comment="Perform negative log here if it was previously switched off.",
+                )                
                 if "algorithm" in pipeline_full[i]["parameters"]:
                     # fix for a default parameter (None) in TomoPy's algorithm
                     pipeline_full[i]["parameters"]["algorithm"] = "gridrec"
