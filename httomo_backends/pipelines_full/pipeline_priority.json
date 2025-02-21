@@ -1,7 +1,8 @@
 {  
     "pipeline_order" : [
     "gpu_pipelineFBP",
+    "gpu_pipelineFBP_denoising",
     "gpu_diad_FBP",
-    "cpu_pipeline_gridrec",
-    "gpu_pipelineFBP_denoising"]
+    "gpu_360_paganin_FBP",
+    "cpu_pipeline_gridrec"]
 }
