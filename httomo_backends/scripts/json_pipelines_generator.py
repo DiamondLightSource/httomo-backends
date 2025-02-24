@@ -22,7 +22,7 @@ result = process_all_yaml_files()
 # Directory containing YAML files relative to this script
 PIPELINES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pipelines_full")
 
-ignored_methods = ["standard_tomo_diad", "calculate_stats", "standard_tomo"]
+ignored_methods = ["calculate_stats"]
 
 def get_yaml_path(yaml_filename: str) -> str:
     """
@@ -154,19 +154,22 @@ def json_pipeline_generator(input_yaml: str) -> Dict[str, Any]:
         print(f"Error occurred: {str(e)}")
         return {}
 
+import json
+import os
+
 # Path to the priority configuration file
-PRIORITY_FILE = os.path.join(PIPELINES_DIR, "pipeline_priority.yaml")
+PRIORITY_FILE = os.path.join(PIPELINES_DIR, "pipeline_priority.json")
 
 def load_priority_order() -> list:
     """
-    Load the pipeline priority order from the configuration file in the pipelines_full directory.
+    Load the pipeline priority order from the JSON configuration file in the pipelines_full directory.
     
     Returns:
         List of pipeline titles in priority order.
     """
     try:
         with open(PRIORITY_FILE, 'r') as file:
-            config = yaml.safe_load(file)  # Use json.load() if using JSON
+            config = json.load(file)
             return config.get("pipeline_order", [])
     except FileNotFoundError:
         print(f"Warning: Priority file '{PRIORITY_FILE}' not found. Using default order.")
