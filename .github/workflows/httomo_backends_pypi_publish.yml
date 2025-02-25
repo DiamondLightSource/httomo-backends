@@ -21,23 +21,25 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.11"
+      - name: Setup conda
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          post-cleanup: 'all'
+          init-shell: bash
       - name: Install dependencies
         run: |        
-          $CONDA/bin/conda install conda-forge::tomopy==1.15
-          $CONDA/bin/conda install conda-forge::pyyaml
-          $CONDA/bin/pip install setuptools wheel
-          $CONDA/bin/pip install build          
-          $CONDA/bin/pip install httomolib
-          $CONDA/bin/pip install --no-deps httomolibgpu
-          $CONDA/bin/conda list
+          micromamba install -c conda-forge tomopy==1.15 pyyaml
+          pip install setuptools wheel build httomolib
+          pip install --no-deps httomolibgpu
+          micromamba list
       - name: Generate yaml templates
         run: |
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./httomo_backends/yaml_templates/tomopy -l ./httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./httomo_backends/yaml_templates/httomolib
-          $CONDA/bin/python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./httomo_backends/yaml_templates/httomolibgpu
+          python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
+          python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./httomo_backends/yaml_templates/tomopy -l ./httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
+          python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./httomo_backends/yaml_templates/httomolib
+          python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./httomo_backends/yaml_templates/httomolibgpu
       - name: Build package
         run: |
-          $CONDA/bin/python -m build
+          python -m build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
