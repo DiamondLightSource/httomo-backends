@@ -27,10 +27,12 @@ from httomo_backends.cufft import CufftType, cufft_estimate_1d
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
+    "_calc_memory_bytes_LPRec3d_tomobar",
     "_calc_memory_bytes_SIRT3d_tomobar",
     "_calc_memory_bytes_CGLS3d_tomobar",
     "_calc_output_dim_FBP2d_astra",
     "_calc_output_dim_FBP3d_tomobar",
+    "_calc_output_dim_LPRec3d_tomobar",
     "_calc_output_dim_SIRT3d_tomobar",
     "_calc_output_dim_CGLS3d_tomobar",
 ]
@@ -55,6 +57,10 @@ def _calc_output_dim_FBP2d_astra(non_slice_dims_shape, **kwargs):
 
 
 def _calc_output_dim_FBP3d_tomobar(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
+
+def _calc_output_dim_LPRec3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
@@ -151,6 +157,79 @@ def _calc_memory_bytes_FBP3d_tomobar(
 
     # this account for the memory used for filtration AND backprojection.
     return (tot_memory_bytes, fixed_amount)
+
+
+
+def _calc_memory_bytes_LPRec3d_tomobar(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    angles_tot = non_slice_dims_shape[0]
+    DetectorsLengthH = non_slice_dims_shape[1]
+    # calculate the output shape
+    output_dims = _calc_output_dim_LPRec(non_slice_dims_shape, **kwargs)
+
+    in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    out_slice_size = np.prod(DetectorsLengthH * DetectorsLengthH) * dtype.itemsize
+
+    # interpolation kernels
+    grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().nbytes
+    phi = grid_size
+
+    eps = 1e-4  # accuracy of usfft
+    mu = -np.log(eps) / (2 * DetectorsLengthH * DetectorsLengthH)
+    m = int(
+        np.ceil(
+            2
+            * DetectorsLengthH
+            * 1
+            / np.pi
+            * np.sqrt(
+                -mu * np.log(eps)
+                + (mu * DetectorsLengthH) * (mu * DetectorsLengthH) / 4
+            )
+        )
+    )
+    oversampling_level = 2
+    tmp_oversample_size = (
+        np.prod(angles_tot * oversampling_level * DetectorsLengthH)
+        * np.float32().nbytes
+    )
+
+    data_c_size = np.prod(0.5 * angles_tot * DetectorsLengthH) * np.complex64().itemsize
+
+    fde_size = (
+        (2 * m + 2 * DetectorsLengthH) * (2 * m + 2 * DetectorsLengthH)
+    ) * np.complex64().itemsize
+
+    fde2_size = (
+        (2 * DetectorsLengthH) * (2 * DetectorsLengthH)
+    ) * np.complex64().itemsize
+
+    c2dfftshift_slice_size = (
+        np.prod(4 * DetectorsLengthH * DetectorsLengthH) * np.int8().nbytes
+    )
+
+    filter_size = (DetectorsLengthH // 2 + 1) * np.float32().itemsize
+    freq_slice = angles_tot * (DetectorsLengthH + 1) * np.complex64().itemsize
+    fftplan_size = freq_slice * 2
+
+    tot_memory_bytes = int(
+        in_slice_size
+        + out_slice_size
+        + 2 * grid_size
+        + phi
+        + tmp_oversample_size
+        + data_c_size
+        + fde_size
+        + fde2_size
+        + c2dfftshift_slice_size
+        + freq_slice
+        + fftplan_size
+    )
+    return (tot_memory_bytes, filter_size)
+
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
