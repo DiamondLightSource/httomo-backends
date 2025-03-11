@@ -161,15 +161,17 @@ def _calc_memory_bytes_LPRec(
 ) -> Tuple[int, int]:
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH = non_slice_dims_shape[1]
+    
     # calculate the output shape
-    output_dims = _calc_output_dim_LPRec(non_slice_dims_shape, **kwargs)
+    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
+    #input and and output slices
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    out_slice_size = np.prod(DetectorsLengthH * DetectorsLengthH) * dtype.itemsize
+    out_slice_size = np.prod(output_dims) * dtype.itemsize
 
     # interpolation kernels
-    grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().nbytes
-    phi = grid_size
+    # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().nbytes
+    # phi = grid_size
 
     eps = 1e-4  # accuracy of usfft
     mu = -np.log(eps) / (2 * DetectorsLengthH * DetectorsLengthH)
@@ -185,21 +187,24 @@ def _calc_memory_bytes_LPRec(
             )
         )
     )
+
     oversampling_level = 2
     tmp_oversample_size = (
         np.prod(angles_tot * oversampling_level * DetectorsLengthH)
         * np.float32().nbytes
     )
-
     data_c_size = np.prod(0.5 * angles_tot * DetectorsLengthH) * np.complex64().itemsize
+    
+    # Oersampling freed during the calculation
+    max_memory_sampling = tmp_oversample_size + data_c_size
 
     fde_size = (
-        (2 * m + 2 * DetectorsLengthH) * (2 * m + 2 * DetectorsLengthH)
+        0.5 * (2 * m + 2 * DetectorsLengthH) * (2 * m + 2 * DetectorsLengthH)
     ) * np.complex64().itemsize
 
-    fde2_size = (
-        (2 * DetectorsLengthH) * (2 * DetectorsLengthH)
-    ) * np.complex64().itemsize
+    c1dfftshift_size = (
+        DetectorsLengthH * np.int8().nbytes
+    )
 
     c2dfftshift_slice_size = (
         np.prod(4 * DetectorsLengthH * DetectorsLengthH) * np.int8().nbytes
@@ -209,20 +214,27 @@ def _calc_memory_bytes_LPRec(
     freq_slice = angles_tot * (DetectorsLengthH + 1) * np.complex64().itemsize
     fftplan_size = freq_slice * 2
 
+    max_memory_per_slice = max(max_memory_sampling + fde_size, 2 * fde_size)
+
+    # Add treshold
+    max_memory_per_slice *= 1.2
+    
     tot_memory_bytes = int(
         in_slice_size
         + out_slice_size
-        + 2 * grid_size
-        + phi
-        + tmp_oversample_size
-        + data_c_size
-        + fde_size
-        + fde2_size
+        + max_memory_per_slice
+    )
+
+    fixed_amount = int(
+        fde_size
+        + fftplan_size
+        + filter_size
+        + c1dfftshift_size
         + c2dfftshift_slice_size
         + freq_slice
-        + fftplan_size
     )
-    return (tot_memory_bytes, filter_size)
+
+    return (tot_memory_bytes, fixed_amount)
 
 
 
