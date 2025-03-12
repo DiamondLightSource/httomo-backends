@@ -15,23 +15,34 @@ jobs:
       url: https://pypi.org/p/httomo-backends
     permissions:
       id-token: write
+    # steps:
+    #   - uses: actions/checkout@v4
+    #   - name: Set up Python
+    #     uses: actions/setup-python@v4
+    #     with:
+    #       python-version: "3.12"
+    #   - name: Setup conda
+    #     uses: mamba-org/setup-micromamba@v2
+    #     with:
+    #       post-cleanup: 'all'
+    #       init-shell: bash
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: conda-incubator/setup-miniconda@v3
         with:
+          auto-update-conda: true
+          auto-activate-base: false
+          conda-remove-defaults: true
+          channels: conda-forge
+          activate-environment: httomobackends
           python-version: "3.12"
-      - name: Setup conda
-        uses: mamba-org/setup-micromamba@v2
-        with:
-          post-cleanup: 'all'
-          init-shell: bash
       - name: Install dependencies
         run: |        
-          micromamba install -c conda-forge tomopy==1.15
+          conda install -c conda-forge tomopy==1.15
           python -m pip install pyyaml setuptools wheel build httomolib
           python -m pip install --no-deps httomolibgpu
-          micromamba list
+          conda list
       - name: Generate yaml templates
         run: |
           python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
