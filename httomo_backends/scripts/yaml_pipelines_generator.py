@@ -19,7 +19,7 @@
 # Created Date: 22/January/2025
 # version ='0.1'
 # ---------------------------------------------------------------------------
-"""Script that generates YAML pipeline for HTTomo using YAML templates from httomo-backends 
+"""Script that generates YAML pipeline for HTTomo using YAML templates from httomo-backends
 (should be already installed in your environment).
 
 Please run the generator as:
@@ -29,8 +29,30 @@ import argparse
 import os
 import ruamel.yaml
 import httomo_backends
+import yaml
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
+
+
+class SweepRange:
+    """SweepRange class."""
+
+    def __init__(self, start, stop, step):
+        self._start, self._stop, self._step = start, stop, step
+
+
+def __sweeprange_representer(
+    dumper: yaml.SafeDumper, swp: SweepRange
+) -> yaml.nodes.MappingNode:
+    """Represent a sweeprange as a YAML mapping node."""
+    return dumper.represent_mapping(
+        "!SweepRange",
+        {
+            "start": swp._start,
+            "stop": swp._stop,
+            "step": swp._step,
+        },
+    )
 
 
 def __represent_none(self, data):
@@ -64,10 +86,18 @@ def yaml_pipelines_generator(
         # a loop over methods in the high-level pipeline file (directive)
         methods_no = len(pipeline_file_content)
         pipeline_full = CS()
+        sweep_enabled = False
         for i in range(methods_no):
             method_content = pipeline_file_content[i]
             method_name = method_content["method"]
             module_name = method_content["module_path"]
+            if "sweep_parameter" in method_content:
+                sweep_parameter = method_content["sweep_parameter"]
+                sweep_start = method_content["sweep_start"]
+                sweep_stop = method_content["sweep_stop"]
+                sweep_step = method_content["sweep_step"]
+                sweep_enabled = True
+
             # get the corresponding yaml template from httomo-backends
             backend_name = module_name[0 : module_name.find(".")]
             full_path_to_yamls = (
@@ -116,7 +146,7 @@ def yaml_pipelines_generator(
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="side",
                     comment="'None' corresponds to fully automated determination, '0' to the left side, '1' to the right side.",
-                )                
+                )
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="cor",
                     comment="A side output of the method, here a CoR scalar value",
@@ -124,7 +154,7 @@ def yaml_pipelines_generator(
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="overlap",
                     comment="An overlap to use for converting 360 degrees scan to 180 degrees scan.",
-                )                
+                )
             elif "corr" in module_name and "remove_outlier" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
@@ -160,7 +190,7 @@ def yaml_pipelines_generator(
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="rotation",
                     comment="'left' if rotation center is close to the left of the field-of-view, 'right' otherwise.",
-                )          
+                )
             elif "normalize" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
@@ -182,7 +212,7 @@ def yaml_pipelines_generator(
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="alpha",
                     comment="Controls the balance between the strength of the filter and the amount of noise reduction. Higher leads to less noise and more blur.",
-                )                
+                )
             elif "stripe" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
@@ -208,7 +238,7 @@ def yaml_pipelines_generator(
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="neglog",
                     comment="Perform negative log here if it was previously switched off.",
-                )                
+                )
                 if "algorithm" in pipeline_full[i]["parameters"]:
                     # fix for a default parameter (None) in TomoPy's algorithm
                     pipeline_full[i]["parameters"]["algorithm"] = "gridrec"
@@ -256,7 +286,13 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full += yaml_template_method
 
+            if sweep_enabled:
+                pipeline_full[i]["parameters"][sweep_parameter] = SweepRange(
+                    start=sweep_start, stop=sweep_stop, step=sweep_step
+                )
+
         yaml.representer.add_representer(type(None), __represent_none)
+        yaml.representer.add_representer(SweepRange, __sweeprange_representer)
         yaml.dump(pipeline_full, f)
 
     return 0
