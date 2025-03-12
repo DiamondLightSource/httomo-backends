@@ -28,8 +28,8 @@ jobs:
           init-shell: bash
       - name: Install dependencies
         run: |        
-          micromamba install -c conda-forge tomopy==1.15 pyyaml
-          pip install setuptools wheel build httomolib
+          micromamba install -c conda-forge tomopy==1.15
+          pip install pyyaml setuptools wheel build httomolib
           pip install --no-deps httomolibgpu
           micromamba list
       - name: Generate yaml templates
