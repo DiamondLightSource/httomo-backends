@@ -37,14 +37,16 @@ jobs:
           channels: conda-forge
           activate-environment: httomobackends
           python-version: "3.12"
+          miniforge-version: latest
       - name: Install dependencies
         run: |        
-          conda install -c conda-forge tomopy==1.15
+          conda install conda-forge::tomopy==1.15
           python -m pip install pyyaml setuptools wheel build httomolib
           python -m pip install --no-deps httomolibgpu
           conda list
       - name: Generate yaml templates
         run: |
+          conda activate httomolibgpu
           python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
           python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./httomo_backends/yaml_templates/tomopy -l ./httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
           python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./httomo_backends/yaml_templates/httomolib
