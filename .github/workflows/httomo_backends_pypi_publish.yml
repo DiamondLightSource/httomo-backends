@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Setup conda
         uses: mamba-org/setup-micromamba@v2
         with:
@@ -29,8 +29,8 @@ jobs:
       - name: Install dependencies
         run: |        
           micromamba install -c conda-forge tomopy==1.15
-          pip install pyyaml setuptools wheel build httomolib
-          pip install --no-deps httomolibgpu
+          python -m pip install pyyaml setuptools wheel build httomolib
+          python -m pip install --no-deps httomolibgpu
           micromamba list
       - name: Generate yaml templates
         run: |
