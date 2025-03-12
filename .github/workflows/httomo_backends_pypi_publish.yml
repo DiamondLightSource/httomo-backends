@@ -46,7 +46,7 @@ jobs:
           conda list
       - name: Generate yaml templates
         run: |
-          conda activate httomolibgpu
+          mamba activate httomobackends
           python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/tomopy/tomopy_modules.yaml -o ./httomo_backends/yaml_templates/tomopy
           python ./httomo_backends/scripts/yaml_unsupported_tomopy_remove.py -t ./httomo_backends/yaml_templates/tomopy -l ./httomo_backends/methods_database/packages/backends/tomopy/tomopy.yaml
           python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./httomo_backends/yaml_templates/httomolib
