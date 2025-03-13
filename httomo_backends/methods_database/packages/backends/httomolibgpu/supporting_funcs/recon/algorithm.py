@@ -170,7 +170,7 @@ def _calc_memory_bytes_LPRec(
     out_slice_size = np.prod(output_dims) * dtype.itemsize
 
     # interpolation kernels
-    # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().nbytes
+    # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
     # phi = grid_size
 
     eps = 1e-4  # accuracy of usfft
@@ -191,34 +191,32 @@ def _calc_memory_bytes_LPRec(
     oversampling_level = 2
     tmp_oversample_size = (
         np.prod(angles_tot * oversampling_level * DetectorsLengthH)
-        * np.float32().nbytes
+        * np.float32().itemsize
     )
     data_c_size = np.prod(0.5 * angles_tot * DetectorsLengthH) * np.complex64().itemsize
     
     # Oersampling freed during the calculation
-    max_memory_sampling = tmp_oversample_size + data_c_size
+    max_memory_sampling = 2 * tmp_oversample_size + data_c_size
 
     fde_size = (
         0.5 * (2 * m + 2 * DetectorsLengthH) * (2 * m + 2 * DetectorsLengthH)
     ) * np.complex64().itemsize
 
     c1dfftshift_size = (
-        DetectorsLengthH * np.int8().nbytes
+        DetectorsLengthH * np.int8().itemsize
     )
 
     c2dfftshift_slice_size = (
-        np.prod(4 * DetectorsLengthH * DetectorsLengthH) * np.int8().nbytes
+        np.prod(4 * DetectorsLengthH * DetectorsLengthH) * np.int8().itemsize
     )
 
+    theta_size = angles_tot * np.float32().itemsize
     filter_size = (DetectorsLengthH // 2 + 1) * np.float32().itemsize
     freq_slice = angles_tot * (DetectorsLengthH + 1) * np.complex64().itemsize
     fftplan_size = freq_slice * 2
 
-    max_memory_per_slice = max(max_memory_sampling + fde_size, 2 * fde_size)
+    max_memory_per_slice = max(max_memory_sampling + 2 * fde_size, 3 * fde_size)
 
-    # Add treshold
-    max_memory_per_slice *= 1.2
-    
     tot_memory_bytes = int(
         in_slice_size
         + out_slice_size
@@ -227,6 +225,7 @@ def _calc_memory_bytes_LPRec(
 
     fixed_amount = int(
         fde_size
+        + theta_size
         + fftplan_size
         + filter_size
         + c1dfftshift_size
@@ -234,7 +233,7 @@ def _calc_memory_bytes_LPRec(
         + freq_slice
     )
 
-    return (tot_memory_bytes, fixed_amount)
+    return (1.4 * tot_memory_bytes, fixed_amount)
 
 
 
