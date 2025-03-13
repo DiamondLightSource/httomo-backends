@@ -27,9 +27,11 @@ from httomo_backends.cufft import CufftType, cufft_estimate_1d
 
 __all__ = [
     "_calc_memory_bytes_FBP",
+    "_calc_memory_bytes_LPRec",
     "_calc_memory_bytes_SIRT",
     "_calc_memory_bytes_CGLS",
     "_calc_output_dim_FBP",
+    "_calc_output_dim_LPRec",
     "_calc_output_dim_SIRT",
     "_calc_output_dim_CGLS",
 ]
@@ -48,6 +50,9 @@ def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
     output_dims = (recon_size, recon_size)
     return output_dims
 
+
+def _calc_output_dim_LPRec(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 def _calc_output_dim_FBP(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
@@ -146,6 +151,90 @@ def _calc_memory_bytes_FBP(
 
     # this account for the memory used for filtration AND backprojection.
     return (tot_memory_bytes, fixed_amount)
+
+
+
+def _calc_memory_bytes_LPRec(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    angles_tot = non_slice_dims_shape[0]
+    DetectorsLengthH = non_slice_dims_shape[1]
+    
+    # calculate the output shape
+    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
+    #input and and output slices
+    in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    out_slice_size = np.prod(output_dims) * dtype.itemsize
+
+    # interpolation kernels
+    # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
+    # phi = grid_size
+
+    eps = 1e-4  # accuracy of usfft
+    mu = -np.log(eps) / (2 * DetectorsLengthH * DetectorsLengthH)
+    m = int(
+        np.ceil(
+            2
+            * DetectorsLengthH
+            * 1
+            / np.pi
+            * np.sqrt(
+                -mu * np.log(eps)
+                + (mu * DetectorsLengthH) * (mu * DetectorsLengthH) / 4
+            )
+        )
+    )
+
+    oversampling_level = 2
+    tmp_oversample_size = (
+        np.prod(angles_tot * oversampling_level * DetectorsLengthH)
+        * np.float32().itemsize
+    )
+    data_c_size = np.prod(0.5 * angles_tot * DetectorsLengthH) * np.complex64().itemsize
+    
+    # Oersampling freed during the calculation
+    max_memory_sampling = 2 * tmp_oversample_size + data_c_size
+
+    fde_size = (
+        0.5 * (2 * m + 2 * DetectorsLengthH) * (2 * m + 2 * DetectorsLengthH)
+    ) * np.complex64().itemsize
+
+    c1dfftshift_size = (
+        DetectorsLengthH * np.int8().itemsize
+    )
+
+    c2dfftshift_slice_size = (
+        np.prod(4 * DetectorsLengthH * DetectorsLengthH) * np.int8().itemsize
+    )
+
+    theta_size = angles_tot * np.float32().itemsize
+    filter_size = (DetectorsLengthH // 2 + 1) * np.float32().itemsize
+    freq_slice = angles_tot * (DetectorsLengthH + 1) * np.complex64().itemsize
+    fftplan_size = freq_slice * 2
+
+    max_memory_per_slice = max(max_memory_sampling + 2 * fde_size, 3 * fde_size)
+
+    tot_memory_bytes = int(
+        in_slice_size
+        + out_slice_size
+        + max_memory_per_slice
+    )
+
+    fixed_amount = int(
+        fde_size
+        + theta_size
+        + fftplan_size
+        + filter_size
+        + c1dfftshift_size
+        + c2dfftshift_slice_size
+        + freq_slice
+    )
+
+    return (1.4 * tot_memory_bytes, fixed_amount)
+
 
 
 def _calc_memory_bytes_SIRT(
