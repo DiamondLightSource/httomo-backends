@@ -55,6 +55,7 @@ dependencies = [
     "astra-toolbox",
     "tomobar",
     "scikit-image",
+    "ccpi-regularisation-cupy",
 ]
 
 [project.optional-dependencies]

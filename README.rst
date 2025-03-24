@@ -11,10 +11,15 @@ Purpose of HTTomo-backends
 * Supporting scripts to calculate memory, size and padding estimators of the methods
 
 
-Install HTTomo-backends
-=======================
+Installation
+============
+
+HTTomo-backends is available on PyPI, but currently can only be installed into a conda
+environment (due to a dependency being available only through conda).
 
 .. code-block:: console
 
+   $ conda create --name httomo-backends
+   $ conda activate httomo-backends
+   $ conda install -c ccpi -c conda-forge ccpi-regulariser cupy==12.3.0
    $ pip install httomo-backends
-
