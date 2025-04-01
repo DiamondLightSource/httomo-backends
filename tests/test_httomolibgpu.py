@@ -573,9 +573,10 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("slices", [2, 3, 4, 5, 10, 15])
-def test_recon_LPRec_memoryhook(slices, ensure_clean_memory):
-    angles_number = 1801
+@pytest.mark.parametrize("projections", [1801, 2560, 3601])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10])
+def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
+    angles_number = projections
     detX_size = 2560
     data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)
     kwargs = {}
