@@ -14,12 +14,23 @@ Purpose of HTTomo-backends
 Installation
 ============
 
-HTTomo-backends is available on PyPI, but currently can only be installed into a conda
-environment (due to a dependency being available only through conda).
+HTTomo-backends is available on PyPI, so it can be installed into either a virtual environment
+or a conda environment.
+
+Virtual environment
+~~~~~~~~~~~~~~~~~~~
+.. code-block:: console
+
+   $ python -m venv httomo-backends
+   $ source httomo-backends/bin/activate
+   $ pip install httomo-backends
+
+Conda environment
+~~~~~~~~~~~~~~~~~
 
 .. code-block:: console
 
    $ conda create --name httomo-backends
    $ conda activate httomo-backends
-   $ conda install -c ccpi -c conda-forge ccpi-regulariser cupy==12.3.0
+   $ conda install -c conda-forge cupy==12.3.0
    $ pip install httomo-backends
