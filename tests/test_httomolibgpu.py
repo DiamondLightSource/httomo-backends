@@ -573,15 +573,17 @@ def test_recon_FBP_memoryhook(
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("slices", [2, 4])
+@pytest.mark.parametrize("slices", [2, 3, 4, 5, 10, 15])
 def test_recon_LPRec_memoryhook(slices, ensure_clean_memory):
-    data = cp.random.random_sample((1801, slices, 2560), dtype=np.float32)
+    angles_number = 1801
+    detX_size = 2560
+    data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)
     kwargs = {}
     kwargs["angles"] = np.linspace(
         0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
     )
-    kwargs["center"] = 500
-    kwargs["recon_size"] = 2560
+    kwargs["center"] = 1280
+    kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
@@ -595,7 +597,7 @@ def test_recon_LPRec_memoryhook(slices, ensure_clean_memory):
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
-        (1801, 2560), dtype=np.float32(), **kwargs
+        (angles_number, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes
