@@ -167,7 +167,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 ) -> Tuple[int, int]:
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH = non_slice_dims_shape[1]
-    
+
     # calculate the output shape
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
@@ -179,49 +179,51 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
     # phi = grid_size
 
+    n = DetectorsLengthH
+
+    odd_horiz = False
+    if (n % 2) != 0:
+        n = n - 1  # dealing with the odd horizontal detector size
+        odd_horiz = True
+
     eps = 1e-4  # accuracy of usfft
-    mu = -np.log(eps) / (2 * DetectorsLengthH * DetectorsLengthH)
+    mu = -np.log(eps) / (2 * n * n)
     m = int(
         np.ceil(
             2
-            * DetectorsLengthH
+            * n
             * 1
             / np.pi
             * np.sqrt(
                 -mu * np.log(eps)
-                + (mu * DetectorsLengthH) * (mu * DetectorsLengthH) / 4
+                + (mu * n) * (mu * n) / 4
             )
         )
     )
 
-    oversampling_level = 2
-    tmp_oversample_size = (
-        np.prod(angles_tot * oversampling_level * DetectorsLengthH)
-        * np.float32().itemsize
-    )
-    data_c_size = np.prod(0.5 * angles_tot * DetectorsLengthH) * np.complex64().itemsize
-    
-    # Oersampling freed during the calculation
-    max_memory_sampling = 2 * tmp_oversample_size + data_c_size
+    data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize
 
     fde_size = (
-        0.5 * (2 * m + 2 * DetectorsLengthH) * (2 * m + 2 * DetectorsLengthH)
+        0.5 * (2 * m + 2 * n) * (2 * m + 2 * n)
     ) * np.complex64().itemsize
 
     c1dfftshift_size = (
-        DetectorsLengthH * np.int8().itemsize
+        n * np.int8().itemsize
     )
 
     c2dfftshift_slice_size = (
-        np.prod(4 * DetectorsLengthH * DetectorsLengthH) * np.int8().itemsize
+        np.prod(4 * n * n) * np.int8().itemsize
     )
 
     theta_size = angles_tot * np.float32().itemsize
-    filter_size = (DetectorsLengthH // 2 + 1) * np.float32().itemsize
-    freq_slice = angles_tot * (DetectorsLengthH + 1) * np.complex64().itemsize
+    filter_size = (n // 2 + 1) * np.float32().itemsize
+    freq_slice = angles_tot * (n + 1) * np.complex64().itemsize
     fftplan_size = freq_slice * 2
 
-    max_memory_per_slice = max(max_memory_sampling + 2 * fde_size, 3 * fde_size)
+    phi_size = n * n * np.float32().itemsize
+
+    # We have two fde arrays and sometimes need double fde.
+    max_memory_per_slice = max(data_c_size + 2 * fde_size, 3 * fde_size)
 
     tot_memory_bytes = int(
         in_slice_size
@@ -231,15 +233,17 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     fixed_amount = int(
         fde_size
+        + data_c_size
         + theta_size
         + fftplan_size
         + filter_size
+        + phi_size
         + c1dfftshift_size
         + c2dfftshift_slice_size
         + freq_slice
     )
 
-    return (1.4 * tot_memory_bytes, fixed_amount)
+    return (1.2 * tot_memory_bytes, 1.2 * fixed_amount)
 
 
 
