@@ -249,8 +249,6 @@ def _calc_memory_bytes_LPRec(
         + recon_output_size # padded fbp output
         + fftplan_slice_size
         + ifftplan_slice_size
-        + proj_f_slice
-        + projection_mem_size
         + max_memory_per_slice
     )
 
