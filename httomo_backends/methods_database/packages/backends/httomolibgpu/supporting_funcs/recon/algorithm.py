@@ -179,6 +179,7 @@ def _calc_memory_bytes_LPRec(
         / SLICES
     )
 
+    pre_astra_input_swapaxis_slice = np.prod(non_slice_dims_shape) * np.float32().itemsize
     recon_output_size = np.prod(output_dims) * np.float32().itemsize
     astra_input_slice_size = np.prod(non_slice_dims_shape) * np.float32().itemsize
     projection_mem_size = pre_astra_input_swapaxis_slice + astra_input_slice_size + recon_output_size
