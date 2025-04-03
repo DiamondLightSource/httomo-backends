@@ -199,7 +199,7 @@ def _calc_memory_bytes_LPRec(
 
     fftplan_slice_size = (
         cufft_estimate_1d(
-            nx=det_width,
+            nx=DetectorsLengthH,
             fft_type=CufftType.CUFFT_R2C,
             batch=angles_tot * SLICES,
         )
