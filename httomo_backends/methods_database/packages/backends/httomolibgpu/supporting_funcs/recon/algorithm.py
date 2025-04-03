@@ -23,7 +23,7 @@
 import math
 from typing import Tuple
 import numpy as np
-from httomo_backends.cufft import CufftType, cufft_estimate_1d
+from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
@@ -167,18 +167,9 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 ) -> Tuple[int, int]:
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH = non_slice_dims_shape[1]
+    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
 
-    # calculate the output shape
-    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
-
-    #input and and output slices
-    in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    out_slice_size = np.prod(output_dims) * dtype.itemsize
-
-    # interpolation kernels
-    # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
-    # phi = grid_size
-
+    det_height = angles_tot
     n = DetectorsLengthH
 
     odd_horiz = False
@@ -201,46 +192,61 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         )
     )
 
-    data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize
+    center_size = 6144
+    center_size = min(center_size, n * 2 + m * 2)
 
-    fde_size = (
-        0.5 * (2 * m + 2 * n) * (2 * m + 2 * n)
-    ) * np.complex64().itemsize
+    padding_m = n - n // 2
 
-    c1dfftshift_size = (
-        n * np.int8().itemsize
-    )
+    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
-    c2dfftshift_slice_size = (
-        np.prod(4 * n * n) * np.int8().itemsize
-    )
-
-    theta_size = angles_tot * np.float32().itemsize
-    filter_size = (n // 2 + 1) * np.float32().itemsize
-    freq_slice = angles_tot * (n + 1) * np.complex64().itemsize
-    fftplan_size = freq_slice * 2
-
-    phi_size = n * n * np.float32().itemsize
-
-    # We have two fde arrays and sometimes need double fde.
-    max_memory_per_slice = max(data_c_size + 2 * fde_size, 3 * fde_size)
+    in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    padded_in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize   # 232 deleted
+    theta_size = angles_tot * np.float32().itemsize # 245
+    recon_output_size = np.prod(output_dims) * np.float32().itemsize    # 264
+    linspace_size = n * np.float32().itemsize # 268 deleted
+    meshgrid_size = n * n * np.float32().itemsize # 269 deleted
+    phi_size = n * n * np.float32().itemsize # 270
+    angle_range_size = center_size * center_size * 3 * np.int32().itemsize # 276 deleted
+    c1dfftshift_size = n * np.int8().itemsize   # 279 deleted
+    c2dfftshift_slice_size = (np.prod(4 * n * n) * np.int8().itemsize) # 282 deleted
+    filter_size = (n // 2 + 1) * np.float32().itemsize # 292 deleted
+    wfilter_size = filter_size # 295
+    scaled_filter_size = filter_size # 296
+    tmp_p_input_slice = np.prod(non_slice_dims_shape) * dtype.itemsize # 299
+    # 307 negligible
+    # 308 negligible
+    padded_tmp_p_input_slice = tmp_p_input_slice # 321
+    rfft_plan_slice_size = cufft_estimate_1d(nx=n,fft_type=CufftType.CUFFT_R2C,batch=det_height * SLICES) / SLICES # 322
+    irfft_plan_slice_size = cufft_estimate_1d(nx=n,fft_type=CufftType.CUFFT_C2R,batch=det_height * SLICES) / SLICES # 322
+    data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize # 329 deleted
+    fde_size = ((angles_tot // 2) * (2 * m + 2 * n) * (2 * m + 2 * n)) * np.complex64().itemsize # 336 deleted
+    fft_plan_slice_size = cufft_estimate_1d(nx=n,fft_type=CufftType.CUFFT_C2C,batch=det_height * SLICES) / SLICES # 339
+    # 364 negligible
+    # 377 negligible
+    # 408 negligible
+    # 409 negligible
+    ifft2_plan_slice_size = cufft_estimate_2d(nx=DetectorsLengthH,ny=angles_tot,fft_type=CufftType.CUFFT_C2C) #  468
+    fde2_size = fde_size # 473
+    recon_output_size_again = 2 * fde2_size # 479
+    circular_mask_size = np.prod(output_dims) * np.int64().itemsize # 490
 
     tot_memory_bytes = int(
-        in_slice_size
-        + out_slice_size
-        + max_memory_per_slice
+        max(
+            in_slice_size + padded_in_slice_size
+            , in_slice_size + recon_output_size + linspace_size + meshgrid_size
+            , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + padded_tmp_p_input_slice
+            , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + data_c_size
+            , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + data_c_size + fde_size + fft_plan_slice_size
+            , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fde_size + fft_plan_slice_size + fde2_size
+            , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + fde2_size + ifft2_plan_slice_size + recon_output_size_again
+        )
     )
 
     fixed_amount = int(
-        fde_size
-        + data_c_size
-        + theta_size
-        + fftplan_size
-        + filter_size
-        + phi_size
-        + c1dfftshift_size
-        + c2dfftshift_slice_size
-        + freq_slice
+        max(
+            theta_size + phi_size + angle_range_size + c1dfftshift_size + c2dfftshift_slice_size + filter_size + wfilter_size + scaled_filter_size
+            , theta_size + phi_size + circular_mask_size
+        )
     )
 
     return (1.2 * tot_memory_bytes, 1.2 * fixed_amount)

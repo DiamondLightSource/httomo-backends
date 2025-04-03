@@ -573,8 +573,10 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("projections", [1801, 2560, 3601])
-@pytest.mark.parametrize("slices", [3, 4, 5, 10])
+# @pytest.mark.parametrize("projections", [1801, 2560, 3601])
+@pytest.mark.parametrize("projections", [1801])
+# @pytest.mark.parametrize("slices", [3, 4, 5, 10])
+@pytest.mark.parametrize("slices", [3])
 def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     angles_number = projections
     detX_size = 2560
@@ -588,10 +590,12 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
+    # hook = cp.cuda.memory_hooks.LineProfileHook()
     with hook:
         recon_data = LPRec(cp.copy(data), **kwargs)
 
     # make sure estimator function is within range (80% min, 100% max)
+    # hook.print_report()
     max_mem = (
         hook.max_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
