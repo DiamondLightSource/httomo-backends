@@ -164,11 +164,9 @@ def _calc_memory_bytes_LPRec(
     SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
 
     # calculate the output shape
-    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
     #input and and output slices
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    out_slice_size = np.prod(output_dims) * dtype.itemsize
 
     fftplan_slice_size = (
         cufft_estimate_1d(
@@ -179,10 +177,18 @@ def _calc_memory_bytes_LPRec(
         / SLICES
     )
 
-    pre_astra_input_swapaxis_slice = np.prod(non_slice_dims_shape) * np.float32().itemsize
+    ifftplan_slice_size = (
+        cufft_estimate_2d(
+            nx=DetectorsLengthH,
+            ny=angles_tot,
+            fft_type=CufftType.CUFFT_C2C,
+        )
+    )
+
+    swapaxis_slice = np.prod(non_slice_dims_shape) * np.float32().itemsize
+
+    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
     recon_output_size = np.prod(output_dims) * np.float32().itemsize
-    astra_input_slice_size = np.prod(non_slice_dims_shape) * np.float32().itemsize
-    projection_mem_size = pre_astra_input_swapaxis_slice + astra_input_slice_size + recon_output_size
 
     # interpolation kernels
     # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
@@ -236,16 +242,20 @@ def _calc_memory_bytes_LPRec(
 
     tot_memory_bytes = int(
         in_slice_size
-        + projection_mem_size
+        + swapaxis_slice
+        + in_slice_size # padded
+        + recon_output_size
+        + recon_output_size # fbp output
+        + recon_output_size # padded fbp output
         + fftplan_slice_size
+        + ifftplan_slice_size
+        + proj_f_slice
+        + projection_mem_size
         + max_memory_per_slice
     )
 
     fixed_amount = int(
-        fde_size
-        + data_c_size
         + theta_size
-        # + fftplan_size
         + filter_size
         + phi_size
         + c1dfftshift_size
@@ -254,7 +264,6 @@ def _calc_memory_bytes_LPRec(
     )
 
     return (1.2 * tot_memory_bytes, 1.2 * fixed_amount)
-
 
 
 def _calc_memory_bytes_SIRT(
