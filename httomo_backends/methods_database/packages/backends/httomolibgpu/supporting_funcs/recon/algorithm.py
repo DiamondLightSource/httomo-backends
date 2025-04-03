@@ -195,6 +195,17 @@ def _calc_memory_bytes_LPRec(
         )
     )
 
+    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
+
+    fftplan_slice_size = (
+        cufft_estimate_1d(
+            nx=det_width,
+            fft_type=CufftType.CUFFT_R2C,
+            batch=angles_tot * SLICES,
+        )
+        / SLICES
+    )
+
     data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize
 
     fde_size = (
@@ -222,6 +233,7 @@ def _calc_memory_bytes_LPRec(
     tot_memory_bytes = int(
         in_slice_size
         + out_slice_size
+        + fftplan_slice_size
         + max_memory_per_slice
     )
 
@@ -229,7 +241,7 @@ def _calc_memory_bytes_LPRec(
         fde_size
         + data_c_size
         + theta_size
-        + fftplan_size
+        # + fftplan_size
         + filter_size
         + phi_size
         + c1dfftshift_size
