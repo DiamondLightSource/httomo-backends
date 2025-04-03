@@ -161,6 +161,7 @@ def _calc_memory_bytes_LPRec(
 ) -> Tuple[int, int]:
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH = non_slice_dims_shape[1]
+    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
 
     # calculate the output shape
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
@@ -168,6 +169,19 @@ def _calc_memory_bytes_LPRec(
     #input and and output slices
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     out_slice_size = np.prod(output_dims) * dtype.itemsize
+
+    fftplan_slice_size = (
+        cufft_estimate_1d(
+            nx=DetectorsLengthH,
+            fft_type=CufftType.CUFFT_R2C,
+            batch=angles_tot * SLICES,
+        )
+        / SLICES
+    )
+
+    recon_output_size = np.prod(output_dims) * np.float32().itemsize
+    astra_input_slice_size = np.prod(non_slice_dims_shape) * np.float32().itemsize
+    projection_mem_size = pre_astra_input_swapaxis_slice + astra_input_slice_size + recon_output_size
 
     # interpolation kernels
     # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
@@ -193,17 +207,6 @@ def _calc_memory_bytes_LPRec(
                 + (mu * n) * (mu * n) / 4
             )
         )
-    )
-
-    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
-
-    fftplan_slice_size = (
-        cufft_estimate_1d(
-            nx=DetectorsLengthH,
-            fft_type=CufftType.CUFFT_R2C,
-            batch=angles_tot * SLICES,
-        )
-        / SLICES
     )
 
     data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize
@@ -232,7 +235,7 @@ def _calc_memory_bytes_LPRec(
 
     tot_memory_bytes = int(
         in_slice_size
-        + out_slice_size
+        + projection_mem_size
         + fftplan_slice_size
         + max_memory_per_slice
     )
