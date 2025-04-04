@@ -163,6 +163,7 @@ def _calc_memory_bytes_LPRec(
     DetectorsLengthH = non_slice_dims_shape[1]
     SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
 
+    det_height = angles_tot
     n = DetectorsLengthH
 
     odd_horiz = False
