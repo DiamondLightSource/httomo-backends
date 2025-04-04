@@ -161,7 +161,8 @@ def _calc_memory_bytes_LPRec(
 ) -> Tuple[int, int]:
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH = non_slice_dims_shape[1]
-    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
+    # SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
+    SLICES = 1
 
     det_height = angles_tot
     n = DetectorsLengthH
@@ -188,8 +189,6 @@ def _calc_memory_bytes_LPRec(
 
     center_size = 6144
     center_size = min(center_size, n * 2 + m * 2)
-
-    padding_m = n - n // 2
 
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
@@ -243,7 +242,7 @@ def _calc_memory_bytes_LPRec(
         )
     )
 
-    return (1.2 * tot_memory_bytes, 1.2 * fixed_amount)
+    return (tot_memory_bytes, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT(
