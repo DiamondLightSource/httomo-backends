@@ -221,9 +221,9 @@ def _calc_memory_bytes_LPRec(
     print(f"rfft_plan_slice_size: {rfft_plan_slice_size}")
     irfft_plan_slice_size = cufft_estimate_1d(nx=n,fft_type=CufftType.CUFFT_C2R,batch=det_height * SLICES) / SLICES # 322
     print(f"irfft_plan_slice_size: {irfft_plan_slice_size}")
-    data_c_size = np.prod(det_height * 0.5 * n) * np.complex64().itemsize # 329 deleted
+    data_c_size = np.prod(1 * n) * np.complex64().itemsize # 329 deleted
     print(f"data_c_size: {data_c_size}")
-    fde_size = ((det_height * 0.5) * (2 * m + 2 * n) * (2 * m + 2 * n)) * np.complex64().itemsize # 336 deleted
+    fde_size = (1 * (2 * m + 2 * n) * (2 * m + 2 * n)) * np.complex64().itemsize # 336 deleted
     print(f"fde_size: {fde_size}")
     fft_plan_slice_size = cufft_estimate_1d(nx=n,fft_type=CufftType.CUFFT_C2C,batch=det_height * SLICES) / SLICES # 339
     print(f"fft_plan_slice_size: {fft_plan_slice_size}")
@@ -231,9 +231,9 @@ def _calc_memory_bytes_LPRec(
     # 377 negligible
     # 408 negligible
     # 409 negligible
-    ifft2_plan_slice_size = cufft_estimate_2d(nx=2 * n,ny=(det_height * 0.5),fft_type=CufftType.CUFFT_C2C) #  468
+    ifft2_plan_slice_size = cufft_estimate_2d(nx=2 * n,ny=1,fft_type=CufftType.CUFFT_C2C) #  468
     print(f"ifft2_plan_slice_size: {ifft2_plan_slice_size}")
-    fde2_size = (det_height * 0.5) * 2 * n * 2 * n * np.complex64().itemsize # 473
+    fde2_size = 1 * 2 * n * 2 * n * np.complex64().itemsize # 473
     print(f"fde2_size: {fde2_size}")
     concatenate_size = 2 * fde2_size # 479
     print(f"concatenate_size: {concatenate_size}")
