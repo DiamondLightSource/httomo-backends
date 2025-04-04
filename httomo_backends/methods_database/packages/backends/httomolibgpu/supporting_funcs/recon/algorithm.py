@@ -238,7 +238,7 @@ def _calc_memory_bytes_LPRec(
 
     fixed_amount = int(
         max(
-            theta_size + phi_size + angle_range_size c1dfftshift_size, c2dfftshift_slice_size + filter_size + wfilter_size + scaled_filter_size
+            theta_size + phi_size + angle_range_size + c1dfftshift_size + c2dfftshift_slice_size + filter_size + wfilter_size + scaled_filter_size
             , theta_size + phi_size + circular_mask_size
         )
     )
