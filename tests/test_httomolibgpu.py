@@ -573,10 +573,10 @@ def test_recon_FBP_memoryhook(
 
 
 @pytest.mark.cupy
-# @pytest.mark.parametrize("projections", [1801, 2560, 3601])
-@pytest.mark.parametrize("projections", [1801])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10])
-@pytest.mark.parametrize("slices", [3])
+@pytest.mark.parametrize("projections", [1801, 2560, 3601])
+# @pytest.mark.parametrize("projections", [1801])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10])
+# @pytest.mark.parametrize("slices", [3])
 def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     angles_number = projections
     detX_size = 2560
