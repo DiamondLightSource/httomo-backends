@@ -247,7 +247,7 @@ def _calc_memory_bytes_LPRec(
         + ifft2_plan_slice_size
         + fde2_size
         + recon_output_size_again
-        circular_mask_size
+        + circular_mask_size
     )
 
     fixed_amount = int(
