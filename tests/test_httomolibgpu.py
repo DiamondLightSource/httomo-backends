@@ -574,8 +574,8 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 @pytest.mark.cupy
 # @pytest.mark.parametrize("projections", [1801, 2560, 3601])
-@pytest.mark.parametrize("projections", [1801])
 # @pytest.mark.parametrize("slices", [3, 4, 5, 10])
+@pytest.mark.parametrize("projections", [3601])
 @pytest.mark.parametrize("slices", [3])
 def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     angles_number = projections
@@ -590,12 +590,12 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
-    # hook = cp.cuda.memory_hooks.LineProfileHook()
-    with hook:
+    line_profile_hook = cp.cuda.memory_hooks.LineProfileHook()
+    with hook, line_profile_hook:
         recon_data = LPRec(cp.copy(data), **kwargs)
 
+    line_profile_hook.print_report()
     # make sure estimator function is within range (80% min, 100% max)
-    # hook.print_report()
     max_mem = (
         hook.max_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
@@ -605,11 +605,16 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
         (angles_number, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    print(f"max_mem: {max_mem}")
     max_mem -= subtract_bytes
+    print(f"max_mem: {max_mem}")
     max_mem_mb = round(max_mem / (1024**2), 2)
+    print(f"max_mem_mb: {max_mem_mb}")
 
     # now we compare both memory estimations
     difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    print(f"estimated_memory_mb: {estimated_memory_mb}")
+    print(f"difference_mb: {difference_mb}")
     percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
