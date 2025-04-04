@@ -589,32 +589,32 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
-    # hook = MaxMemoryHook()
-    hook = cp.cuda.memory_hooks.LineProfileHook()
+    hook = MaxMemoryHook()
+    # hook = cp.cuda.memory_hooks.LineProfileHook()
     with hook:
         recon_data = LPRec(cp.copy(data), **kwargs)
 
     # make sure estimator function is within range (80% min, 100% max)
-    hook.print_report()
-    # max_mem = (
-    #     hook.max_mem
-    # )  # the amount of memory in bytes needed for the method according to memoryhook
+    # hook.print_report()
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
         (angles_number, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
-    # max_mem -= subtract_bytes
-    # max_mem_mb = round(max_mem / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
 
-    # # now we compare both memory estimations
-    # difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    # percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
-    # # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
-    # # the resulting percent value should not deviate from max_mem on more than 20%
-    # assert estimated_memory_mb >= max_mem_mb
-    # assert percents_relative_maxmem <= 35
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 35
 
 
 @pytest.mark.cupy
