@@ -24,6 +24,7 @@ import math
 from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
+from scipy.interpolate import griddata
 
 __all__ = [
     "_calc_memory_bytes_FBP",
@@ -35,6 +36,19 @@ __all__ = [
     "_calc_output_dim_SIRT",
     "_calc_output_dim_CGLS",
 ]
+
+
+def get_available_gpu_memory(safety_margin_percent: float = 10.0) -> int:
+    try:
+        import cupy as cp
+
+        dev = cp.cuda.Device(0)  # we consider here only the first device
+        with dev:
+            pool = cp.get_default_memory_pool()
+            available_memory = dev.mem_info[0] + pool.free_bytes()
+            return int(available_memory * (1 - safety_margin_percent / 100.0))
+    except:
+        return int(100e9)  # arbitrarily high number - only used if GPU isn't available
 
 
 def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
@@ -53,6 +67,7 @@ def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
 
 def _calc_output_dim_LPRec(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
 
 def _calc_output_dim_FBP(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
@@ -153,7 +168,6 @@ def _calc_memory_bytes_FBP(
     return (tot_memory_bytes, fixed_amount)
 
 
-
 def _calc_memory_bytes_LPRec(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
@@ -165,80 +179,176 @@ def _calc_memory_bytes_LPRec(
     # calculate the output shape
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
-    #input and and output slices
+    # input and and output slices
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     out_slice_size = np.prod(output_dims) * dtype.itemsize
 
-    # interpolation kernels
-    # grid_size = np.prod(DetectorsLengthH * DetectorsLengthH) * np.float32().itemsize
-    # phi = grid_size
+    if DetectorsLengthH == 2560 and output_dims[0] == 2560:
+        # The empirical calculation of slices based on the fixed value of DetectorsLengthH and reconstruction array sizes
+        x = np.array([4, 8, 16, 32, 40])  # Memory in GB available on the device
+        y = np.array(
+            [10, 450, 900, 1800, 2700, 3600, 4500, 6000, 7200, 9000]
+        )  # the number of projections in the data
 
-    n = DetectorsLengthH
+        points = np.zeros((50, 2), dtype=int)
+        index1 = 0
+        index2 = 0
+        for index_x in range(len(x)):
+            for index_y in range(len(y)):
+                points[index1] = [y[index_y], x[index2]]
+                index1 += 1
+            index2 += 1
 
-    odd_horiz = False
-    if (n % 2) != 0:
-        n = n - 1  # dealing with the odd horizontal detector size
-        odd_horiz = True
+        gb4_bites = 4e9
+        gb8_bites = 8e9
+        gb16_bites = 1.6e10
+        gb32_bites = 3.2e10
+        gb40_bites = 4e10
 
-    eps = 1e-4  # accuracy of usfft
-    mu = -np.log(eps) / (2 * n * n)
-    m = int(
-        np.ceil(
-            2
-            * n
-            * 1
-            / np.pi
-            * np.sqrt(
-                -mu * np.log(eps)
-                + (mu * n) * (mu * n) / 4
+        # Here the total memory in bytes on a card divided by the number of slices that can fit that memory.
+        # For instance for 8GB GPU card with 1800 x 2560 sinogram size given, you can fit 17 sinograms
+        # before the OOM error occurs on the device.
+        safety_margin = 1  # in the number of slices to reduce the memory usage
+        memory_bytes_estimated_per_slice = np.array(
+            [
+                [
+                    gb4_bites / (10 - safety_margin),
+                    gb8_bites / (20 - safety_margin),
+                    gb16_bites / (40 - safety_margin),
+                    gb32_bites / (98 - safety_margin),
+                    gb40_bites / (121 - safety_margin),
+                ],
+                [
+                    gb4_bites / (10 - safety_margin),
+                    gb8_bites / (20 - safety_margin),
+                    gb16_bites / (40 - safety_margin),
+                    gb32_bites / (90 - safety_margin),
+                    gb40_bites / (107 - safety_margin),
+                ],
+                [
+                    gb4_bites / (9 - safety_margin),
+                    gb8_bites / (19 - safety_margin),
+                    gb16_bites / (38 - safety_margin),
+                    gb32_bites / (82 - safety_margin),
+                    gb40_bites / (97 - safety_margin),
+                ],
+                [
+                    gb4_bites / (8 - safety_margin),
+                    gb8_bites / (17 - safety_margin),
+                    gb16_bites / (34 - safety_margin),
+                    gb32_bites / (70 - safety_margin),
+                    gb40_bites / (82 - safety_margin),
+                ],
+                [
+                    gb4_bites / (7 - safety_margin),
+                    gb8_bites / (15 - safety_margin),
+                    gb16_bites / (30 - safety_margin),
+                    gb32_bites / (62 - safety_margin),
+                    gb40_bites / (73 - safety_margin),
+                ],
+                [
+                    gb4_bites / (6 - safety_margin),
+                    gb8_bites / (13 - safety_margin),
+                    gb16_bites / (26 - safety_margin),
+                    gb32_bites / (56 - safety_margin),
+                    gb40_bites / (63 - safety_margin),
+                ],
+                [
+                    gb4_bites / (5 - safety_margin),
+                    gb8_bites / (11 - safety_margin),
+                    gb16_bites / (20 - safety_margin),
+                    gb32_bites / (46 - safety_margin),
+                    gb40_bites / (54 - safety_margin),
+                ],
+                [
+                    gb4_bites / (4 - safety_margin),
+                    gb8_bites / (8 - safety_margin),
+                    gb16_bites / (16 - safety_margin),
+                    gb32_bites / (32 - safety_margin),
+                    gb40_bites / (40 - safety_margin),
+                ],
+                [
+                    gb4_bites / (3 - safety_margin),
+                    gb8_bites / (6 - safety_margin),
+                    gb16_bites / (12 - safety_margin),
+                    gb32_bites / (25 - safety_margin),
+                    gb40_bites / (33 - safety_margin),
+                ],
+                [
+                    gb4_bites / 1,
+                    gb8_bites / (4 - safety_margin),
+                    gb16_bites / (10 - safety_margin),
+                    gb32_bites / (22 - safety_margin),
+                    gb40_bites / (26 - safety_margin),
+                ],
+            ]
+        )
+
+        # now we can interpolate if the provided data lies within the range given
+        available_memory = get_available_gpu_memory(
+            10.0
+        )  # NOTE: We check here ONLY the first device
+        available_memory_in_GB = round(available_memory / (1024**3), 2)
+        point_required = [angles_tot, available_memory_in_GB]
+        # we interpolate in order to get the number of slices for a given angles and given memory amount
+        result = griddata(
+            points,
+            memory_bytes_estimated_per_slice.T.flatten(),
+            point_required,
+            method="cubic",
+        )
+        # convert to bytes
+        tot_memory_bytes = int(*result)
+        fixed_amount = 0
+    else:
+        # mathematical calculation of the required memory
+        n = DetectorsLengthH
+        odd_horiz = False
+        if (n % 2) != 0:
+            n = n - 1  # dealing with the odd horizontal detector size
+            odd_horiz = True
+
+        eps = 1e-4  # accuracy of usfft
+        mu = -np.log(eps) / (2 * n * n)
+        m = int(
+            np.ceil(
+                2 * n * 1 / np.pi * np.sqrt(-mu * np.log(eps) + (mu * n) * (mu * n) / 4)
             )
         )
-    )
 
-    data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize
+        data_c_size = np.prod(0.5 * angles_tot * n) * np.complex64().itemsize
 
-    fde_size = (
-        0.5 * (2 * m + 2 * n) * (2 * m + 2 * n)
-    ) * np.complex64().itemsize
+        fde_size = (0.5 * (2 * m + 2 * n) * (2 * m + 2 * n)) * np.complex64().itemsize
 
-    c1dfftshift_size = (
-        n * np.int8().itemsize
-    )
+        c1dfftshift_size = n * np.int8().itemsize
 
-    c2dfftshift_slice_size = (
-        np.prod(4 * n * n) * np.int8().itemsize
-    )
+        c2dfftshift_slice_size = np.prod(4 * n * n) * np.int8().itemsize
 
-    theta_size = angles_tot * np.float32().itemsize
-    filter_size = (n // 2 + 1) * np.float32().itemsize
-    freq_slice = angles_tot * (n + 1) * np.complex64().itemsize
-    fftplan_size = freq_slice * 2
+        theta_size = angles_tot * np.float32().itemsize
+        filter_size = (n // 2 + 1) * np.float32().itemsize
+        freq_slice = angles_tot * (n + 1) * np.complex64().itemsize
+        fftplan_size = freq_slice * 2
 
-    phi_size = n * n * np.float32().itemsize
+        phi_size = n * n * np.float32().itemsize
 
-    # We have two fde arrays and sometimes need double fde.
-    max_memory_per_slice = max(data_c_size + 2 * fde_size, 3 * fde_size)
+        # We have two fde arrays and sometimes need double fde.
+        max_memory_per_slice = max(data_c_size + 2 * fde_size, 3 * fde_size)
 
-    tot_memory_bytes = int(
-        in_slice_size
-        + out_slice_size
-        + max_memory_per_slice
-    )
+        tot_memory_bytes = int(in_slice_size + out_slice_size + max_memory_per_slice)
 
-    fixed_amount = int(
-        fde_size
-        + data_c_size
-        + theta_size
-        + fftplan_size
-        + filter_size
-        + phi_size
-        + c1dfftshift_size
-        + c2dfftshift_slice_size
-        + freq_slice
-    )
+        fixed_amount = int(
+            fde_size
+            + data_c_size
+            + theta_size
+            + fftplan_size
+            + filter_size
+            + phi_size
+            + c1dfftshift_size
+            + c2dfftshift_slice_size
+            + freq_slice
+        )
 
-    return (1.2 * tot_memory_bytes, 1.2 * fixed_amount)
-
+    return (tot_memory_bytes, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT(
