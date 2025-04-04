@@ -194,11 +194,11 @@ def _calc_memory_bytes_LPRec(
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-    padded_in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize   # 232 deleted
+    # padded_in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize   # 232 deleted
     theta_size = angles_tot * np.float32().itemsize # 245
     recon_output_size = np.prod(output_dims) * np.float32().itemsize    # 264
-    linspace_size = n * np.float32().itemsize # 268 deleted
-    meshgrid_size = n * n * np.float32().itemsize # 269 deleted
+    # linspace_size = n * np.float32().itemsize # 268 deleted
+    # meshgrid_size = n * n * np.float32().itemsize # 269 deleted
     phi_size = n * n * np.float32().itemsize # 270
     angle_range_size = center_size * center_size * 3 * np.int32().itemsize # 276 deleted
     c1dfftshift_size = n * np.int8().itemsize   # 279 deleted
@@ -221,23 +221,16 @@ def _calc_memory_bytes_LPRec(
     # 409 negligible
     ifft2_plan_slice_size = cufft_estimate_2d(nx=DetectorsLengthH,ny=angles_tot,fft_type=CufftType.CUFFT_C2C) #  468
     fde2_size = fde_size # 473
-    recon_output_size_again = recon_output_size # 479
+    recon_output_size_again = 2 * fde2_size # 479
     circular_mask_size = np.prod(output_dims) * np.int64().itemsize # 490
 
     tot_memory_bytes = int(
         in_slice_size
-        + padded_in_slice_size
+        # + padded_in_slice_size
         + theta_size
         + recon_output_size
-        + linspace_size
-        + meshgrid_size
-        + phi_size
-        + angle_range_size
-        + c1dfftshift_size
-        + c2dfftshift_slice_size
-        + filter_size
-        + wfilter_size
-        + scaled_filter_size
+        # + linspace_size
+        # + meshgrid_size
         + tmp_p_input_slice
         + padded_tmp_p_input_slice
         + rfft_plan_slice_size
@@ -248,11 +241,17 @@ def _calc_memory_bytes_LPRec(
         + ifft2_plan_slice_size
         + fde2_size
         + recon_output_size_again
-        + circular_mask_size
     )
 
     fixed_amount = int(
-        0
+        phi_size
+        + angle_range_size
+        + c1dfftshift_size
+        + c2dfftshift_slice_size
+        + filter_size
+        + wfilter_size
+        + scaled_filter_size
+        + circular_mask_size
     )
 
     return (1.2 * tot_memory_bytes, 1.2 * fixed_amount)
