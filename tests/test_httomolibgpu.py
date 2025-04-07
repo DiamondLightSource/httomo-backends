@@ -604,7 +604,7 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
         slices, (angles_number, detX_size), dtype=np.float32(), **kwargs
     )
-    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
     print(f"max_mem: {max_mem}")
     max_mem -= subtract_bytes
     print(f"max_mem: {max_mem}")
