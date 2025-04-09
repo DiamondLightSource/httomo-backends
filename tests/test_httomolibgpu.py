@@ -574,9 +574,9 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 @pytest.mark.cupy
 # @pytest.mark.parametrize("projections", [1801, 2560, 3601])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10])
-@pytest.mark.parametrize("projections", [3601])
-@pytest.mark.parametrize("slices", [3])
+# @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize("projections", [1801])
+@pytest.mark.parametrize("slices", [15])
 def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     angles_number = projections
     detX_size = 2560
@@ -589,12 +589,12 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
+    line_profiler = cp.cuda.memory_hooks.LineProfileHook()
     hook = MaxMemoryHook()
-    line_profile_hook = cp.cuda.memory_hooks.LineProfileHook()
-    with hook, line_profile_hook:
+    with hook, line_profiler:
         recon_data = LPRec(cp.copy(data), **kwargs)
 
-    line_profile_hook.print_report()
+    line_profiler.print_report()
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
         hook.max_mem
@@ -602,14 +602,16 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
-        slices, (angles_number, detX_size), dtype=np.float32(), **kwargs
+        (angles_number, detX_size), dtype=np.float32(), **kwargs
     )
-    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
-    print(f"max_mem: {max_mem}")
+
+    padded_slices = slices
+    if (slices % 2) != 0:
+        padded_slices += 1
+
+    estimated_memory_mb = round(padded_slices * estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes
-    print(f"max_mem: {max_mem}")
     max_mem_mb = round(max_mem / (1024**2), 2)
-    print(f"max_mem_mb: {max_mem_mb}")
 
     # now we compare both memory estimations
     difference_mb = abs(estimated_memory_mb - max_mem_mb)
