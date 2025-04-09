@@ -236,8 +236,8 @@ def _calc_memory_bytes_LPRec(
                     gb4_bites / (8 - safety_margin),
                     gb8_bites / (17 - safety_margin),
                     gb16_bites / (34 - safety_margin),
-                    gb32_bites / (70 - safety_margin),
-                    gb40_bites / (82 - safety_margin),
+                    gb32_bites / (60 - safety_margin),
+                    gb40_bites / (72 - safety_margin),
                 ],
                 [
                     gb4_bites / (7 - safety_margin),
