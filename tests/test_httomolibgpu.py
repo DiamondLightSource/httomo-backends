@@ -43,16 +43,21 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
     def __init__(self, initial=0):
         self.max_mem = initial
         self.current = initial
+        self.all_allocations = initial
+        self.free_stack_traces = []
 
     def malloc_postprocess(
         self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
     ):
         self.current += mem_size
         self.max_mem = max(self.max_mem, self.current)
+        self.all_allocations += mem_size
 
     def free_postprocess(
         self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
     ):
+        import traceback
+        self.free_stack_traces.append(traceback.extract_stack())
         self.current -= mem_size
 
     def alloc_preprocess(self, **kwargs):
@@ -599,6 +604,12 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     max_mem = (
         hook.max_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    print(f"hook all allocations: {hook.all_allocations}")
+
+    for stack in hook.free_stack_traces:
+        for frame in stack:
+            print(f"{frame.filename}:{frame.lineno} in {frame.name}")
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(

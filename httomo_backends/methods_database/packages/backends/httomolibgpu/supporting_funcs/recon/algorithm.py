@@ -279,14 +279,63 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         in_slice_size + padded_in_slice_size
         , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + padded_tmp_p_input_slice + rfft_result_size + filtered_rfft_result_size + irfft_result_size
         , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + datac_size + conversion_to_complex_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + datac_size + fde_size + fft_plan_slice_size + shifted_datac_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fde_size + fft_plan_slice_size
+        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + fde_size + datac_size + shifted_datac_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
         , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + shifted_fde_view_size
         , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + fde2_size + concatenate_size
         , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + after_recon_swapaxis_slice
     ]
 
+    print(f"all per slice memory estimation: {
+        in_slice_size 
+        + padded_in_slice_size
+        + recon_output_size 
+        + rfft_plan_slice_size 
+        + irfft_plan_slice_size 
+        + tmp_p_input_slice 
+        + padded_tmp_p_input_slice 
+        + rfft_result_size 
+        + filtered_rfft_result_size 
+        + irfft_result_size 
+        + datac_size 
+        + conversion_to_complex_size
+        + fft_plan_slice_size + fde_size + shifted_datac_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
+        + ifft2_plan_slice_size + shifted_fde_view_size
+        + fde2_size + concatenate_size
+        + after_recon_swapaxis_slice
+        }")
+
+    print(f"all fixed memory estimation: {
+        theta_size + phi_size + linspace_size + meshgrid_size
+        + angle_range_size + c1dfftshift_size + c2dfftshift_slice_size + filter_size + rfftfreq_size + scaled_filter_size + circular_mask_size
+        }")
+    
+    print(f"all memory estimation assuming 15 slices: {
+        in_slice_size * 15 
+        + (
+            padded_in_slice_size
+            + recon_output_size 
+            + rfft_plan_slice_size 
+            + irfft_plan_slice_size 
+            + tmp_p_input_slice 
+            + padded_tmp_p_input_slice 
+            + rfft_result_size 
+            + filtered_rfft_result_size 
+            + irfft_result_size 
+            + datac_size 
+            + conversion_to_complex_size
+            + fft_plan_slice_size + fde_size + shifted_datac_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
+            + ifft2_plan_slice_size + shifted_fde_view_size
+            + fde2_size + concatenate_size
+        ) * 16
+        + after_recon_swapaxis_slice * 15
+        + theta_size + phi_size + linspace_size + meshgrid_size
+        + angle_range_size + c1dfftshift_size + c2dfftshift_slice_size + filter_size + rfftfreq_size + scaled_filter_size + circular_mask_size
+        }")
+
+    print(f"scoped_sums: {scope_sums}")
     tot_memory_bytes_peak = max(scope_sums)
+    tot_memory_peak_index = scope_sums.index(tot_memory_bytes_peak)
+    print(f"tot_memory_peak_index: {tot_memory_peak_index}")
     tot_memory_bytes = int(tot_memory_bytes_peak)
 
     fixed_amount = int(
