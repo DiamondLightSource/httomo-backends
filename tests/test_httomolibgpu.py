@@ -32,8 +32,10 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.recon.algorithm import *
+from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.recon.peak_memory_line_profile_hook import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
+
 
 
 module_mem_path = "httomo.methods_database.packages.external."
@@ -57,7 +59,7 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
         self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
     ):
         import traceback
-        self.free_stack_traces.append(traceback.extract_stack())
+        self.free_stack_traces.append((traceback.extract_stack(), mem_size))
         self.current -= mem_size
 
     def alloc_preprocess(self, **kwargs):
@@ -594,7 +596,8 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
-    line_profiler = cp.cuda.memory_hooks.LineProfileHook()
+    # line_profiler = cp.cuda.memory_hooks.LineProfileHook()
+    line_profiler = PeakMemoryLineProfileHook("methodsDIR_CuPy.py")
     hook = MaxMemoryHook()
     with hook, line_profiler:
         recon_data = LPRec(cp.copy(data), **kwargs)
@@ -607,9 +610,10 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
 
     print(f"hook all allocations: {hook.all_allocations}")
 
-    for stack in hook.free_stack_traces:
+    for (stack, memsize) in hook.free_stack_traces:
         for frame in stack:
-            print(f"{frame.filename}:{frame.lineno} in {frame.name}")
+            if frame.filename.endswith("methodsDIR_CuPy.py"):
+                print(f"{frame.filename}:{frame.lineno} in {frame.name}: {memsize}")
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
