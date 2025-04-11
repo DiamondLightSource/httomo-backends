@@ -37,6 +37,7 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 
 
+import traceback
 
 module_mem_path = "httomo.methods_database.packages.external."
 
@@ -46,6 +47,7 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
         self.max_mem = initial
         self.current = initial
         self.all_allocations = initial
+        self.malloc_stack_traces = []
         self.free_stack_traces = []
 
     def malloc_postprocess(
@@ -54,11 +56,11 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
         self.current += mem_size
         self.max_mem = max(self.max_mem, self.current)
         self.all_allocations += mem_size
+        self.malloc_stack_traces.append((traceback.extract_stack(), mem_size))
 
     def free_postprocess(
         self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
     ):
-        import traceback
         self.free_stack_traces.append((traceback.extract_stack(), mem_size))
         self.current -= mem_size
 
@@ -597,7 +599,7 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_mask_radius"] = 0.8
 
     # line_profiler = cp.cuda.memory_hooks.LineProfileHook()
-    line_profiler = PeakMemoryLineProfileHook("methodsDIR_CuPy.py")
+    line_profiler = PeakMemoryLineProfileHook(["methodsDIR_CuPy.py"])
     hook = MaxMemoryHook()
     with hook, line_profiler:
         recon_data = LPRec(cp.copy(data), **kwargs)
@@ -610,6 +612,13 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
 
     print(f"hook all allocations: {hook.all_allocations}")
 
+    print("****** MALLOC ******")
+    for (stack, memsize) in hook.malloc_stack_traces:
+        for frame in stack:
+            if frame.filename.endswith("methodsDIR_CuPy.py"):
+                print(f"{frame.filename}:{frame.lineno} in {frame.name}: {memsize}")
+
+    print("****** FREE ******")
     for (stack, memsize) in hook.free_stack_traces:
         for frame in stack:
             if frame.filename.endswith("methodsDIR_CuPy.py"):
