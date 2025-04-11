@@ -37,8 +37,6 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 
 
-import traceback
-
 module_mem_path = "httomo.methods_database.packages.external."
 
 
@@ -46,22 +44,16 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
     def __init__(self, initial=0):
         self.max_mem = initial
         self.current = initial
-        self.all_allocations = initial
-        self.malloc_stack_traces = []
-        self.free_stack_traces = []
 
     def malloc_postprocess(
         self, device_id: int, size: int, mem_size: int, mem_ptr: int, pmem_id: int
     ):
         self.current += mem_size
         self.max_mem = max(self.max_mem, self.current)
-        self.all_allocations += mem_size
-        self.malloc_stack_traces.append((traceback.extract_stack(), mem_size))
 
     def free_postprocess(
         self, device_id: int, mem_size: int, mem_ptr: int, pmem_id: int
     ):
-        self.free_stack_traces.append((traceback.extract_stack(), mem_size))
         self.current -= mem_size
 
     def alloc_preprocess(self, **kwargs):
@@ -582,10 +574,8 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-# @pytest.mark.parametrize("projections", [1801, 2560, 3601])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
-@pytest.mark.parametrize("projections", [1801])
-@pytest.mark.parametrize("slices", [15])
+@pytest.mark.parametrize("projections", [1801, 2560, 3601])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
 def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     angles_number = projections
     detX_size = 2560
@@ -598,40 +588,32 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
-    # line_profiler = cp.cuda.memory_hooks.LineProfileHook()
-    line_profiler = PeakMemoryLineProfileHook(["methodsDIR_CuPy.py"])
     hook = MaxMemoryHook()
-    with hook, line_profiler:
+    with hook:
         recon_data = LPRec(cp.copy(data), **kwargs)
 
-    line_profiler.print_report()
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
         hook.max_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
-    print(f"hook all allocations: {hook.all_allocations}")
-
-    print("****** MALLOC ******")
-    for (stack, memsize) in hook.malloc_stack_traces:
-        for frame in stack:
-            if frame.filename.endswith("methodsDIR_CuPy.py"):
-                print(f"{frame.filename}:{frame.lineno} in {frame.name}: {memsize}")
-
-    print("****** FREE ******")
-    for (stack, memsize) in hook.free_stack_traces:
-        for frame in stack:
-            if frame.filename.endswith("methodsDIR_CuPy.py"):
-                print(f"{frame.filename}:{frame.lineno} in {frame.name}: {memsize}")
+    non_slice_dims_shape = (angles_number, detX_size)
+    input_data_type = np.float32()
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
-        (angles_number, detX_size), dtype=np.float32(), **kwargs
+        non_slice_dims_shape, dtype=input_data_type, **kwargs
     )
 
+    even_slice_count = True
     padded_slices = slices
     if (slices % 2) != 0:
+        even_slice_count = False
         padded_slices += 1
+
+    if even_slice_count:
+        input_slice_size = np.prod(non_slice_dims_shape) * input_data_type.itemsize
+        estimated_memory_bytes -= input_slice_size
 
     estimated_memory_mb = round(padded_slices * estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes
@@ -639,8 +621,6 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
 
     # now we compare both memory estimations
     difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    print(f"estimated_memory_mb: {estimated_memory_mb}")
-    print(f"difference_mb: {difference_mb}")
     percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%

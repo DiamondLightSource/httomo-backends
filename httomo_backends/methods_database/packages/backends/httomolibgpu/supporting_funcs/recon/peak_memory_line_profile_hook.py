@@ -83,10 +83,12 @@ class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
         humanized_running_peak_bytes = None
         humanized_running_used_bytes = None
         if path.basename(st.filename) in self.running_peak_root_file_names:
-            running_used_bytes[0] = running_used_bytes[0] + memory_frame.used_bytes - memory_frame.freed_bytes
-            humanized_running_used_bytes = MemoryFrame.humanized_size(running_used_bytes[0])
+            running_used_bytes[0] += memory_frame.used_bytes
             running_peak_bytes[0] = max(running_peak_bytes[0], running_used_bytes[0])
+            running_used_bytes[0] -= memory_frame.freed_bytes
+
             humanized_running_peak_bytes = MemoryFrame.humanized_size(running_peak_bytes[0])
+            humanized_running_used_bytes = MemoryFrame.humanized_size(running_used_bytes[0])
 
         line = '%s%s:%s:%s (%s, %s, %s, %s, %s)\n' % (
             indent, st.filename, st.lineno, st.name,
