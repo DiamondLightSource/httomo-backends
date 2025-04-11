@@ -240,8 +240,10 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     debug_print(327, "filtered_rfft_result_size", filtered_rfft_result_size)
     rfft_plan_slice_size = cufft_estimate_1d(nx=(n + padding_m * 2),fft_type=CufftType.CUFFT_R2C,batch=angles_tot * SLICES) / SLICES
     debug_print(327, "rfft_plan_slice_size", rfft_plan_slice_size)
-    irfft_result_size = filtered_rfft_result_size * 2
+    irfft_result_size = filtered_rfft_result_size
     debug_print(327, "irfft_result_size", irfft_result_size)
+    irfft_scratch_memory_size = filtered_rfft_result_size
+    debug_print(327, "irfft_scratch_memory_size", irfft_scratch_memory_size)
     irfft_plan_slice_size = cufft_estimate_1d(nx=(n + padding_m * 2),fft_type=CufftType.CUFFT_C2R,batch=angles_tot * SLICES) / SLICES
     debug_print(327, "irfft_plan_slice_size", irfft_plan_slice_size)
     conversion_to_complex_size = np.prod(non_slice_dims_shape) * np.complex64().itemsize / 2
@@ -263,6 +265,8 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     fde_view_size = 4 * n * n * np.complex64().itemsize / 2
     shifted_fde_view_size = fde_view_size
     debug_print(474, "shifted_fde_view_size", shifted_fde_view_size)
+    ifft2_scratch_memory_size = fde_view_size
+    debug_print(474, "ifft2_scratch_memory_size", ifft2_scratch_memory_size)
     ifft2_plan_slice_size = cufft_estimate_2d(nx=(2 * n),ny=(2 * n),fft_type=CufftType.CUFFT_C2C) / 2
     debug_print(474, "ifft2_plan_slice_size", ifft2_plan_slice_size)
     fde2_size = n * n * np.complex64().itemsize / 2
@@ -276,13 +280,12 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     debug_print(0, "after_recon_swapaxis_slice", after_recon_swapaxis_slice)
 
     scope_sums = [
-        in_slice_size + padded_in_slice_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + padded_tmp_p_input_slice + rfft_result_size + filtered_rfft_result_size + irfft_result_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + datac_size + conversion_to_complex_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + fde_size + datac_size + shifted_datac_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + shifted_fde_view_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + fde2_size + concatenate_size
-        , in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + after_recon_swapaxis_slice
+        in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + padded_tmp_p_input_slice + rfft_result_size + filtered_rfft_result_size + irfft_result_size + irfft_scratch_memory_size
+        , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + tmp_p_input_slice + datac_size + conversion_to_complex_size
+        , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + fde_size + datac_size + shifted_datac_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
+        , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + shifted_fde_view_size + ifft2_scratch_memory_size
+        , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + fde2_size + concatenate_size
+        , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + after_recon_swapaxis_slice
     ]
 
     print(f"all per slice memory estimation: {

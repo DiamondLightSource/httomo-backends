@@ -8,12 +8,12 @@ from cupy.cuda import memory_hook
 class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
     name = 'LineProfileHook'
 
-    def __init__(self, running_peak_root_file_name, max_depth=0):
+    def __init__(self, running_peak_root_file_names, max_depth=0):
         self._memory_frames = {}
         self._root = MemoryFrame(None, None)
         self._filename = path.abspath(__file__)
         self._max_depth = max_depth
-        self.running_peak_root_file_name = running_peak_root_file_name
+        self.running_peak_root_file_names = running_peak_root_file_names
 
     # callback
     def malloc_preprocess(self, device_id, size, mem_size):
@@ -82,18 +82,18 @@ class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
 
         humanized_running_peak_bytes = None
         humanized_running_used_bytes = None
-        if st.filename.endswith(self.running_peak_root_file_name):
-            running_peak_bytes[0] = max(running_peak_bytes[0], running_peak_bytes[0] + memory_frame.used_bytes - memory_frame.freed_bytes)
-            humanized_running_peak_bytes = MemoryFrame.humanized_size(running_peak_bytes[0])
+        if path.basename(st.filename) in self.running_peak_root_file_names:
             running_used_bytes[0] = running_used_bytes[0] + memory_frame.used_bytes - memory_frame.freed_bytes
             humanized_running_used_bytes = MemoryFrame.humanized_size(running_used_bytes[0])
+            running_peak_bytes[0] = max(running_peak_bytes[0], running_used_bytes[0])
+            humanized_running_peak_bytes = MemoryFrame.humanized_size(running_peak_bytes[0])
 
         line = '%s%s:%s:%s (%s, %s, %s, %s, %s)\n' % (
             indent, st.filename, st.lineno, st.name,
             used_bytes, acquired_bytes, freed_bytes, humanized_running_peak_bytes, humanized_running_used_bytes)
         file.write(line)
         for child in memory_frame.children:
-            self._print_frame(child, running_peak_bytes, depth=depth + 1, file=file)
+            self._print_frame(child, running_peak_bytes, running_used_bytes, depth=depth + 1, file=file)
 
 
 class StackFrame(object):
