@@ -14,3 +14,5 @@
         # when null, the full data dimension is used, i.e., no previewing
         start: null
         stop: null
+    darks: null
+    flats: null
