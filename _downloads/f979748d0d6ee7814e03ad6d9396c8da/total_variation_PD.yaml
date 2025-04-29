@@ -1,0 +1,8 @@
+- method: total_variation_PD
+  module_path: httomolibgpu.misc.denoise
+  parameters:
+    regularisation_parameter: 1.0e-05
+    iterations: 1000
+    isotropic: true
+    nonnegativity: false
+    lipschitz_const: 8.0
