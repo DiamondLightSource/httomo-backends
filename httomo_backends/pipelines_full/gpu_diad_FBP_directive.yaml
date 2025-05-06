@@ -1,4 +1,4 @@
-- method: standard_tomo_diad
+- method: standard_tomo
   module_path: httomo.data.hdf.loaders
 - method: find_center_vo
   module_path: httomolibgpu.recon.rotation
