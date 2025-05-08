@@ -43,7 +43,7 @@ def test_httomolibgpu_implementation():
 
 def test_httomolibgpu_implementation2():
     query = MethodsDatabaseQuery("httomolibgpu.recon.algorithm", "FBP2d_astra")
-    assert query.get_implementation() == "gpu_cpu"
+    assert query.get_implementation() == "gpu"
 
 
 def test_httomolibgpu_output_dims_change():

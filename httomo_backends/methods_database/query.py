@@ -101,13 +101,12 @@ class MethodsDatabaseQuery:
         p = self._get_method_info("output_dims_change")
         return bool(p)
 
-    def get_implementation(self) -> Literal["cpu", "gpu", "gpu_cupy", "gpu_cpu"]:
+    def get_implementation(self) -> Literal["cpu", "gpu", "gpu_cupy"]:
         p = self._get_method_info("implementation")
         assert p in [
             "gpu",
             "gpu_cupy",
             "cpu",
-            "gpu_cpu",
         ], f"The implementation arch {p} listed for method {self.module_path}.{self.method_name} is invalid"
         return p
 

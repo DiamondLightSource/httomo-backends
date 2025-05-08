@@ -148,7 +148,7 @@ recon:
     FBP2d_astra:
       pattern: sinogram
       output_dims_change: True
-      implementation: gpu_cpu
+      implementation: gpu
       save_result_default: True
       padding: False
       memory_gpu:
