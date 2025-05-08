@@ -25,7 +25,7 @@ from httomolibgpu.prep.stripe import (
 )
 from httomolibgpu.misc.corr import remove_outlier
 from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
-from httomolibgpu.recon.algorithm import FBP, SIRT, CGLS
+from httomolibgpu.recon.algorithm import FBP2d_astra, FBP, SIRT, CGLS
 from httomolibgpu.misc.rescale import rescale_to_int
 
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
@@ -728,3 +728,23 @@ def test_sino_360_to_180_memoryhook(
 
     assert estimated_bytes >= max_mem
     assert percentage_difference <= 35
+
+
+def test_FBP2d_astra_memory_calc():
+    # Call memory estimator to estimate memory usage
+    (estimated_bytes, subtract_bytes) = _calc_memory_bytes_FBP2d_astra(
+        non_slice_dims_shape=(10, 10),
+        dtype=np.float32(),
+    )
+    assert estimated_bytes == 1
+    assert subtract_bytes == 0
+
+
+def test_FBP2d_astra_output_dim():
+    # Call memory estimator to estimate memory usage
+    recon_size = 300
+    output_dims = _calc_output_dim_FBP2d_astra(
+        non_slice_dims_shape=(10, 10),
+        recon_size=recon_size,
+    )
+    assert output_dims == (recon_size, recon_size)

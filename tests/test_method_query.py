@@ -41,6 +41,11 @@ def test_httomolibgpu_implementation():
     assert query.get_implementation() == "gpu_cupy"
 
 
+def test_httomolibgpu_implementation2():
+    query = MethodsDatabaseQuery("httomolibgpu.recon.algorithm", "FBP2d_astra")
+    assert query.get_implementation() == "gpu_cpu"
+
+
 def test_httomolibgpu_output_dims_change():
     query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
     assert query.get_output_dims_change() is False
