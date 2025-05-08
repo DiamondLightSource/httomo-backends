@@ -26,9 +26,11 @@ import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
 
 __all__ = [
+    "_calc_memory_bytes_FBP2d_astra",
     "_calc_memory_bytes_FBP",
     "_calc_memory_bytes_SIRT",
     "_calc_memory_bytes_CGLS",
+    "_calc_output_dim_FBP2d_astra",
     "_calc_output_dim_FBP",
     "_calc_output_dim_SIRT",
     "_calc_output_dim_CGLS",
@@ -49,6 +51,10 @@ def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
     return output_dims
 
 
+def _calc_output_dim_FBP2d_astra(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
+
 def _calc_output_dim_FBP(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
@@ -59,6 +65,15 @@ def _calc_output_dim_SIRT(non_slice_dims_shape, **kwargs):
 
 def _calc_output_dim_CGLS(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
+
+def _calc_memory_bytes_FBP2d_astra(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    # this is GPU-CPU slice-by-slice reconstruction function so it doesn't need a lot of GPU memory
+    return (1, 0)
 
 
 def _calc_memory_bytes_FBP(
