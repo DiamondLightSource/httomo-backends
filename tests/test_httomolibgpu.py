@@ -728,3 +728,13 @@ def test_sino_360_to_180_memoryhook(
 
     assert estimated_bytes >= max_mem
     assert percentage_difference <= 35
+
+
+def test_FBP2d_astra_output_dim():
+    # Call memory estimator to estimate memory usage
+    recon_size = 300
+    output_dims = _calc_output_dim_FBP2d_astra(
+        non_slice_dims_shape=(10, 10),
+        recon_size=recon_size,
+    )
+    assert output_dims == (recon_size, recon_size)

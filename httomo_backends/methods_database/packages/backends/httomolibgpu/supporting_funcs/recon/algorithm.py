@@ -29,6 +29,7 @@ __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
     "_calc_memory_bytes_SIRT3d_tomobar",
     "_calc_memory_bytes_CGLS3d_tomobar",
+    "_calc_output_dim_FBP2d_astra",
     "_calc_output_dim_FBP3d_tomobar",
     "_calc_output_dim_SIRT3d_tomobar",
     "_calc_output_dim_CGLS3d_tomobar",
@@ -47,6 +48,10 @@ def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
         recon_size = DetectorsLengthH
     output_dims = (recon_size, recon_size)
     return output_dims
+
+
+def _calc_output_dim_FBP2d_astra(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
 def _calc_output_dim_FBP3d_tomobar(non_slice_dims_shape, **kwargs):

@@ -145,6 +145,15 @@ prep:
         method: module
 recon:
   algorithm:
+    FBP2d_astra:
+      pattern: sinogram
+      output_dims_change: True
+      implementation: gpu
+      save_result_default: True
+      padding: False
+      memory_gpu:
+        multiplier: None
+        method: module
     FBP3d_tomobar:
       pattern: sinogram
       output_dims_change: True
@@ -152,8 +161,8 @@ recon:
       save_result_default: True
       padding: False
       memory_gpu:
-        multiplier: None
-        method: module
+        multiplier: 1.0
+        method: direct
     SIRT3d_tomobar:
       pattern: sinogram
       output_dims_change: True
