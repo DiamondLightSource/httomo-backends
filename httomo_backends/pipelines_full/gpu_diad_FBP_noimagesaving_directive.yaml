@@ -8,5 +8,5 @@
   module_path: httomolibgpu.prep.normalize
 - method: remove_stripe_based_sorting
   module_path: httomolibgpu.prep.stripe
-- method: FBP
+- method: FBP3d_tomobar
   module_path: httomolibgpu.recon.algorithm

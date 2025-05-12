@@ -53,7 +53,7 @@ def test_httomolibgpu_default_save_result():
 
 
 def test_httomolibgpu_default_save_result_recon():
-    query = MethodsDatabaseQuery("httomolibgpu.recon.algorithm", "FBP")
+    query = MethodsDatabaseQuery("httomolibgpu.recon.algorithm", "FBP3d_tomobar")
 
     assert query.save_result_default() is True
 

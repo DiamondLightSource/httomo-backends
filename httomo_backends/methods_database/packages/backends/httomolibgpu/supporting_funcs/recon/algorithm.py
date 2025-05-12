@@ -26,12 +26,12 @@ import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
 
 __all__ = [
-    "_calc_memory_bytes_FBP",
-    "_calc_memory_bytes_SIRT",
-    "_calc_memory_bytes_CGLS",
-    "_calc_output_dim_FBP",
-    "_calc_output_dim_SIRT",
-    "_calc_output_dim_CGLS",
+    "_calc_memory_bytes_FBP3d_tomobar",
+    "_calc_memory_bytes_SIRT3d_tomobar",
+    "_calc_memory_bytes_CGLS3d_tomobar",
+    "_calc_output_dim_FBP3d_tomobar",
+    "_calc_output_dim_SIRT3d_tomobar",
+    "_calc_output_dim_CGLS3d_tomobar",
 ]
 
 
@@ -49,19 +49,19 @@ def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
     return output_dims
 
 
-def _calc_output_dim_FBP(non_slice_dims_shape, **kwargs):
+def _calc_output_dim_FBP3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
-def _calc_output_dim_SIRT(non_slice_dims_shape, **kwargs):
+def _calc_output_dim_SIRT3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
-def _calc_output_dim_CGLS(non_slice_dims_shape, **kwargs):
+def _calc_output_dim_CGLS3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
-def _calc_memory_bytes_FBP(
+def _calc_memory_bytes_FBP3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     **kwargs,
@@ -118,7 +118,7 @@ def _calc_memory_bytes_FBP(
 
     # 7. astra backprojection will generate an output array
     # https://github.com/dkazanc/ToMoBAR/blob/54137829b6326406e09f6ef9c95eb35c213838a7/tomobar/astra_wrappers/astra_base.py#L524
-    output_dims = _calc_output_dim_FBP(non_slice_dims_shape, **kwargs)
+    output_dims = _calc_output_dim_FBP3d_tomobar(non_slice_dims_shape, **kwargs)
     recon_output_size = np.prod(output_dims) * np.float32().itemsize
 
     # 7. astra backprojection makes a copy of the input
@@ -148,14 +148,14 @@ def _calc_memory_bytes_FBP(
     return (tot_memory_bytes, fixed_amount)
 
 
-def _calc_memory_bytes_SIRT(
+def _calc_memory_bytes_SIRT3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
     DetectorsLengthH = non_slice_dims_shape[1]
     # calculate the output shape
-    output_dims = _calc_output_dim_SIRT(non_slice_dims_shape, **kwargs)
+    output_dims = _calc_output_dim_SIRT3d_tomobar(non_slice_dims_shape, **kwargs)
 
     in_data_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     out_data_size = np.prod(output_dims) * dtype.itemsize
@@ -166,14 +166,14 @@ def _calc_memory_bytes_SIRT(
     return (tot_memory_bytes, 0)
 
 
-def _calc_memory_bytes_CGLS(
+def _calc_memory_bytes_CGLS3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
     DetectorsLengthH = non_slice_dims_shape[1]
     # calculate the output shape
-    output_dims = _calc_output_dim_CGLS(non_slice_dims_shape, **kwargs)
+    output_dims = _calc_output_dim_CGLS3d_tomobar(non_slice_dims_shape, **kwargs)
 
     in_data_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     out_data_size = np.prod(output_dims) * dtype.itemsize
