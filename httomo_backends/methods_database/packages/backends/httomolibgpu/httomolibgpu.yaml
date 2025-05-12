@@ -145,7 +145,7 @@ prep:
         method: module
 recon:
   algorithm:
-    FBP:
+    FBP3d_tomobar:
       pattern: sinogram
       output_dims_change: True
       implementation: gpu_cupy
@@ -154,7 +154,7 @@ recon:
       memory_gpu:
         multiplier: None
         method: module
-    SIRT:
+    SIRT3d_tomobar:
       pattern: sinogram
       output_dims_change: True
       implementation: gpu_cupy
@@ -163,7 +163,7 @@ recon:
       memory_gpu:
         multiplier: None
         method: module
-    CGLS:
+    CGLS3d_tomobar:
       pattern: sinogram
       output_dims_change: True
       implementation: gpu_cupy
