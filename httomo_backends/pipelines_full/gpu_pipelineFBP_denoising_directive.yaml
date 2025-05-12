@@ -8,7 +8,7 @@
   module_path: httomolibgpu.prep.normalize
 - method: remove_all_stripe
   module_path: httomolibgpu.prep.stripe
-- method: FBP
+- method: FBP3d_tomobar
   module_path: httomolibgpu.recon.algorithm
 - method: total_variation_PD
   module_path: httomolibgpu.misc.denoise

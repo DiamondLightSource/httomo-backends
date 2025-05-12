@@ -25,7 +25,7 @@ from httomolibgpu.prep.stripe import (
 )
 from httomolibgpu.misc.corr import remove_outlier
 from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
-from httomolibgpu.recon.algorithm import FBP2d_astra, FBP, SIRT, CGLS
+from httomolibgpu.recon.algorithm import FBP2d_astra, FBP3d_tomobar, SIRT3d_tomobar, CGLS3d_tomobar
 from httomolibgpu.misc.rescale import rescale_to_int
 
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
@@ -525,7 +525,7 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
 @pytest.mark.parametrize("projections", [1801, 3601])
 @pytest.mark.parametrize("slices", [7, 11, 15])
 @pytest.mark.parametrize("detectorX", [1200, 2560])
-def test_recon_FBP_memoryhook(
+def test_recon_FBP3d_tomobar_memoryhook(
     slices, detectorX, projections, ensure_clean_memory, mocker: MockerFixture
 ):
     data = cp.random.random_sample((projections, slices, detectorX), dtype=np.float32)
@@ -544,7 +544,7 @@ def test_recon_FBP_memoryhook(
     )
 
     with hook:
-        recon_data = FBP(cp.copy(data), **kwargs)
+        recon_data = FBP3d_tomobar(cp.copy(data), **kwargs)
 
     p1.assert_called_once()
 
@@ -554,7 +554,7 @@ def test_recon_FBP_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FBP(
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FBP3d_tomobar(
         (projections, detectorX), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -575,14 +575,14 @@ def test_recon_FBP_memoryhook(
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])
 @pytest.mark.parametrize("recon_size_it", [1200, 2000])
-def test_recon_SIRT_memoryhook(slices, recon_size_it, ensure_clean_memory):
+def test_recon_SIRT3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_memory):
     data = cp.random.random_sample((1801, slices, 2560), dtype=np.float32)
     kwargs = {}
     kwargs["recon_size"] = recon_size_it
 
     hook = MaxMemoryHook()
     with hook:
-        recon_data = SIRT(
+        recon_data = SIRT3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
             1200,
@@ -597,7 +597,7 @@ def test_recon_SIRT_memoryhook(slices, recon_size_it, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT(
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT3d_tomobar(
         (1801, 2560), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -616,14 +616,14 @@ def test_recon_SIRT_memoryhook(slices, recon_size_it, ensure_clean_memory):
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])
 @pytest.mark.parametrize("recon_size_it", [1200, 2000])
-def test_recon_CGLS_memoryhook(slices, recon_size_it, ensure_clean_memory):
+def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_memory):
     data = cp.random.random_sample((1801, slices, 2560), dtype=np.float32)
     kwargs = {}
     kwargs["recon_size"] = recon_size_it
 
     hook = MaxMemoryHook()
     with hook:
-        recon_data = CGLS(
+        recon_data = CGLS3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
             1200,
@@ -638,7 +638,7 @@ def test_recon_CGLS_memoryhook(slices, recon_size_it, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS(
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
         (1801, 2560), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)

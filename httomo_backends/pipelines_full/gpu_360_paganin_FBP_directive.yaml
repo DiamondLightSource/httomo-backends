@@ -6,11 +6,11 @@
   module_path: httomolibgpu.recon.rotation
 - method: sino_360_to_180
   module_path: httomolibgpu.misc.morph
-- method: paganin_filter_tomopy
-  module_path: httomolibgpu.prep.phase
 - method: remove_stripe_based_sorting
   module_path: httomolibgpu.prep.stripe
-- method: FBP
+- method: paganin_filter_tomopy
+  module_path: httomolibgpu.prep.phase
+- method: FBP3d_tomobar
   module_path: httomolibgpu.recon.algorithm
 - method: calculate_stats
   module_path: httomo.methods
