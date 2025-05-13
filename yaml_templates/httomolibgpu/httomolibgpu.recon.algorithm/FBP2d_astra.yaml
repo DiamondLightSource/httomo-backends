@@ -1,0 +1,10 @@
+- method: FBP2d_astra
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    filter_type: ram-lak
+    filter_parameter: null
+    filter_d: null
+    recon_size: null
+    recon_mask_radius: 0.95
+    neglog: false
