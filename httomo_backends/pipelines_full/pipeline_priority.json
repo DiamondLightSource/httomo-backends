@@ -1,9 +1,9 @@
 {  
     "pipeline_order" : [
-    "gpu_pipelineFBP",
-    "gpu_pipelineFBP_denoising",
-    "gpu_diad_FBP",
-    "gpu_360_paganin_FBP",
-    "gpu_360_distortion_FBP",
-    "cpu_pipeline_gridrec"]
+    "FBP3d_tomobar",
+    "LPRec3d_tomobar_directive",
+    "FBP3d_tomobar_denoising",
+    "360scan_distortion_FBP3d_tomobar",
+    "360scan_paganin_FBP3d_tomobar",
+    "tomopy_gridrec_directive"]
 }
