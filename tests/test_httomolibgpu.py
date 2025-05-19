@@ -576,7 +576,7 @@ def test_recon_FBP3d_tomobar_memoryhook(
 @pytest.mark.cupy
 @pytest.mark.parametrize("projections", [1801, 2560, 3601])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
-def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
+def test_recon_LPRec3d_tomobar_memoryhook(slices, projections, ensure_clean_memory):
     angles_number = projections
     detX_size = 2560
     data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)
@@ -590,7 +590,7 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
 
     hook = MaxMemoryHook()
     with hook:
-        recon_data = LPRec(cp.copy(data), **kwargs)
+        recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
@@ -601,7 +601,7 @@ def test_recon_LPRec_memoryhook(slices, projections, ensure_clean_memory):
     input_data_type = np.float32()
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec(
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec3d_tomobar(
         non_slice_dims_shape, dtype=input_data_type, **kwargs
     )
 
