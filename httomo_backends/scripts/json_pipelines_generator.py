@@ -22,7 +22,7 @@ result = process_all_yaml_files()
 # Directory containing YAML files relative to this script
 PIPELINES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "pipelines_full")
 
-ignored_methods = ["standard_tomo_diad","standard_tomo","calculate_stats"]
+ignored_methods = ["standard_tomo","calculate_stats"]
 
 def get_yaml_path(yaml_filename: str) -> str:
     """
