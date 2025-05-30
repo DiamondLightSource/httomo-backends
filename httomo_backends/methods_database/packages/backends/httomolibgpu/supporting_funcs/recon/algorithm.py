@@ -196,6 +196,8 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     padded_in_slice_size = np.prod(non_slice_dims_shape) * np.float32().itemsize
     theta_size = angles_tot * np.float32().itemsize
+    sorted_theta_indices_size = angles_tot * np.int32().itemsize
+    sorted_theta_size = angles_tot * np.float32().itemsize
     recon_output_size = (n + 1) * (n + 1) * np.float32().itemsize if odd_horiz else n * n * np.float32().itemsize    # 264
     linspace_size = n * np.float32().itemsize
     meshgrid_size = 2 * n * n * np.float32().itemsize
@@ -246,8 +248,8 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     fixed_amount = int(
         max(
             theta_size + phi_size + linspace_size + meshgrid_size
-            , theta_size + phi_size + angle_range_size + c1dfftshift_size + c2dfftshift_slice_size + filter_size + rfftfreq_size + scaled_filter_size
-            , theta_size + phi_size + circular_mask_size
+            , theta_size + sorted_theta_indices_size + sorted_theta_size + phi_size + angle_range_size + c1dfftshift_size + c2dfftshift_slice_size + filter_size + rfftfreq_size + scaled_filter_size
+            , theta_size + sorted_theta_indices_size + sorted_theta_size + phi_size + circular_mask_size
         )
     )
 
