@@ -165,7 +165,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-    # Based on: https://github.com/neon60/ToMoBAR/commit/fe95670d2b02edb4036be0e10f38967976af94d5
+    # Based on: https://github.com/dkazanc/ToMoBAR/pull/112/commits/4704ecdc6ded3dd5ec0583c2008aa104f30a8a39
 
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH = non_slice_dims_shape[1]
@@ -189,6 +189,11 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     ne = oversampling_level * n
     padding_m = ne // 2 - n // 2
 
+    angles = kwargs["angles"]
+    sorted_theta_cpu = np.sort(angles)
+    theta_full_range = abs(sorted_theta_cpu[angles_tot-1] - sorted_theta_cpu[0])
+    angle_range_pi_count = 1 + int(np.ceil(theta_full_range / math.pi))
+
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
     if odd_horiz:
         output_dims = tuple(x + 1 for x in output_dims)
@@ -196,13 +201,13 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
     padded_in_slice_size = np.prod(non_slice_dims_shape) * np.float32().itemsize
     theta_size = angles_tot * np.float32().itemsize
-    sorted_theta_indices_size = angles_tot * np.int32().itemsize
+    sorted_theta_indices_size = angles_tot * np.int64().itemsize
     sorted_theta_size = angles_tot * np.float32().itemsize
     recon_output_size = (n + 1) * (n + 1) * np.float32().itemsize if odd_horiz else n * n * np.float32().itemsize    # 264
     linspace_size = n * np.float32().itemsize
     meshgrid_size = 2 * n * n * np.float32().itemsize
     phi_size = 6 * n * n * np.float32().itemsize
-    angle_range_size = center_size * center_size * 3 * np.int32().itemsize
+    angle_range_size = center_size * center_size * 1 + angle_range_pi_count * 2 * np.int32().itemsize
     c1dfftshift_size = n * np.int8().itemsize
     c2dfftshift_slice_size = 4 * n * n * np.int8().itemsize
     filter_size = (n // 2 + 1) * np.float32().itemsize
@@ -253,7 +258,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         )
     )
 
-    return (tot_memory_bytes, fixed_amount)
+    return (tot_memory_bytes * 1.1, fixed_amount)
 
 
 

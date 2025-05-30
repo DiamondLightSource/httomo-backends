@@ -576,14 +576,24 @@ def test_recon_FBP3d_tomobar_memoryhook(
 @pytest.mark.cupy
 @pytest.mark.parametrize("projections", [1801, 2560, 3601])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
-def test_recon_LPRec3d_tomobar_memoryhook(slices, projections, ensure_clean_memory):
+@pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+def test_recon_LPRec3d_tomobar_memoryhook(slices, projections, projection_angle_range, ensure_clean_memory):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(slices, projections, projection_angle_range, ensure_clean_memory)
+
+@pytest.mark.full
+@pytest.mark.cupy
+@pytest.mark.parametrize("projections", [1801, 2560, 3601])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize("projection_angle_range", [(0, np.pi), (0, 2 * np.pi), (-np.pi / 2, np.pi / 2)])
+def test_recon_LPRec3d_tomobar_memoryhook_full(slices, projections, projection_angle_range, ensure_clean_memory):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(slices, projections, projection_angle_range, ensure_clean_memory)
+
+def __test_recon_LPRec3d_tomobar_memoryhook_common(slices, projections, projection_angle_range, ensure_clean_memory):
     angles_number = projections
     detX_size = 2560
     data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)
     kwargs = {}
-    kwargs["angles"] = np.linspace(
-        0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
-    )
+    kwargs["angles"] = np.linspace(projection_angle_range[0], projection_angle_range[1], data.shape[0])
     kwargs["center"] = 1280
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
