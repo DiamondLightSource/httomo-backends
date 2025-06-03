@@ -191,11 +191,11 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     if "angles" in kwargs:
         angles = kwargs["angles"]
+        sorted_theta_cpu = np.sort(angles)
+        theta_full_range = abs(sorted_theta_cpu[angles_tot-1] - sorted_theta_cpu[0])
+        angle_range_pi_count = 1 + int(np.ceil(theta_full_range / math.pi))
     else:
-        angles = 2 * math.pi
-    sorted_theta_cpu = np.sort(angles)
-    theta_full_range = abs(sorted_theta_cpu[angles_tot-1] - sorted_theta_cpu[0])
-    angle_range_pi_count = 1 + int(np.ceil(theta_full_range / math.pi))
+        angle_range_pi_count = 1 + int(np.ceil(2)) # assume a 2 * PI projection angle range
 
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
     if odd_horiz:
