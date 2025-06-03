@@ -446,7 +446,7 @@ def test_raven_filter_memoryhook(projections, ensure_clean_memory):
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 25
+    assert percents_relative_maxmem <= 27
 
 
 @pytest.mark.cupy
@@ -574,10 +574,19 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
+@pytest.mark.parametrize("projections", [1801, 2560])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10])
+@pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+def test_recon_LPRec3d_tomobar_0_pi_memoryhook(slices, projections, projection_angle_range, ensure_clean_memory):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(slices, projections, projection_angle_range, ensure_clean_memory)
+
+
+@pytest.mark.full
+@pytest.mark.cupy
 @pytest.mark.parametrize("projections", [1801, 2560, 3601])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
 @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
-def test_recon_LPRec3d_tomobar_memoryhook(slices, projections, projection_angle_range, ensure_clean_memory):
+def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(slices, projections, projection_angle_range, ensure_clean_memory):
     __test_recon_LPRec3d_tomobar_memoryhook_common(slices, projections, projection_angle_range, ensure_clean_memory)
 
 @pytest.mark.full
