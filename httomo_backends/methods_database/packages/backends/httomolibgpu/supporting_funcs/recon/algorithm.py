@@ -175,7 +175,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     odd_horiz = False
     if (n % 2) != 0:
-        n = n - 1  # dealing with the odd horizontal detector size
+        n = n + 1  # dealing with the odd horizontal detector size
         odd_horiz = True
 
     eps = 1e-4  # accuracy of usfft
