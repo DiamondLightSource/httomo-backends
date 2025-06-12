@@ -1,0 +1,43 @@
+- method: SIRT3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    recon_size: null
+    iterations: 300
+    nonnegativity: true
+    neglog: false
+- method: FBP2d_astra
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    filter_type: ram-lak
+    filter_parameter: null
+    filter_d: null
+    recon_size: null
+    recon_mask_radius: 0.95
+    neglog: false
+- method: LPRec3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    filter_type: shepp
+    filter_freq_cutoff: 1.0
+    recon_size: null
+    recon_mask_radius: 0.95
+    neglog: false
+- method: CGLS3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    recon_size: null
+    iterations: 20
+    nonnegativity: true
+    neglog: false
+- method: FBP3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    filter_freq_cutoff: 0.35
+    recon_size: null
+    recon_mask_radius: 0.95
+    neglog: false
