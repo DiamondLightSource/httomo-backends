@@ -129,6 +129,8 @@ def _set_param_value(name: str, value: inspect.Parameter, params_dict: Dict[str,
         params_dict[name] = "${{statistics.side_outputs.glob_stats}}"
     elif name == "overlap":
         params_dict[name] = "${{centering.side_outputs.overlap}}"
+    elif name == "side":
+        params_dict[name] = "${{centering.side_outputs.side}}"
     else:
         params_dict[name] = value.default
 
