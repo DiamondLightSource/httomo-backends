@@ -248,12 +248,12 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     tot_memory_bytes = int( max(
             in_slice_size + padded_in_slice_size + recon_output_size + tmp_p_input_slice + padded_tmp_p_input_slice + rfft_plan_slice_size + rfft_result_size + filtered_rfft_result_size
             , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + tmp_p_input_slice + rfft_result_size
-            , in_slice_size + padded_in_slice_size + recon_output_size + tmp_p_input_slice + irfft_plan_slice_size + irfft_scratch_memory_size + irfft_result_size 
-            , in_slice_size + padded_in_slice_size + recon_output_size + tmp_p_input_slice + irfft_plan_slice_size + datac_size + conversion_to_complex_size
-            , in_slice_size + padded_in_slice_size + recon_output_size + irfft_plan_slice_size + datac_size + fde_size + shifted_datac_size + fft_plan_slice_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
-            , in_slice_size + padded_in_slice_size + recon_output_size + irfft_plan_slice_size + fde_size + fft_plan_slice_size + ifft2_plan_slice_size
-            , in_slice_size + padded_in_slice_size + recon_output_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + fde_view_size + concatenate_size
-            , in_slice_size + padded_in_slice_size + recon_output_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + after_recon_swapaxis_slice
+            , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + tmp_p_input_slice + irfft_plan_slice_size + irfft_scratch_memory_size + irfft_result_size 
+            , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + tmp_p_input_slice + irfft_plan_slice_size + datac_size + conversion_to_complex_size
+            , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + datac_size + fde_size + shifted_datac_size + fft_plan_slice_size + fft_result_size + backshifted_datac_size + scaled_backshifted_datac_size
+            , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fde_size + fft_plan_slice_size + ifft2_plan_slice_size
+            , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + fde_view_size + concatenate_size
+            , in_slice_size + padded_in_slice_size + recon_output_size + rfft_plan_slice_size + irfft_plan_slice_size + fft_plan_slice_size + ifft2_plan_slice_size + after_recon_swapaxis_slice
         )
     )
 
