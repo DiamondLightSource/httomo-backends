@@ -301,6 +301,9 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     bump_memory(233, padded_in_slice_size, True)
 
     bump_memory(240, theta_size, False)
+    bump_memory(345, sorted_theta_indices_size, False)
+    bump_memory(346, sorted_theta_size, False)
+    bump_memory(351, angle_range_size, False)
     bump_memory(259, filter_size, False)
     bump_memory(262, rfftfreq_size, False)
     bump_memory(263, scaled_filter_size, False)
@@ -327,11 +330,6 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     bump_memory(309, fft_plan_slice_size, True)
     bump_memory(309, datac_size, True)
 
-    bump_memory(345, sorted_theta_indices_size, False)
-    bump_memory(346, sorted_theta_size, False)
-    bump_memory(351, angle_range_size, False)
-    # bump_memory(392, -angle_range_size, False)
-
     bump_memory(424, -datac_size, True)
     bump_memory(434, recon_output_size, True)
     bump_memory(449, ifft2_plan_slice_size, True)
@@ -341,7 +339,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     bump_memory(-1, after_recon_swapaxis_slice, True)
 
     print(f"tot_memory_bytes: {tot_memory_bytes / 1024 / 1024} MB, fixed_amount: {fixed_amount / 1024 / 1024} MB")
-    return (tot_memory_bytes * 1.1, fixed_amount)
+    return (tot_memory_bytes*1.25, fixed_amount)
     # return (tot_memory_bytes * 1.25, fixed_amount)
 
 

@@ -665,7 +665,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(slices, detX_size, projection
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 35
+    assert percents_relative_maxmem <= 40
 
 
 @pytest.mark.cupy
