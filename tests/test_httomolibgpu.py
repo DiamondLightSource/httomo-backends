@@ -574,6 +574,16 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
+# @pytest.mark.parametrize("projections", [2560])
+# @pytest.mark.parametrize("detX_size", [2560])
+# @pytest.mark.parametrize("slices", [10])
+# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+
+# @pytest.mark.parametrize("projections", [1801])
+# @pytest.mark.parametrize("detX_size", [2560])
+# @pytest.mark.parametrize("slices", [3])
+# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+
 @pytest.mark.parametrize("projections", [1500, 1801, 2560])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10])
@@ -609,9 +619,13 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(slices, detX_size, projection
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
+
     hook = MaxMemoryHook()
-    with hook:
+    hook2 = PeakMemoryLineProfileHook(running_peak_root_file_names=["methodsDIR_CuPy.py"])
+    with hook, hook2:
         recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
+    hook2.print_report()
+    # hook.print_report()
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
@@ -626,22 +640,27 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(slices, detX_size, projection
         non_slice_dims_shape, dtype=input_data_type, **kwargs
     )
 
-    even_slice_count = True
-    padded_slices = slices
-    if (slices % 2) != 0:
-        even_slice_count = False
-        padded_slices += 1
+    odd_horiz = bool(detX_size % 2)
+    odd_vert = bool(slices % 2)
 
-    if even_slice_count:
+    slices += odd_vert
+
+    if not odd_horiz and not odd_vert:
         input_slice_size = np.prod(non_slice_dims_shape) * input_data_type.itemsize
         estimated_memory_bytes -= input_slice_size
 
-    estimated_memory_mb = round(padded_slices * estimated_memory_bytes / (1024**2), 2)
+    print(f"slice: {slices}")
+    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem_mb = round(max_mem / (1024**2), 2)
+    print(f"max_mem_mb before: {max_mem_mb}")
     max_mem -= subtract_bytes
     max_mem_mb = round(max_mem / (1024**2), 2)
 
     # now we compare both memory estimations
+    print(f"estimated_memory_mb: {estimated_memory_mb}")
+    print(f"max_mem_mb: {max_mem_mb}")
     difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    print(f"difference_mb: {difference_mb}")
     percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
