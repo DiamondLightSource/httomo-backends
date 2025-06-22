@@ -334,6 +334,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 and arg.annotation.attr == "ndarray"
             ):
                 arg.annotation = ast.Name(id="FakeCuPyArray", ctx=ast.Load())
+        node.returns = None
 
         def shape_index(index):
             return ast.Subscript(
@@ -470,6 +471,17 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
             decorator_list=[],
         )
         node.body.insert(0, noop_def)
+
+        new_body = []
+        for stmt in node.body:
+            if isinstance(stmt, ast.Return):
+                stmt = ast.Assign(
+                    targets=[ast.Name(id="return_value", ctx=ast.Store())],
+                    value=stmt.value,
+                )
+            new_body.append(stmt)
+
+        node.body = new_body
 
         return self.generic_visit(node)
 
