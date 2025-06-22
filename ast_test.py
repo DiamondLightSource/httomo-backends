@@ -111,7 +111,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
     def __init__(self, output_function_name, cupy_aliases=set[str]):
         self.output_function_name = output_function_name
         self.cupy_aliases = cupy_aliases
-        self.faked_variables = {}
+        self.custom_kernels = []
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
         if isinstance(node.func, ast.Attribute) and isinstance(
@@ -235,10 +235,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                             args=ast.arguments(
                                 posonlyargs=[],
                                 args=[ast.arg(arg="x")],
-                                # vararg=None,
                                 kwonlyargs=[],
-                                # kw_defaults=[],
-                                # kwarg=None,
                                 defaults=[],
                             ),
                             body=FakeCuPyArray.new_ast_node(
@@ -258,6 +255,10 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                     ],
                     keywords=[],
                 )
+
+            if lib_name == "module" and func_name == "get_function":
+                self.custom_kernels.append(node.args[0].value)
+                return self.generic_visit(node)
 
         if isinstance(node.func, ast.Name) and node.func.id in [
             "rfft",
@@ -312,18 +313,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
             dtype = ast.Constant(value="float32")
             return FakeCuPyArray.new_ast_node(node.lineno, shape, dtype)
 
-        if isinstance(node.func, ast.Name) and node.func.id in [
-            "fft_us_kernels",
-            "gather_kernel",
-            "gather_kernel_partial",
-            "gather_kernel_center_angle_based_prune",
-            "gather_kernel_center",
-            "wrap_kernel",
-            "r2c_c1dfftshift",
-            "c1dfftshift",
-            "c2dfftshift",
-            "unpadding_mul_phi",
-        ]:
+        if isinstance(node.func, ast.Name) and node.func.id in self.custom_kernels:
             return ast.Call(
                 func=ast.Name(id="noop", ctx=ast.Load()),
                 args=[],
