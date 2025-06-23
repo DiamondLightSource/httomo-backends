@@ -15,31 +15,60 @@ Shape = Union[int, Tuple[int, ...]]
 class FakeCuPyArray:
     @staticmethod
     def new_ast_node(
-        line_number: int, shape: ast.expr | None, dtype: ast.expr | ast.Constant
+        line_number: int,
+        memory_usage: ast.expr | None,
+        shape: ast.expr | None,
+        dtype: ast.expr | ast.Constant,
     ) -> ast.AST:
         return (
             ast.parse(
-                f"FakeCuPyArray({line_number}, {ast.unparse(shape)}, dtype={ast.unparse(dtype)})"
+                f"FakeCuPyArray({line_number}, {ast.unparse(memory_usage)}, {ast.unparse(shape)}, dtype={ast.unparse(dtype)})"
             )
             .body[0]
             .value
         )
 
-    def __init__(self, line_number_of_creation: int, shape, dtype="float32"):
+    def __init__(
+        self,
+        line_number_of_creation: int,
+        memory_usage: dict | None,
+        shape,
+        dtype="float32",
+    ):
         self.line_number_of_creation = line_number_of_creation
         self.shape = shape
         self.dtype = dtype
+        self.memory_usage = memory_usage
+
+        if self.memory_usage:
+            self.memory_usage["current_peak_memory"] += (
+                np.prod(self.shape) * np.dtype(self.dtype).itemsize
+            )
+            self.memory_usage["peak_memory"] = max(
+                self.memory_usage["peak_memory"],
+                self.memory_usage["current_peak_memory"],
+            )
+
         print(
             f"[CREATE] FakeCuPyArray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
         )
 
     def __del__(self):
+        if self.memory_usage:
+            self.memory_usage["current_peak_memory"] -= (
+                np.prod(self.shape) * np.dtype(self.dtype).itemsize
+            )
+            self.memory_usage["peak_memory"] = max(
+                self.memory_usage["peak_memory"],
+                self.memory_usage["current_peak_memory"],
+            )
+
         print(
             f"[DELETE] FakeCuPyArray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
         )
 
     def __repr__(self):
-        return f"FakeCuPyArray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
+        return f"FakeCuPyArray(line_no={self.line_number_of_creation}, memory_usage={self.memory_usage}, shape={self.shape}, dtype={self.dtype})"
 
     def _binary_op(self, other):
         if isinstance(other, FakeCuPyArray):
@@ -50,7 +79,9 @@ class FakeCuPyArray:
             line_no = self.line_number_of_creation
             result_shape = self.shape
             result_dtype = np.result_type(self.dtype, type(other))
-        return FakeCuPyArray(line_no, result_shape, str(result_dtype))
+        return FakeCuPyArray(
+            line_no, self.memory_usage, result_shape, str(result_dtype)
+        )
 
     def __add__(self, other):
         return self._binary_op(other)
@@ -98,13 +129,17 @@ class FakeCuPyArray:
             else:
                 raise TypeError(f"Unsupported index type: {type(idx)}")
 
-        return FakeCuPyArray(self.line_number_of_creation, new_shape, self.dtype)
+        return FakeCuPyArray(
+            self.line_number_of_creation, self.memory_usage, new_shape, self.dtype
+        )
 
     def __setitem__(self, key, value):
         pass
 
     def astype(self, dtype):
-        return FakeCuPyArray(self.line_number_of_creation, self.shape, dtype)
+        return FakeCuPyArray(
+            self.line_number_of_creation, self.memory_usage, self.shape, dtype
+        )
 
 
 class CuPyMemoryPrintTransformer(ast.NodeTransformer):
@@ -132,7 +167,12 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                     ast.Constant(value="float32"),
                 )
 
-                return FakeCuPyArray.new_ast_node(node.lineno, shape, dtype)
+                return FakeCuPyArray.new_ast_node(
+                    node.lineno,
+                    ast.Name(id="memory_usage", ctx=ast.Load()),
+                    shape,
+                    dtype,
+                )
 
             if lib_name in self.cupy_aliases and func_name == "pad":
                 return ast.Call(
@@ -148,6 +188,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                             ),
                             body=FakeCuPyArray.new_ast_node(
                                 node.lineno,
+                                ast.Name(id="memory_usage", ctx=ast.Load()),
                                 ast.Call(
                                     func=ast.Name(id="tuple", ctx=ast.Load()),
                                     args=[
@@ -240,6 +281,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                             ),
                             body=FakeCuPyArray.new_ast_node(
                                 node.lineno,
+                                ast.Name(id="memory_usage", ctx=ast.Load()),
                                 ast.Attribute(
                                     value=ast.Name(id="x", ctx=ast.Load()),
                                     attr="shape",
@@ -282,7 +324,12 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 func=ast.Name(id="fake_fft", ctx=ast.Load()),
                 args=[
                     ast.Constant(value=node.func.id),
-                    FakeCuPyArray.new_ast_node(node.lineno, shape, dtype),
+                    FakeCuPyArray.new_ast_node(
+                        node.lineno,
+                        ast.Name(id="memory_usage", ctx=ast.Load()),
+                        shape,
+                        dtype,
+                    ),
                 ],
                 keywords=[],
             )
@@ -298,7 +345,9 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 right=ast.Constant(value=1),
             )
             dtype = ast.Constant(value="float64")
-            return FakeCuPyArray.new_ast_node(node.lineno, shape, dtype)
+            return FakeCuPyArray.new_ast_node(
+                node.lineno, ast.Name(id="memory_usage", ctx=ast.Load()), shape, dtype
+            )
 
         if isinstance(node.func, ast.Name) and node.func.id == "calc_filter":
             shape = ast.BinOp(
@@ -311,7 +360,9 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 right=ast.Constant(value=1),
             )
             dtype = ast.Constant(value="float32")
-            return FakeCuPyArray.new_ast_node(node.lineno, shape, dtype)
+            return FakeCuPyArray.new_ast_node(
+                node.lineno, ast.Name(id="memory_usage", ctx=ast.Load()), shape, dtype
+            )
 
         if isinstance(node.func, ast.Name) and node.func.id in self.custom_kernels:
             return ast.Call(
@@ -327,13 +378,21 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
             return self.generic_visit(node)
 
         node.name = self.output_function_name
-        node.args.args = [arg for arg in node.args.args if arg.arg != "self"]
+
+        new_args = []
         for arg in node.args.args:
-            if (
-                isinstance(arg.annotation, ast.Attribute)
-                and arg.annotation.attr == "ndarray"
-            ):
-                arg.annotation = ast.Name(id="FakeCuPyArray", ctx=ast.Load())
+            if arg.arg == "self":
+                continue
+
+            if arg.arg == "data":
+                new_args.append(ast.arg(arg="data_shape", annotation=None))
+                new_args.append(ast.arg(arg="data_dtype", annotation=None))
+                continue
+
+            new_args.append(arg)
+
+        node.args.args = new_args
+
         node.returns = None
 
         def shape_index(index):
@@ -472,6 +531,32 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
         )
         node.body.insert(0, noop_def)
 
+        assign_node = ast.Assign(
+            targets=[ast.Name(id="data", ctx=ast.Store())],
+            value=FakeCuPyArray.new_ast_node(
+                node.lineno,
+                ast.Name(id="memory_usage", ctx=ast.Load()),
+                ast.Name(id="data_shape", ctx=ast.Load()),
+                ast.Name(id="data_dtype", ctx=ast.Load()),
+            ),
+        )
+        node.body.insert(0, assign_node)
+
+        assign_node = ast.Assign(
+            targets=[ast.Name(id="memory_usage", ctx=ast.Store())],
+            value=ast.Dict(
+                keys=[
+                    ast.Constant(value="peak_memory"),
+                    ast.Constant(value="current_peak_memory"),
+                ],
+                values=[
+                    ast.Constant(value=0),
+                    ast.Constant(value=0),
+                ],
+            ),
+        )
+        node.body.insert(0, assign_node)
+
         new_body = []
         for stmt in node.body:
             if isinstance(stmt, ast.Return):
@@ -560,11 +645,14 @@ projData3D_analyt = TomoP3D.ModelSino(
 )
 input_data_labels = ["detY", "angles", "detX"]
 
-Fourier_cupy = estimator(
-    FakeCuPyArray(-1, projData3D_analyt.shape, projData3D_analyt.dtype),
-    recon_mask_radius=0.95,
-    data_axes_labels_order=input_data_labels,
-    recon_size=Horiz_det,
-    centre_of_rotation=1281,
-    angles_vec=angles_rad,
+print(
+    estimator(
+        projData3D_analyt.shape,
+        projData3D_analyt.dtype,
+        recon_mask_radius=0.95,
+        data_axes_labels_order=input_data_labels,
+        recon_size=Horiz_det,
+        centre_of_rotation=1281,
+        angles_vec=angles_rad,
+    )
 )
