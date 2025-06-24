@@ -187,10 +187,6 @@ def yaml_pipelines_generator(
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
-                pipeline_full[i]["parameters"].yaml_add_eol_comment(
-                    key="rotation",
-                    comment="'left' if rotation center is close to the left of the field-of-view, 'right' otherwise.",
-                )
             elif "normalize" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
