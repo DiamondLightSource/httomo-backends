@@ -36,7 +36,7 @@ def pytest_addoption(parser):
     )
 
 
-def pytest_collection_modifyitems(config, items):  
+def pytest_collection_modifyitems(config, items):
     if config.getoption("--full"):
         skip_other = pytest.mark.skip(reason="not a GPU hungry test")
         for item in items:
