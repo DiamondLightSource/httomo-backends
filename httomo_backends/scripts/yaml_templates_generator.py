@@ -90,7 +90,7 @@ def yaml_generator(path_to_modules: str, output_folder: str) -> int:
                             append = False
                             break
                     if append:
-                        _set_param_value(name, value, params_dict)
+                        _set_param_value(name, method_name, value, params_dict)
             method_dict = {
                 "method": method_name,
                 "module_path": module_name,
@@ -102,10 +102,13 @@ def yaml_generator(path_to_modules: str, output_folder: str) -> int:
     return 0
 
 
-def _set_param_value(name: str, value: inspect.Parameter, params_dict: Dict[str, Any]):
+def _set_param_value(
+    name: str, method_name: str, value: inspect.Parameter, params_dict: Dict[str, Any]
+):
     """Set param value for method inside dictionary
     Args:
         name: Parameter name
+        method_name: method's name
         value: Parameter value
         params_dict: Dict containing method's parameter names and values
     """
@@ -129,7 +132,7 @@ def _set_param_value(name: str, value: inspect.Parameter, params_dict: Dict[str,
         params_dict[name] = "${{statistics.side_outputs.glob_stats}}"
     elif name == "overlap":
         params_dict[name] = "${{centering.side_outputs.overlap}}"
-    elif name == "side":
+    elif name == "side" and method_name == "sino_360_to_180":
         params_dict[name] = "${{centering.side_outputs.side}}"
     else:
         params_dict[name] = value.default
