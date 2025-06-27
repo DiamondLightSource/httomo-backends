@@ -1,0 +1,6 @@
+- method: total_variation_ROF
+  module_path: httomolibgpu.misc.denoise
+  parameters:
+    regularisation_parameter: 1.0e-05
+    iterations: 3000
+    time_marching_parameter: 0.001
