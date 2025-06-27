@@ -584,6 +584,7 @@ def test_recon_FBP3d_tomobar_memoryhook(
 # @pytest.mark.parametrize("slices", [15])
 # @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 
+
 @pytest.mark.parametrize("projections", [1500, 1801, 2560])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
@@ -593,8 +594,12 @@ def test_recon_FBP3d_tomobar_memoryhook(
 # @pytest.mark.parametrize("detX_size", [2560])
 # @pytest.mark.parametrize("slices", [3, 4, 5, 10])
 # @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
-def test_recon_LPRec3d_tomobar_0_pi_memoryhook(slices, detX_size, projections, projection_angle_range, ensure_clean_memory):
-    __test_recon_LPRec3d_tomobar_memoryhook_common(slices, detX_size, projections, projection_angle_range, ensure_clean_memory)
+def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
+    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+    )
 
 
 @pytest.mark.full
@@ -640,11 +645,10 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
-
     hook = MaxMemoryHook()
     hook2 = PeakMemoryLineProfileHook(["methodsDIR_CuPy.py"])
     with hook, hook2:
-    # with hook:
+        # with hook:
         recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
     # hook2.print_report()
 

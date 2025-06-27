@@ -220,9 +220,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     tmp_p_input_slice = angles_tot * n * np.float32().itemsize
 
-    padded_tmp_p_input_slice = (
-        angles_tot * (n + padding_m * 2) * np.float32().itemsize
-    )
+    padded_tmp_p_input_slice = angles_tot * (n + padding_m * 2) * np.float32().itemsize
     rfft_plan_slice_size = (
         cufft_estimate_1d(
             nx=n + padding_m * 2,
@@ -319,7 +317,6 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
         add_to_memory_counters(-irfft_result_size / chunk_count, True)
 
-
     add_to_memory_counters(-padded_in_slice_size, True)
     add_to_memory_counters(-filter_size, False)
     add_to_memory_counters(-rfftfreq_size, False)
@@ -344,7 +341,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(circular_mask_size, False)
     add_to_memory_counters(after_recon_swapaxis_slice, True)
 
-    return (tot_memory_bytes * 1.05, fixed_amount + 250 * 1024 *1024)
+    return (tot_memory_bytes * 1.05, fixed_amount + 250 * 1024 * 1024)
     # return (tot_memory_bytes, fixed_amount)
 
 
