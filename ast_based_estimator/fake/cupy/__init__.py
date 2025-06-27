@@ -145,6 +145,13 @@ def full(shape, dtype, **kwargs):
     return ndarray(shape, dtype, kwargs)
 
 
+def asarray(array, dtype, **kwargs):
+    if isinstance(array, ndarray):
+        return array
+
+    return ndarray(array.shape, dtype, kwargs)
+
+
 def pad(array, pad_width, **kwargs):
     return ndarray(
         tuple(s + p[0] + p[1] for (s, p) in zip(array.shape, pad_width)),

@@ -14,81 +14,10 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
     def __init__(self, output_function_name, cupy_aliases=set[str]):
         self.output_function_name = output_function_name
         self.cupy_aliases = cupy_aliases
+        self.custom_kernel_modules = []
         self.custom_kernels = []
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
-        if isinstance(node.func, ast.Attribute) and isinstance(
-            node.func.value, ast.Name
-        ):
-            lib_name = node.func.value.id
-            func_name = node.func.attr
-
-            if lib_name == "module" and func_name == "get_function":
-                self.custom_kernels.append(node.args[0].value)
-                return self.generic_visit(node)
-
-        if isinstance(node.func, ast.Name) and node.func.id in [
-            "rfft",
-            "irfft",
-            "fft",
-            "ifft2",
-        ]:
-            array_arg = node.args[0]
-            shape = ast.Attribute(
-                value=ast.copy_location(array_arg, array_arg),
-                attr="shape",
-                ctx=ast.Load(),
-            )
-            dtype = ast.Attribute(
-                value=ast.copy_location(array_arg, array_arg),
-                attr="dtype",
-                ctx=ast.Load(),
-            )
-
-            return ast.Call(
-                func=ast.Name(id="fake_fft", ctx=ast.Load()),
-                args=[
-                    ast.Constant(value=node.func.id),
-                    FakeCuPyArray.new_ast_node(
-                        node.lineno,
-                        ast.Name(id="memory_usage", ctx=ast.Load()),
-                        shape,
-                        dtype,
-                    ),
-                ],
-                keywords=[],
-            )
-
-        if isinstance(node.func, ast.Name) and node.func.id == "rfftfreq":
-            shape = ast.BinOp(
-                left=ast.BinOp(
-                    left=node.args[0],
-                    op=ast.FloorDiv(),
-                    right=ast.Constant(value=2),
-                ),
-                op=ast.Add(),
-                right=ast.Constant(value=1),
-            )
-            dtype = ast.Constant(value="float64")
-            return FakeCuPyArray.new_ast_node(
-                node.lineno, ast.Name(id="memory_usage", ctx=ast.Load()), shape, dtype
-            )
-
-        if isinstance(node.func, ast.Name) and node.func.id == "calc_filter":
-            shape = ast.BinOp(
-                left=ast.BinOp(
-                    left=node.args[0],
-                    op=ast.FloorDiv(),
-                    right=ast.Constant(value=2),
-                ),
-                op=ast.Add(),
-                right=ast.Constant(value=1),
-            )
-            dtype = ast.Constant(value="float32")
-            return FakeCuPyArray.new_ast_node(
-                node.lineno, ast.Name(id="memory_usage", ctx=ast.Load()), shape, dtype
-            )
-
         if isinstance(node.func, ast.Name) and node.func.id in self.custom_kernels:
             return ast.Call(
                 func=ast.Name(id="noop", ctx=ast.Load()),
@@ -96,10 +25,24 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 keywords=[],
             )
 
+        node.args.append(
+            ast.Dict(
+                keys=[
+                    ast.Constant(value="line_number"),
+                    ast.Constant(value="memory_usage"),
+                    ast.Constant(value="fft_plan_cache"),
+                ],
+                values=[
+                    ast.Constant(value=node.lineno),
+                    ast.Name(id="memory_usage", ctx=ast.Load()),
+                    ast.Name(id="fft_plan_cache", ctx=ast.Load()),
+                ],
+            )
+        )
         return self.generic_visit(node)
 
     def visit_FunctionDef(self, node):
-        if node.name in ["fake_fft", "call_with_temp_arg", "noop"]:
+        if node.name in ["noop"]:
             return self.generic_visit(node)
 
         node.name = self.output_function_name
@@ -120,445 +63,57 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
 
         node.returns = None
 
-        def shape_index(index):
-            return ast.Subscript(
-                value=ast.Attribute(
-                    value=ast.Name(id="input", ctx=ast.Load()),
-                    attr="shape",
-                    ctx=ast.Load(),
+        new_body = [
+            ast.FunctionDef(
+                name="noop",
+                args=ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], defaults=[]),
+                body=[ast.Pass()],
+                decorator_list=[],
+            ),
+            ast.Assign(
+                targets=[ast.Name(id="memory_usage", ctx=ast.Store())],
+                value=ast.Dict(
+                    keys=[
+                        ast.Constant(value="peak_memory"),
+                        ast.Constant(value="current_peak_memory"),
+                    ],
+                    values=[
+                        ast.Constant(value=0),
+                        ast.Constant(value=0),
+                    ],
                 ),
-                slice=ast.Constant(value=index),
-                ctx=ast.Load(),
-            )
-
-        def call_cufft_estimate_1d(cufft_type):
-            return ast.Assign(
-                targets=[ast.Name(id="plan_size", ctx=ast.Store())],
+            ),
+            ast.Assign(
+                targets=[ast.Name(id="fft_plan_cache", ctx=ast.Store())],
+                value=ast.List(elts=[], ctx=ast.Load()),
+            ),
+            ast.Assign(
+                targets=[ast.Name(id="data", ctx=ast.Store())],
                 value=ast.Call(
-                    func=ast.Name(id="cufft_estimate_1d", ctx=ast.Load()),
-                    args=[],
-                    keywords=[
-                        ast.keyword(arg="nx", value=shape_index(2)),
-                        ast.keyword(
-                            arg="fft_type",
-                            value=ast.Attribute(
-                                value=ast.Name(id="CufftType", ctx=ast.Load()),
-                                attr=cufft_type,
-                                ctx=ast.Load(),
-                            ),
-                        ),
-                        ast.keyword(arg="batch", value=shape_index(1)),
+                    func=ast.Name(id="ndarray", ctx=ast.Load()),
+                    args=[
+                        ast.Name(id="data_shape", ctx=ast.Load()),
+                        ast.Name(id="data_dtype", ctx=ast.Load()),
                     ],
+                    keywords=[],
                 ),
-            )
-
-        def call_cufft_estimate_2d(cuff_type):
-            return ast.Assign(
-                targets=[ast.Name(id="plan_size", ctx=ast.Store())],
-                value=ast.Call(
-                    func=ast.Name(id="cufft_estimate_2d", ctx=ast.Load()),
-                    args=[],
-                    keywords=[
-                        ast.keyword(arg="nx", value=shape_index(2)),
-                        ast.keyword(arg="ny", value=shape_index(1)),
-                        ast.keyword(
-                            arg="fft_type",
-                            value=ast.Attribute(
-                                value=ast.Name(id="CufftType", ctx=ast.Load()),
-                                attr=cuff_type,
-                                ctx=ast.Load(),
-                            ),
-                        ),
-                    ],
-                ),
-            )
-
-        function_def = ast.FunctionDef(
-            name="call_with_temp_arg",
-            args=ast.arguments(
-                args=[ast.arg(arg="input"), ast.arg(arg="func")],
-                posonlyargs=[],
-                defaults=[],
-                kwonlyargs=[],
             ),
-            body=[
-                ast.Return(
-                    value=ast.Call(
-                        func=ast.Name(id="func", ctx=ast.Load()),
-                        args=[ast.Name(id="input", ctx=ast.Load())],
-                        keywords=[],
-                    )
-                ),
-            ],
-            decorator_list=[],
-        )
-        node.body.insert(0, function_def)
+        ]
 
-        function_def = ast.FunctionDef(
-            name="_output_dtype",
-            args=[ast.arg(arg="dtype"), ast.arg(arg="value_type")],
-            posonlyargs=[],
-            defaults=[],
-            kwonlyargs=[],
-            body=[
-                ast.If(
-                    test=ast.Compare(
-                        left=ast.Name(id="value_type", ctx=ast.Load()),
-                        ops=[ast.NotEq()],
-                        comparators=[ast.Constant(value="R2C")],
-                    ),
-                    body=[
-                        ast.If(
-                            test=ast.Compare(
-                                left=ast.Name(id="dtype", ctx=ast.Load()),
-                                ops=[ast.In()],
-                                comparators=[
-                                    ast.List(
-                                        elts=[
-                                            ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="float16",
-                                                ctx=ast.Load(),
-                                            ),
-                                            ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="float32",
-                                                ctx=ast.Load(),
-                                            ),
-                                        ],
-                                        ctx=ast.Load(),
-                                    )
-                                ],
-                            ),
-                            body=[
-                                ast.Return(
-                                    value=ast.Attribute(
-                                        value=ast.Name(id="np", ctx=ast.Load()),
-                                        attr="complex64",
-                                        ctx=ast.Load(),
-                                    )
-                                )
-                            ],
-                            orelse=[
-                                ast.If(
-                                    test=ast.Compare(
-                                        left=ast.Name(id="dtype", ctx=ast.Load()),
-                                        ops=[ast.NotIn()],
-                                        comparators=[
-                                            ast.List(
-                                                elts=[
-                                                    ast.Attribute(
-                                                        value=ast.Name(
-                                                            id="np", ctx=ast.Load()
-                                                        ),
-                                                        attr="complex64",
-                                                        ctx=ast.Load(),
-                                                    ),
-                                                    ast.Attribute(
-                                                        value=ast.Name(
-                                                            id="np", ctx=ast.Load()
-                                                        ),
-                                                        attr="complex128",
-                                                        ctx=ast.Load(),
-                                                    ),
-                                                ],
-                                                ctx=ast.Load(),
-                                            )
-                                        ],
-                                    ),
-                                    body=[
-                                        ast.Return(
-                                            value=ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="complex128",
-                                                ctx=ast.Load(),
-                                            )
-                                        )
-                                    ],
-                                    orelse=[],
-                                )
-                            ],
-                        )
-                    ],
-                    orelse=[
-                        ast.If(
-                            test=ast.Compare(
-                                left=ast.Name(id="dtype", ctx=ast.Load()),
-                                ops=[ast.In()],
-                                comparators=[
-                                    ast.List(
-                                        elts=[
-                                            ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="complex64",
-                                                ctx=ast.Load(),
-                                            ),
-                                            ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="complex128",
-                                                ctx=ast.Load(),
-                                            ),
-                                        ],
-                                        ctx=ast.Load(),
-                                    )
-                                ],
-                            ),
-                            body=[
-                                ast.Return(
-                                    value=ast.Call(
-                                        func=ast.Attribute(
-                                            value=ast.Name(id="np", ctx=ast.Load()),
-                                            attr="dtype",
-                                            ctx=ast.Load(),
-                                        ),
-                                        args=[
-                                            ast.Call(
-                                                func=ast.Attribute(
-                                                    value=ast.Attribute(
-                                                        value=ast.Name(
-                                                            id="dtype", ctx=ast.Load()
-                                                        ),
-                                                        attr="char",
-                                                        ctx=ast.Load(),
-                                                    ),
-                                                    attr="lower",
-                                                    ctx=ast.Load(),
-                                                ),
-                                                args=[],
-                                                keywords=[],
-                                            )
-                                        ],
-                                        keywords=[],
-                                    )
-                                )
-                            ],
-                            orelse=[
-                                ast.If(
-                                    test=ast.Compare(
-                                        left=ast.Name(id="dtype", ctx=ast.Load()),
-                                        ops=[ast.Eq()],
-                                        comparators=[
-                                            ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="float16",
-                                                ctx=ast.Load(),
-                                            )
-                                        ],
-                                    ),
-                                    body=[
-                                        ast.Return(
-                                            value=ast.Attribute(
-                                                value=ast.Name(id="np", ctx=ast.Load()),
-                                                attr="float32",
-                                                ctx=ast.Load(),
-                                            )
-                                        )
-                                    ],
-                                    orelse=[
-                                        ast.If(
-                                            test=ast.Compare(
-                                                left=ast.Name(
-                                                    id="dtype", ctx=ast.Load()
-                                                ),
-                                                ops=[ast.NotIn()],
-                                                comparators=[
-                                                    ast.List(
-                                                        elts=[
-                                                            ast.Attribute(
-                                                                value=ast.Name(
-                                                                    id="np",
-                                                                    ctx=ast.Load(),
-                                                                ),
-                                                                attr="float32",
-                                                                ctx=ast.Load(),
-                                                            ),
-                                                            ast.Attribute(
-                                                                value=ast.Name(
-                                                                    id="np",
-                                                                    ctx=ast.Load(),
-                                                                ),
-                                                                attr="float64",
-                                                                ctx=ast.Load(),
-                                                            ),
-                                                        ],
-                                                        ctx=ast.Load(),
-                                                    )
-                                                ],
-                                            ),
-                                            body=[
-                                                ast.Return(
-                                                    value=ast.Attribute(
-                                                        value=ast.Name(
-                                                            id="np", ctx=ast.Load()
-                                                        ),
-                                                        attr="float64",
-                                                        ctx=ast.Load(),
-                                                    )
-                                                )
-                                            ],
-                                            orelse=[],
-                                        )
-                                    ],
-                                )
-                            ],
-                        )
-                    ],
-                ),
-                ast.Return(value=ast.Name(id="dtype", ctx=ast.Load())),
-            ],
-            decorator_list=[],
-        )
-        node.body.insert(0, function_def)
+        for statement in node.body:
+            if (
+                isinstance(statement, ast.Expr)
+                and isinstance(statement.value, ast.Constant)
+                and isinstance(statement.value.value, str)
+            ):
+                continue
 
-        function_def = ast.FunctionDef(
-            name="fake_fft",
-            args=ast.arguments(
-                args=[
-                    ast.arg(arg="fft_function"),
-                    ast.arg(arg="input"),
-                    ast.arg("memory_usage"),
-                ],
-                posonlyargs=[],
-                defaults=[],
-                kwonlyargs=[],
-            ),
-            body=[
-                ast.Nonlocal(names=["fft_plan_cache"]),
-                ast.Match(
-                    subject=ast.Name(id="fft_function", ctx=ast.Load()),
-                    cases=[
-                        ast.match_case(
-                            pattern=ast.MatchValue(ast.Constant(value="rfft")),
-                            body=[call_cufft_estimate_1d("CUFFT_R2C")],
-                        ),
-                        ast.match_case(
-                            pattern=ast.MatchValue(ast.Constant(value="irfft")),
-                            body=[call_cufft_estimate_1d("CUFFT_C2R")],
-                        ),
-                        ast.match_case(
-                            pattern=ast.MatchValue(ast.Constant(value="fft")),
-                            body=[call_cufft_estimate_1d("CUFFT_C2C")],
-                        ),
-                        ast.match_case(
-                            pattern=ast.MatchValue(ast.Constant(value="ifft2")),
-                            body=[call_cufft_estimate_2d("CUFFT_C2C")],
-                        ),
-                    ],
-                ),
-                ast.Expr(
-                    value=ast.Call(
-                        func=ast.Attribute(
-                            value=ast.Name(id="fft_plan_cache", ctx=ast.Load()),
-                            attr="append",
-                            ctx=ast.Load(),
-                        ),
-                        args=[ast.Name(id="plan_size", ctx=ast.Load())],
-                        keywords=[],
-                    )
-                ),
-                ast.Assign(
-                    targets=[ast.Name(id="input_size_along_axis", ctx=ast.Store())],
-                    value=ast.Subscript(
-                        value=ast.Attribute(
-                            value=ast.Name(id="input", ctx=ast.Load()),
-                            attr="shape",
-                            ctx=ast.Load(),
-                        ),
-                        slice=ast.Slice(lower=None, upper=ast.Constant(value=2)),
-                        ctx=ast.Load(),
-                    ),
-                ),
-                ast.Return(
-                    value=FakeCuPyArray.new_ast_node(
-                        node.lineno,
-                        ast.Name(id="memory_usage", ctx=ast.Load()),
-                        ast.BinOp(
-                            left=ast.Name(id="input_size_along_axis", ctx=ast.Load()),
-                            op=ast.Add(),
-                            right=ast.Tuple(
-                                elts=[
-                                    ast.BinOp(
-                                        left=ast.BinOp(
-                                            left=ast.Name(
-                                                id="input_size_along_axis",
-                                                ctx=ast.Load(),
-                                            ),
-                                            op=ast.FloorDiv(),
-                                            right=ast.Constant(value=2),
-                                        ),
-                                        op=ast.Add(),
-                                        right=ast.Constant(value=1),
-                                    )
-                                ],
-                                ctx=ast.Load(),
-                            ),
-                        ),
-                        ast.Call(
-                            func=ast.Name(id="_output_dtype", ctx=ast.Load()),
-                            args=[
-                                ast.Attribute(
-                                    value=ast.Name(id="input", ctx=ast.Load()),
-                                    attr="dtype",
-                                    ctx=ast.Load(),
-                                )
-                            ],
-                            keywords=[],
-                        ),
-                    )
-                ),
-            ],
-            decorator_list=[],
-        )
-        node.body.insert(0, function_def)
-
-        assign_node = ast.Assign(
-            targets=[ast.Name(id="fft_plan_cache", ctx=ast.Store())],
-            value=ast.List(elts=[], ctx=ast.Load()),
-        )
-        node.body.insert(0, assign_node)
-
-        noop_def = ast.FunctionDef(
-            name="noop",
-            args=ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], defaults=[]),
-            body=[ast.Pass()],
-            decorator_list=[],
-        )
-        node.body.insert(0, noop_def)
-
-        assign_node = ast.Assign(
-            targets=[ast.Name(id="data", ctx=ast.Store())],
-            value=FakeCuPyArray.new_ast_node(
-                node.lineno,
-                ast.Name(id="memory_usage", ctx=ast.Load()),
-                ast.Name(id="data_shape", ctx=ast.Load()),
-                ast.Name(id="data_dtype", ctx=ast.Load()),
-            ),
-        )
-        node.body.insert(0, assign_node)
-
-        assign_node = ast.Assign(
-            targets=[ast.Name(id="memory_usage", ctx=ast.Store())],
-            value=ast.Dict(
-                keys=[
-                    ast.Constant(value="peak_memory"),
-                    ast.Constant(value="current_peak_memory"),
-                ],
-                values=[
-                    ast.Constant(value=0),
-                    ast.Constant(value=0),
-                ],
-            ),
-        )
-        node.body.insert(0, assign_node)
-
-        new_body = []
-        for stmt in node.body:
-            if isinstance(stmt, ast.Return):
-                stmt = ast.Assign(
+            if isinstance(statement, ast.Return):
+                statement = ast.Assign(
                     targets=[ast.Name(id="return_value", ctx=ast.Store())],
-                    value=stmt.value,
+                    value=statement.value,
                 )
-            new_body.append(stmt)
+            new_body.append(statement)
 
         node.body = new_body
 
@@ -575,6 +130,27 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 slice=ast.Constant(value=node.attr),
                 ctx=ast.Load(),
             )
+
+        return self.generic_visit(node)
+
+    def visit_Assign(self, node):
+        if (
+            isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Name)
+            and node.value.func.id == "load_cuda_module"
+        ):
+            self.custom_kernel_modules.append(node.targets)
+            node.value = None
+
+        if (
+            isinstance(node.value, ast.Call)
+            and isinstance(node.value.func, ast.Attribute)
+            and isinstance(node.value.func.value, ast.Name)
+            and node.value.func.value.id in self.custom_kernel_modules
+            and node.value.func.attr == "get_function"
+        ):
+            self.custom_kernels.append(node.targets)
+            node.value = None
 
         return self.generic_visit(node)
 
