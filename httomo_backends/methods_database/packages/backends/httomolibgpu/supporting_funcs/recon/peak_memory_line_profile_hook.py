@@ -6,7 +6,7 @@ from cupy.cuda import memory_hook
 
 
 class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
-    name = 'LineProfileHook'
+    name = "LineProfileHook"
 
     def __init__(self, running_peak_root_file_names, max_depth=0):
         self._memory_frames = {}
@@ -45,15 +45,11 @@ class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
     def _extract_stackframes(self):
         stackframes = traceback.extract_stack()
         stackframes = [StackFrame(st) for st in stackframes]
-        stackframes = [
-            st for st in stackframes if st.filename != self._filename]
+        stackframes = [st for st in stackframes if st.filename != self._filename]
         return stackframes
 
     def _key_frame(self, parent, stackframe):
-        return (parent,
-                stackframe.filename,
-                stackframe.lineno,
-                stackframe.name)
+        return (parent, stackframe.filename, stackframe.lineno, stackframe.name)
 
     def _add_frame(self, parent, stackframe):
         key = self._key_frame(parent, stackframe)
@@ -66,17 +62,26 @@ class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
 
     def print_report(self, file=sys.stdout):
         """Prints a report of line memory profiling."""
-        line = '_root (%s, %s, %s)\n' % self._root.humanized_bytes()
+        line = "_root (%s, %s, %s)\n" % self._root.humanized_bytes()
         file.write(line)
 
         running_peak_bytes = [0]
         running_used_bytes = [0]
         for child in self._root.children:
-            self._print_frame(child, running_peak_bytes, running_used_bytes, depth=1, file=file)
+            self._print_frame(
+                child, running_peak_bytes, running_used_bytes, depth=1, file=file
+            )
         file.flush()
 
-    def _print_frame(self, memory_frame, running_peak_bytes, running_used_bytes, depth=0, file=sys.stdout):
-        indent = ' ' * (depth * 2)
+    def _print_frame(
+        self,
+        memory_frame,
+        running_peak_bytes,
+        running_used_bytes,
+        depth=0,
+        file=sys.stdout,
+    ):
+        indent = " " * (depth * 2)
         st = memory_frame.stackframe
         used_bytes, acquired_bytes, freed_bytes = memory_frame.humanized_bytes()
 
@@ -87,15 +92,33 @@ class PeakMemoryLineProfileHook(memory_hook.MemoryHook):
             running_peak_bytes[0] = max(running_peak_bytes[0], running_used_bytes[0])
             running_used_bytes[0] -= memory_frame.freed_bytes
 
-            humanized_running_peak_bytes = MemoryFrame.humanized_size(running_peak_bytes[0])
-            humanized_running_used_bytes = MemoryFrame.humanized_size(running_used_bytes[0])
+            humanized_running_peak_bytes = MemoryFrame.humanized_size(
+                running_peak_bytes[0]
+            )
+            humanized_running_used_bytes = MemoryFrame.humanized_size(
+                running_used_bytes[0]
+            )
 
-        line = '%s%s:%s:%s (%s, %s, %s, %s, %s)\n' % (
-            indent, st.filename, st.lineno, st.name,
-            used_bytes, acquired_bytes, freed_bytes, humanized_running_peak_bytes, humanized_running_used_bytes)
+        line = "%s%s:%s:%s (%s, %s, %s, %s, %s)\n" % (
+            indent,
+            st.filename,
+            st.lineno,
+            st.name,
+            used_bytes,
+            acquired_bytes,
+            freed_bytes,
+            humanized_running_peak_bytes,
+            humanized_running_used_bytes,
+        )
         file.write(line)
         for child in memory_frame.children:
-            self._print_frame(child, running_peak_bytes, running_used_bytes, depth=depth + 1, file=file)
+            self._print_frame(
+                child,
+                running_peak_bytes,
+                running_used_bytes,
+                depth=depth + 1,
+                file=file,
+            )
 
 
 class StackFrame(object):
@@ -147,11 +170,11 @@ class MemoryFrame(object):
 
     @staticmethod
     def humanized_size(size):
-        for unit in ['', 'K', 'M', 'G', 'T', 'P', 'E']:
+        for unit in ["", "K", "M", "G", "T", "P", "E"]:
             if size < 1024.0:
-                return '%3.2f%sB' % (size, unit)
+                return "%3.2f%sB" % (size, unit)
             size /= 1024.0
-        return '%.2f%sB' % (size, 'Z')
+        return "%.2f%sB" % (size, "Z")
 
     def _set_parent(self, parent):
         if parent and parent not in parent.children:
