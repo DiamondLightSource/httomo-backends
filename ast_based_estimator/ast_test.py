@@ -1,44 +1,57 @@
 import ast
 import inspect
-import cupy as cp
 import numpy as np
 import textwrap
 from types import FunctionType
-from typing import Any, Dict, Tuple, Union
-from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
+from typing import Any, Dict
 from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-from fake_cupy_array import FakeCuPyArray
+import fake
 
 
 class CuPyMemoryPrintTransformer(ast.NodeTransformer):
-    def __init__(self, output_function_name, cupy_aliases=set[str]):
+    def __init__(self, output_function_name):
         self.output_function_name = output_function_name
-        self.cupy_aliases = cupy_aliases
+        self.fake_definitions = fake.top_level_definitions()
         self.custom_kernel_modules = []
         self.custom_kernels = []
 
     def visit_Call(self, node: ast.Call) -> ast.AST:
-        if isinstance(node.func, ast.Name) and node.func.id in self.custom_kernels:
-            return ast.Call(
-                func=ast.Name(id="noop", ctx=ast.Load()),
-                args=[],
-                keywords=[],
-            )
+        call_name = None
+        if isinstance(node.func, ast.Name):
+            call_name = node.func.id
+        if isinstance(node.func, ast.Attribute) and isinstance(
+            node.func.value, ast.Name
+        ):
+            call_name = node.func.attr
 
-        node.args.append(
-            ast.Dict(
-                keys=[
-                    ast.Constant(value="line_number"),
-                    ast.Constant(value="memory_usage"),
-                    ast.Constant(value="fft_plan_cache"),
-                ],
-                values=[
-                    ast.Constant(value=node.lineno),
-                    ast.Name(id="memory_usage", ctx=ast.Load()),
-                    ast.Name(id="fft_plan_cache", ctx=ast.Load()),
-                ],
-            )
-        )
+        if call_name:
+            if call_name in self.custom_kernels:
+                return ast.Call(
+                    func=ast.Name(id="noop", ctx=ast.Load()),
+                    lineno=node.lineno,
+                    args=[],
+                    keywords=[],
+                )
+
+            if call_name in self.fake_definitions:
+                node.keywords = [
+                    ast.keyword(
+                        arg=None,
+                        value=ast.Dict(
+                            keys=[
+                                ast.Constant(value="line_number"),
+                                ast.Constant(value="memory_usage"),
+                                ast.Constant(value="fft_plan_cache"),
+                            ],
+                            values=[
+                                ast.Constant(value=node.lineno),
+                                ast.Name(id="memory_usage", ctx=ast.Load()),
+                                ast.Name(id="fft_plan_cache", ctx=ast.Load()),
+                            ],
+                        ),
+                    )
+                ]
+
         return self.generic_visit(node)
 
     def visit_FunctionDef(self, node):
@@ -90,7 +103,12 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
             ast.Assign(
                 targets=[ast.Name(id="data", ctx=ast.Store())],
                 value=ast.Call(
-                    func=ast.Name(id="ndarray", ctx=ast.Load()),
+                    lineno=node.lineno,
+                    func=ast.Attribute(
+                        value=ast.Name(id="xp", ctx=ast.Load()),
+                        attr="ndarray",
+                        ctx=ast.Load(),
+                    ),
                     args=[
                         ast.Name(id="data_shape", ctx=ast.Load()),
                         ast.Name(id="data_dtype", ctx=ast.Load()),
@@ -139,8 +157,10 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
             and isinstance(node.value.func, ast.Name)
             and node.value.func.id == "load_cuda_module"
         ):
-            self.custom_kernel_modules.append(node.targets)
-            node.value = None
+            self.custom_kernel_modules.extend(
+                [target.id for target in node.targets if isinstance(target, ast.Name)]
+            )
+            node.value = ast.Constant(value=None)
 
         if (
             isinstance(node.value, ast.Call)
@@ -149,18 +169,12 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
             and node.value.func.value.id in self.custom_kernel_modules
             and node.value.func.attr == "get_function"
         ):
-            self.custom_kernels.append(node.targets)
-            node.value = None
+            self.custom_kernels.extend(
+                [target.id for target in node.targets if isinstance(target, ast.Name)]
+            )
+            node.value = ast.Constant(value=None)
 
         return self.generic_visit(node)
-
-
-def infer_aliases_from_globals(func: FunctionType) -> set[str]:
-    return {
-        name
-        for name, _ in func.__globals__.items()
-        if name == "cupy" or name == "cp" or name == "xp"
-    }
 
 
 def memory_estimator_from_function(func: FunctionType) -> FunctionType:
@@ -169,19 +183,15 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     source = textwrap.dedent(source)
     tree = ast.parse(source)
 
-    transformer = CuPyMemoryPrintTransformer(
-        output_function_name, infer_aliases_from_globals(func)
-    )
+    transformer = CuPyMemoryPrintTransformer(output_function_name)
     tree = transformer.visit(tree)
     ast.fix_missing_locations(tree)
 
     print(ast.unparse(tree))
 
     global_namespace = dict(func.__globals__)
-    global_namespace["FakeCuPyArray"] = FakeCuPyArray
-    global_namespace["CufftType"] = CufftType
-    global_namespace["cufft_estimate_1d"] = cufft_estimate_1d
-    global_namespace["cufft_estimate_2d"] = cufft_estimate_2d
+    global_namespace["cupy"] = fake.cupy
+    global_namespace["cupyx"] = fake.cupyx
 
     namespace: Dict[str, Any] = {}
     exec(compile(tree, filename="<ast>", mode="exec"), global_namespace, namespace)
