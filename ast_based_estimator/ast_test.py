@@ -34,7 +34,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 )
 
             if call_name in self.fake_definitions:
-                node.keywords = [
+                node.keywords.append(
                     ast.keyword(
                         arg=None,
                         value=ast.Dict(
@@ -50,7 +50,7 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                             ],
                         ),
                     )
-                ]
+                )
 
         return self.generic_visit(node)
 
@@ -191,6 +191,8 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
 
     global_namespace = dict(func.__globals__)
     global_namespace["cupy"] = fake.cupy
+    global_namespace["cp"] = fake.cupy
+    global_namespace["xp"] = fake.cupy
     global_namespace["cupyx"] = fake.cupyx
 
     namespace: Dict[str, Any] = {}

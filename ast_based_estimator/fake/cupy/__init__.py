@@ -129,6 +129,27 @@ class ndarray:
         )
 
 
+float16 = np.float16
+float32 = np.float32
+float64 = np.float64
+
+int8 = np.int8
+int16 = np.int16
+int32 = np.int32
+int64 = np.int64
+
+uint8 = np.uint8
+uint16 = np.uint16
+uint32 = np.uint32
+uint64 = np.uint64
+
+bool_ = np.bool_
+
+
+def dtype(self, obj):
+    return np.dtype(obj)
+
+
 def zeros(shape, dtype, **kwargs):
     return ndarray(shape, dtype, kwargs)
 
@@ -143,6 +164,10 @@ def empty(shape, dtype, **kwargs):
 
 def full(shape, dtype, **kwargs):
     return ndarray(shape, dtype, kwargs)
+
+
+def array(obj, dtype, **kwargs):
+    return ndarray(obj.shape, dtype, kwargs)
 
 
 def asarray(array, dtype, **kwargs):
