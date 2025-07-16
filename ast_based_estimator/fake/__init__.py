@@ -1,9 +1,11 @@
-from . import cupy
-from . import cupyx
-
 import os
 import ast
 import importlib.util
+
+from . import cupy
+from . import cupyx
+
+__all__ = ["cupy", "cupyx"]
 
 
 def __find_module_path():
@@ -54,3 +56,10 @@ def top_level_definitions():
         functions, classes = __list_defs_from_file(py_file)
         results.update(functions, classes)
     return results
+
+
+def override_globals_shim(function_to_call, globals_source, *args, **kwargs):
+    if hasattr(function_to_call, "__globals__"):
+        function_to_call.__globals__.update(globals_source.__globals__)
+
+    return function_to_call(*args, **kwargs)

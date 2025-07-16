@@ -24,41 +24,55 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
         ):
             call_name = node.func.attr
 
-        if call_name:
-            if call_name in self.custom_kernels:
-                return ast.Call(
-                    func=ast.Name(id="noop", ctx=ast.Load()),
-                    lineno=node.lineno,
-                    args=[],
-                    keywords=[],
+        if call_name in self.custom_kernels:
+            return ast.Call(
+                func=ast.Name(id="noop", ctx=ast.Load()),
+                lineno=node.lineno,
+                args=[],
+                keywords=[],
+            )
+
+        if call_name in self.fake_definitions:
+            node.keywords.append(
+                ast.keyword(
+                    arg=None,
+                    value=ast.Dict(
+                        keys=[
+                            ast.Constant(value="line_number"),
+                            ast.Constant(value="memory_usage"),
+                            ast.Constant(value="fft_plan_cache"),
+                        ],
+                        values=[
+                            ast.Constant(value=node.lineno),
+                            ast.Name(id="memory_usage", ctx=ast.Load()),
+                            ast.Name(id="fft_plan_cache", ctx=ast.Load()),
+                        ],
+                    ),
                 )
+            )
 
-            if call_name in self.fake_definitions:
-                node.keywords.append(
-                    ast.keyword(
-                        arg=None,
-                        value=ast.Dict(
-                            keys=[
-                                ast.Constant(value="line_number"),
-                                ast.Constant(value="memory_usage"),
-                                ast.Constant(value="fft_plan_cache"),
-                            ],
-                            values=[
-                                ast.Constant(value=node.lineno),
-                                ast.Name(id="memory_usage", ctx=ast.Load()),
-                                ast.Name(id="fft_plan_cache", ctx=ast.Load()),
-                            ],
-                        ),
-                    )
-                )
-
-        return self.generic_visit(node)
-
-    def visit_FunctionDef(self, node):
-        if node.name in ["noop"]:
             return self.generic_visit(node)
 
-        node.name = self.output_function_name
+        if not call_name:
+            return self.generic_visit(node)
+
+        return ast.Call(
+            func=ast.Attribute(
+                value=ast.Name(id="fake", ctx=ast.Load()),
+                attr="override_globals_shim",
+                ctx=ast.Load(),
+            ),
+            args=[
+                node.func,
+                ast.Name(id=self.output_function_name, ctx=ast.Load()),
+                *node.args,
+            ],
+            keywords=[],
+        )
+
+    def visit_FunctionDef(self, node):
+        if node.name in ["noop", "override_globals_shim"]:
+            return node
 
         new_args = []
         for arg in node.args.args:
@@ -71,10 +85,6 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 continue
 
             new_args.append(arg)
-
-        node.args.args = new_args
-
-        node.returns = None
 
         new_body = [
             ast.FunctionDef(
@@ -133,7 +143,10 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 )
             new_body.append(statement)
 
+        node.name = self.output_function_name
+        node.args.args = new_args
         node.body = new_body
+        node.returns = None
 
         return self.generic_visit(node)
 
@@ -190,13 +203,21 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     print(ast.unparse(tree))
 
     global_namespace = dict(func.__globals__)
+    global_namespace["fake"] = fake
     global_namespace["cupy"] = fake.cupy
     global_namespace["cp"] = fake.cupy
     global_namespace["xp"] = fake.cupy
-    global_namespace["cupyx"] = fake.cupyx
+    global_namespace["fft"] = fake.cupyx.scipy.fft.fft
+    global_namespace["ifft2"] = fake.cupyx.scipy.fft.ifft2
+    global_namespace["rfftfreq"] = fake.cupyx.scipy.fft.rfftfreq
+    global_namespace["rfft"] = fake.cupyx.scipy.fft.rfft
+    global_namespace["irfft"] = fake.cupyx.scipy.fft.irfft
 
     namespace: Dict[str, Any] = {}
     exec(compile(tree, filename="<ast>", mode="exec"), global_namespace, namespace)
+    namespace[output_function_name].__globals__[output_function_name] = namespace[
+        output_function_name
+    ]
     return namespace[output_function_name]
 
 

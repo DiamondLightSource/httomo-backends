@@ -39,15 +39,16 @@ def fft(array, **kwargs):
             plan_size = cufft_estimate_1d(
                 nx=shape[-1], fft_type=CufftType.CUFFT_C2C, batch=shape[-2]
             )
-            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, kwargs)
+            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, **kwargs)
 
-    return ndarray(shape, array.dtype, kwargs)
+    return ndarray(shape, array.dtype, **kwargs)
 
 
 def rfft(array, axis, **kwargs):
     array = _convert_dtype(array, "R2C")
-    shape = array.shape
+    shape = list(array.shape)
     shape[axis] = shape[axis] // 2 + 1
+    shape = tuple(shape)
 
     fft_plan_cache = kwargs.get("fft_plan_cache")
     if fft_plan_cache:
@@ -57,15 +58,16 @@ def rfft(array, axis, **kwargs):
             plan_size = cufft_estimate_1d(
                 nx=shape[axis], fft_type=CufftType.CUFFT_R2C, batch=shape[axis - 1]
             )
-            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, kwargs)
+            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, **kwargs)
 
-    return ndarray(shape, array.dtype, kwargs)
+    return ndarray(shape, array.dtype, **kwargs)
 
 
 def irfft(array, axis, **kwargs):
     array = _convert_dtype(array, "C2R")
-    shape = array.shape
+    shape = list(array.shape)
     shape[axis] = 2 * (shape[axis] + 1)
+    shape = tuple(shape)
 
     fft_plan_cache = kwargs.get("fft_plan_cache")
     if fft_plan_cache:
@@ -75,9 +77,9 @@ def irfft(array, axis, **kwargs):
             plan_size = cufft_estimate_1d(
                 nx=shape[axis], fft_type=CufftType.CUFFT_C2R, batch=shape[axis - 1]
             )
-            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, kwargs)
+            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, **kwargs)
 
-    return ndarray(shape, array.dtype, kwargs)
+    return ndarray(shape, array.dtype, **kwargs)
 
 
 def ifft2(array, **kwargs):
@@ -92,10 +94,10 @@ def ifft2(array, **kwargs):
             plan_size = cufft_estimate_2d(
                 nx=shape[-1], ny=shape[-2], fft_type=CufftType.CUFFT_C2C
             )
-            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, kwargs)
+            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte, **kwargs)
 
-    return ndarray(shape, array.dtype, kwargs)
+    return ndarray(shape, array.dtype, **kwargs)
 
 
-def rfftfreq(n):
-    return ndarray(n // 2 + 1, dtype=np.float64) / n
+def rfftfreq(n, **kwargs):
+    return ndarray(n // 2 + 1, dtype=np.float64, **kwargs) / n

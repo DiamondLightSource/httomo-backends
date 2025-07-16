@@ -21,7 +21,7 @@ class ndarray:
             )
 
         print(
-            f"[CREATE] FakeCuPyArray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
+            f"[CREATE] ndarray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
         )
 
     def __del__(self):
@@ -35,11 +35,11 @@ class ndarray:
             )
 
         print(
-            f"[DELETE] FakeCuPyArray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
+            f"[DELETE] ndarray(line_no={self.line_number_of_creation}, shape={self.shape}, dtype={self.dtype})"
         )
 
     def __repr__(self):
-        return f"FakeCuPyArray(line_no={self.line_number_of_creation}, memory_usage={self.memory_usage}, shape={self.shape}, dtype={self.dtype})"
+        return f"ndarray(line_no={self.line_number_of_creation}, memory_usage={self.memory_usage}, shape={self.shape}, dtype={self.dtype})"
 
     def _binary_op(self, other):
         if isinstance(other, ndarray):
@@ -54,7 +54,7 @@ class ndarray:
         return ndarray(
             result_shape,
             str(result_dtype),
-            {
+            **{
                 "line_number": line_no,
                 "memory_usage": self.memory_usage,
             },
@@ -85,6 +85,16 @@ class ndarray:
         return self._binary_op(other)
 
     def __getitem__(self, key):
+        if isinstance(key, ndarray):
+            return ndarray(
+                key.shape,
+                self.dtype,
+                **{
+                    "line_number": self.line_number_of_creation,
+                    "memory_usage": self.memory_usage,
+                },
+            )
+
         if not isinstance(key, tuple):
             key = (key,)
 
@@ -109,7 +119,7 @@ class ndarray:
         return ndarray(
             new_shape,
             self.dtype,
-            {
+            **{
                 "line_number": self.line_number_of_creation,
                 "memory_usage": self.memory_usage,
             },
@@ -122,11 +132,14 @@ class ndarray:
         return ndarray(
             self.shape,
             dtype,
-            {
+            **{
                 "line_number": self.line_number_of_creation,
                 "memory_usage": self.memory_usage,
             },
         )
+
+    def get(self):
+        return np.empty(self.shape, self.dtype)
 
 
 float16 = np.float16
@@ -143,38 +156,42 @@ uint16 = np.uint16
 uint32 = np.uint32
 uint64 = np.uint64
 
+complex64 = np.complex64
+
 bool_ = np.bool_
 
+pi = np.pi
 
 def dtype(self, obj):
     return np.dtype(obj)
 
 
 def zeros(shape, dtype, **kwargs):
-    return ndarray(shape, dtype, kwargs)
+    return ndarray(shape, dtype, **kwargs)
 
 
 def ones(shape, dtype, **kwargs):
-    return ndarray(shape, dtype, kwargs)
+    return ndarray(shape, dtype, **kwargs)
 
 
 def empty(shape, dtype, **kwargs):
-    return ndarray(shape, dtype, kwargs)
+    return ndarray(shape, dtype, **kwargs)
 
 
 def full(shape, dtype, **kwargs):
-    return ndarray(shape, dtype, kwargs)
+    return ndarray(shape, dtype, **kwargs)
 
 
 def array(obj, dtype, **kwargs):
-    return ndarray(obj.shape, dtype, kwargs)
+    array = np.array(obj, dtype)
+    return ndarray(array.shape, dtype, **kwargs)
 
 
 def asarray(array, dtype, **kwargs):
     if isinstance(array, ndarray):
         return array
 
-    return ndarray(array.shape, dtype, kwargs)
+    return ndarray(array.shape, dtype, **kwargs)
 
 
 def pad(array, pad_width, **kwargs):
@@ -187,3 +204,12 @@ def pad(array, pad_width, **kwargs):
 
 def exp(array, **kwargs):
     return ndarray(array.shape, array.dtype, **kwargs)
+
+
+def argsort(a, axis=-1, kind=None, **kwargs):
+    if axis is None:
+        shape = (np.prod(a.shape),)
+    else:
+        shape = a.shape
+
+    return ndarray(shape, np.intp, **kwargs)
