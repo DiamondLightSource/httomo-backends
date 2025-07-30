@@ -1,17 +1,15 @@
 import ast
 import inspect
-import numpy as np
 import textwrap
 from types import FunctionType
 from typing import Any, Dict
 from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-import fake
+import httomo_backends.ast_based_estimator.fake as fake
 
 
-class CuPyMemoryPrintTransformer(ast.NodeTransformer):
+class MemoryEstimatorTransformer(ast.NodeTransformer):
     def __init__(self, output_function_name):
         self.output_function_name = output_function_name
-        self.fake_definitions = fake.top_level_definitions()
         self.custom_kernel_modules = []
         self.custom_kernels = []
 
@@ -24,6 +22,9 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
         ):
             call_name = node.func.attr
 
+        if call_name in ["globals"]:
+            return node
+
         if call_name in self.custom_kernels:
             return ast.Call(
                 func=ast.Name(id="noop", ctx=ast.Load()),
@@ -32,42 +33,28 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 keywords=[],
             )
 
-        if call_name in self.fake_definitions:
-            node.keywords.append(
-                ast.keyword(
-                    arg=None,
-                    value=ast.Dict(
-                        keys=[
-                            ast.Constant(value="line_number"),
-                            ast.Constant(value="memory_usage"),
-                            ast.Constant(value="fft_plan_cache"),
-                        ],
-                        values=[
-                            ast.Constant(value=node.lineno),
-                            ast.Name(id="memory_usage", ctx=ast.Load()),
-                            ast.Name(id="fft_plan_cache", ctx=ast.Load()),
-                        ],
+        return self.generic_visit(
+            ast.Call(
+                func=ast.Attribute(
+                    value=ast.Name(id="fake", ctx=ast.Load()),
+                    attr="override_globals_shim",
+                    ctx=ast.Load(),
+                ),
+                args=[
+                    node.func,
+                    ast.Subscript(
+                        value=ast.Call(
+                            func=ast.Name(id="globals", ctx=ast.Load()),
+                            args=[],
+                            keywords=[],
+                        ),
+                        slice=ast.Constant(value=self.output_function_name),
+                        ctx=ast.Load(),
                     ),
-                )
+                    *node.args,
+                ],
+                keywords=[],
             )
-
-            return self.generic_visit(node)
-
-        if not call_name:
-            return self.generic_visit(node)
-
-        return ast.Call(
-            func=ast.Attribute(
-                value=ast.Name(id="fake", ctx=ast.Load()),
-                attr="override_globals_shim",
-                ctx=ast.Load(),
-            ),
-            args=[
-                node.func,
-                ast.Name(id=self.output_function_name, ctx=ast.Load()),
-                *node.args,
-            ],
-            keywords=[],
         )
 
     def visit_FunctionDef(self, node):
@@ -92,23 +79,6 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 args=ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], defaults=[]),
                 body=[ast.Pass()],
                 decorator_list=[],
-            ),
-            ast.Assign(
-                targets=[ast.Name(id="memory_usage", ctx=ast.Store())],
-                value=ast.Dict(
-                    keys=[
-                        ast.Constant(value="peak_memory"),
-                        ast.Constant(value="current_peak_memory"),
-                    ],
-                    values=[
-                        ast.Constant(value=0),
-                        ast.Constant(value=0),
-                    ],
-                ),
-            ),
-            ast.Assign(
-                targets=[ast.Name(id="fft_plan_cache", ctx=ast.Store())],
-                value=ast.List(elts=[], ctx=ast.Load()),
             ),
             ast.Assign(
                 targets=[ast.Name(id="data", ctx=ast.Store())],
@@ -143,10 +113,20 @@ class CuPyMemoryPrintTransformer(ast.NodeTransformer):
                 )
             new_body.append(statement)
 
+        new_body.append(
+            ast.Return(
+                value=ast.Subscript(
+                    value=ast.Name(id="memory_usage", ctx=ast.Load()),
+                    slice=ast.Constant(value="peak_memory"),
+                    ctx=ast.Load(),
+                )
+            )
+        )
+
         node.name = self.output_function_name
         node.args.args = new_args
         node.body = new_body
-        node.returns = None
+        node.returns = ast.Name(id="int", ctx=ast.Load())
 
         return self.generic_visit(node)
 
@@ -196,13 +176,18 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     source = textwrap.dedent(source)
     tree = ast.parse(source)
 
-    transformer = CuPyMemoryPrintTransformer(output_function_name)
+    transformer = MemoryEstimatorTransformer(output_function_name)
     tree = transformer.visit(tree)
     ast.fix_missing_locations(tree)
 
     print(ast.unparse(tree))
 
+    memory_usage = {"peak_memory": 0, "current_peak_memory": 0}
+    fft_plan_cache = {}
+
     global_namespace = dict(func.__globals__)
+    global_namespace["memory_usage"] = memory_usage
+    global_namespace["fft_plan_cache"] = fft_plan_cache
     global_namespace["fake"] = fake
     global_namespace["cupy"] = fake.cupy
     global_namespace["cp"] = fake.cupy
@@ -225,37 +210,37 @@ original_func = RecToolsDIRCuPy.__dict__["FOURIER_INV"]
 estimator = memory_estimator_from_function(original_func)
 
 
-import os
-import tomophantom
-from tomophantom import TomoP3D
+# import os
+# import tomophantom
+# from tomophantom import TomoP3D
 
-model = 13  # select a model number from the library
-N_size = 256  # Define phantom dimensions using a scalar value (cubic phantom)
-path = os.path.dirname(tomophantom.__file__)
-path_library3D = os.path.join(path, "phantomlib", "Phantom3DLibrary.dat")
+# model = 13  # select a model number from the library
+# N_size = 256  # Define phantom dimensions using a scalar value (cubic phantom)
+# path = os.path.dirname(tomophantom.__file__)
+# path_library3D = os.path.join(path, "phantomlib", "Phantom3DLibrary.dat")
 
-phantom_tm = TomoP3D.Model(model, N_size, path_library3D)
+# phantom_tm = TomoP3D.Model(model, N_size, path_library3D)
 
-# Projection geometry related parameters:
-Horiz_det = int(np.sqrt(2) * N_size)  # detector column count (horizontal)
-Vert_det = N_size  # detector row count (vertical) (no reason for it to be > N)
-angles_num = int(0.3 * np.pi * N_size)  # angles number
-angles = np.linspace(0.0, 179.9, angles_num, dtype="float32")  # in degrees
-angles_rad = angles * (np.pi / 180.0)
+# # Projection geometry related parameters:
+# Horiz_det = int(np.sqrt(2) * N_size)  # detector column count (horizontal)
+# Vert_det = N_size  # detector row count (vertical) (no reason for it to be > N)
+# angles_num = int(0.3 * np.pi * N_size)  # angles number
+# angles = np.linspace(0.0, 179.9, angles_num, dtype="float32")  # in degrees
+# angles_rad = angles * (np.pi / 180.0)
 
-projData3D_analyt = TomoP3D.ModelSino(
-    model, N_size, Horiz_det, Vert_det, angles, path_library3D
-)
-input_data_labels = ["detY", "angles", "detX"]
+# projData3D_analyt = TomoP3D.ModelSino(
+#     model, N_size, Horiz_det, Vert_det, angles, path_library3D
+# )
+# input_data_labels = ["detY", "angles", "detX"]
 
-print(
-    estimator(
-        projData3D_analyt.shape,
-        projData3D_analyt.dtype,
-        recon_mask_radius=0.95,
-        data_axes_labels_order=input_data_labels,
-        recon_size=Horiz_det,
-        centre_of_rotation=1281,
-        angles_vec=angles_rad,
-    )
-)
+# print(
+#     estimator(
+#         projData3D_analyt.shape,
+#         projData3D_analyt.dtype,
+#         recon_mask_radius=0.95,
+#         data_axes_labels_order=input_data_labels,
+#         recon_size=Horiz_det,
+#         centre_of_rotation=1281,
+#         angles_vec=angles_rad,
+#     )
+# )
