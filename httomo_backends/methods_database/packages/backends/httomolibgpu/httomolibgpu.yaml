@@ -60,7 +60,7 @@ misc:
     rescale_to_int:
       pattern: all
       output_dims_change: False
-      implementation: gpu_cupy
+      implementation: cpu
       save_result_default: False
       padding: False
       memory_gpu:
