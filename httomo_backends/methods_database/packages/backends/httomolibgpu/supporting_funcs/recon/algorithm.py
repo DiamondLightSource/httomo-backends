@@ -175,6 +175,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         detector_pad = 0
 
     angles_tot = non_slice_dims_shape[0]
+    DetectorsLengthH_prepad = non_slice_dims_shape[1]
     DetectorsLengthH = non_slice_dims_shape[1] + 2 * detector_pad
     SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
     _CENTER_SIZE_MIN = 192  # must be divisible by 8
@@ -264,7 +265,9 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         center_size * center_size * (1 + angle_range_pi_count * 2) * np.int16().itemsize
     )
 
-    recon_output_size = DetectorsLengthH * DetectorsLengthH * np.float32().itemsize
+    recon_output_size = (
+        DetectorsLengthH_prepad * DetectorsLengthH_prepad * np.float32().itemsize
+    )
     ifft2_plan_slice_size = (
         cufft_estimate_2d(
             nx=(2 * m + 2 * n), ny=(2 * m + 2 * n), fft_type=CufftType.CUFFT_C2C
@@ -349,7 +352,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(circular_mask_size, False)
     add_to_memory_counters(after_recon_swapaxis_slice, True)
 
-    return (tot_memory_bytes * 1.05, fixed_amount + 250 * 1024 * 1024)
+    return (int(tot_memory_bytes * 1.05), fixed_amount + 250 * 1024 * 1024)
     # return (tot_memory_bytes, fixed_amount)
 
 
@@ -373,7 +376,7 @@ def _calc_memory_bytes_SIRT3d_tomobar(
 
     astra_projection = 2.5 * (in_data_size + out_data_size)
 
-    tot_memory_bytes = 2 * in_data_size + 2 * out_data_size + astra_projection
+    tot_memory_bytes = int(2 * in_data_size + 2 * out_data_size + astra_projection)
     return (tot_memory_bytes, 0)
 
 
@@ -382,14 +385,20 @@ def _calc_memory_bytes_CGLS3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-    DetectorsLengthH = non_slice_dims_shape[1]
+    if "detector_pad" in kwargs:
+        detector_pad = kwargs["detector_pad"]
+    else:
+        detector_pad = 0
+
+    anglesnum = non_slice_dims_shape[0]
+    DetectorsLengthH = non_slice_dims_shape[1] + 2 * detector_pad
     # calculate the output shape
     output_dims = _calc_output_dim_CGLS3d_tomobar(non_slice_dims_shape, **kwargs)
 
-    in_data_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    in_data_size = (anglesnum * DetectorsLengthH) * dtype.itemsize
     out_data_size = np.prod(output_dims) * dtype.itemsize
 
     astra_projection = 2.5 * (in_data_size + out_data_size)
 
-    tot_memory_bytes = 2 * in_data_size + 2 * out_data_size + astra_projection
+    tot_memory_bytes = int(2 * in_data_size + 2 * out_data_size + astra_projection)
     return (tot_memory_bytes, 0)

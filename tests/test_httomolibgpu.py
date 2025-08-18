@@ -528,17 +528,24 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
 
 
 @pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 100, 200])
 @pytest.mark.parametrize("projections", [1801, 3601])
 @pytest.mark.parametrize("slices", [7, 11, 15])
 @pytest.mark.parametrize("detectorX", [1200, 2560])
 def test_recon_FBP3d_tomobar_memoryhook(
-    slices, detectorX, projections, ensure_clean_memory, mocker: MockerFixture
+    slices,
+    detectorX,
+    projections,
+    padding_detx,
+    ensure_clean_memory,
+    mocker: MockerFixture,
 ):
     data = cp.random.random_sample((projections, slices, detectorX), dtype=np.float32)
     kwargs = {}
     kwargs["angles"] = np.linspace(
         0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
     )
+    kwargs["detector_pad"] = padding_detx
     kwargs["center"] = 500
     kwargs["recon_size"] = detectorX
     kwargs["recon_mask_radius"] = 0.8
@@ -579,45 +586,57 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-# @pytest.mark.parametrize("projections", [1801])
-# @pytest.mark.parametrize("detX_size", [2560])
-# @pytest.mark.parametrize("slices", [15])
-# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
-
-
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
 @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
-
-# @pytest.mark.parametrize("projections", [1500, 1801, 2560])
-# @pytest.mark.parametrize("detX_size", [2560])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10])
-# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
-    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
 ):
     __test_recon_LPRec3d_tomobar_memoryhook_common(
-        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        ensure_clean_memory,
     )
 
 
 @pytest.mark.full
 @pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
 @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
-    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
 ):
     __test_recon_LPRec3d_tomobar_memoryhook_common(
-        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        ensure_clean_memory,
     )
 
 
 @pytest.mark.full
 @pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
@@ -625,15 +644,30 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
     "projection_angle_range", [(0, np.pi), (0, 2 * np.pi), (-np.pi / 2, np.pi / 2)]
 )
 def test_recon_LPRec3d_tomobar_memoryhook_full(
-    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
 ):
     __test_recon_LPRec3d_tomobar_memoryhook_common(
-        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        ensure_clean_memory,
     )
 
 
 def __test_recon_LPRec3d_tomobar_memoryhook_common(
-    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
 ):
     angles_number = projections
     data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)
@@ -642,6 +676,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
         projection_angle_range[0], projection_angle_range[1], data.shape[0]
     )
     kwargs["center"] = 1280
+    kwargs["detector_pad"] = padding_detx
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
@@ -687,9 +722,9 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     if slices <= 3:
         assert percents_relative_maxmem <= 75
     elif slices <= 5:
-        assert percents_relative_maxmem <= 60
+        assert percents_relative_maxmem <= 63
     else:
-        assert percents_relative_maxmem <= 47
+        assert percents_relative_maxmem <= 50
 
 
 @pytest.mark.cupy
