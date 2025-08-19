@@ -219,7 +219,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     if odd_horiz:
         output_dims = tuple(x + 1 for x in output_dims)
 
-    in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
+    in_slice_size = (angles_tot * DetectorsLengthH) * dtype.itemsize
     padded_in_slice_size = angles_tot * n * np.float32().itemsize
 
     theta_size = angles_tot * np.float32().itemsize
@@ -352,9 +352,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(circular_mask_size, False)
     add_to_memory_counters(after_recon_swapaxis_slice, True)
 
-    return (int(tot_memory_bytes * 1.05), fixed_amount + 250 * 1024 * 1024)
-    # return (tot_memory_bytes, fixed_amount)
-
+    return (tot_memory_bytes * 1.05, fixed_amount + 250 * 1024 * 1024)
 
 def _calc_memory_bytes_SIRT3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
