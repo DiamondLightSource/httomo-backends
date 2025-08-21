@@ -158,7 +158,7 @@ def yaml_pipelines_generator(
             elif "corr" in module_name and "remove_outlier" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
-                    "--- Removing dead pixels in the data, aka zingers. Use if sharp streaks are present in reconstruction. ---",
+                    "--- Removing dead pixels in the data, aka zingers. Use if sharp streaks are present in reconstruction. Please use before normalisation. ---",
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
