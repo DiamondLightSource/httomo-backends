@@ -149,7 +149,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="cor",
-                    comment="A side output of the method, here a CoR scalar value",
+                    comment="An estimated CoR value provided as a side output",
                 )
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="overlap",
@@ -158,7 +158,7 @@ def yaml_pipelines_generator(
             elif "corr" in module_name and "remove_outlier" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
-                    "--- Removing dead pixels in the data, aka zingers. Use if sharp streaks are present in reconstruction. Please use before normalisation. ---",
+                    "--- Removing unresponsive pixels in the data, aka zingers. Use if sharp streaks are present in the reconstruction. To be applied before normalisation. ---",
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
@@ -166,9 +166,14 @@ def yaml_pipelines_generator(
                     # fix for the absent parameter in TomoPy's algorithm
                     pipeline_full[i]["parameters"]["dif"] = 0.1
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
-                    key="dif",
-                    comment="A difference between the outlier value and the median value of neighboring pixels.",
+                    key="kernel_size",
+                    comment="The size of the 3D neighbourhood surrounding the voxel. Odd integer.",
                 )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="dif",
+                    comment="A difference between the outlier value and the median value of neighbouring pixels.",
+                )
+
             elif "distortion" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
@@ -225,8 +230,12 @@ def yaml_pipelines_generator(
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="center",
-                    comment="Reference to center of rotation side output OR an integer.",
+                    comment="Reference to center of rotation side output above OR a float number.",
                 )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="detector_pad",
+                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction",
+                )                
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="recon_mask_radius",
                     comment="Zero pixels outside the mask-circle radius.",
