@@ -15,7 +15,7 @@ from httomo_backends.methods_database.query import MethodsDatabaseQuery
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu.prep.phase import paganin_filter_tomopy, paganin_filter_savu
+from httomolibgpu.prep.phase import paganin_filter_tomopy
 from httomolibgpu.prep.alignment import distortion_correction_proj_discorpy
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
@@ -243,48 +243,6 @@ def test_paganin_filter_tomopy_memoryhook(slices, dim_x, dim_y, ensure_clean_mem
     max_mem_mb = round(max_mem / (1024**2), 2)
 
     # now we compare both memory estimations
-    difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
-    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
-    # the resulting percent value should not deviate from max_mem on more than 20%
-    assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 20
-
-
-@pytest.mark.cupy
-@pytest.mark.parametrize("slices", [64, 128])
-@pytest.mark.parametrize("dim_x", [81, 260, 320])
-@pytest.mark.parametrize("dim_y", [340, 135, 96])
-def test_paganin_filter_savu_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
-    data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
-    kwargs = {}
-    kwargs["ratio"] = 250.0
-    kwargs["energy"] = 53.0
-    kwargs["distance"] = 1.0
-    kwargs["resolution"] = 1.28
-    kwargs["pad_x"] = 20
-    kwargs["pad_y"] = 20
-    kwargs["pad_method"] = "edge"
-    kwargs["increment"] = 0.0
-    hook = MaxMemoryHook()
-    with hook:
-        data_filtered = paganin_filter_savu(data, **kwargs).get()
-
-    # The amount of bytes used by the method's processing according to the memory hook, plus
-    # the amount of bytes needed to hold the method's input in GPU memory
-    max_mem = hook.max_mem + data.nbytes
-
-    # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_paganin_filter_savu(
-        (dim_x, dim_y), np.float32(), **kwargs
-    )
-    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
-    max_mem -= subtract_bytes
-    max_mem_mb = round(max_mem / (1024**2), 2)
-
-    # now we compare both memory estimations
-    #
-    # make sure estimator function is within range (80% min, 100% max)
     difference_mb = abs(estimated_memory_mb - max_mem_mb)
     percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb

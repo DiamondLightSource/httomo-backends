@@ -30,6 +30,7 @@ __all__ = [
     "_calc_memory_bytes_paganin_filter_tomopy",
 ]
 
+
 def _calc_memory_bytes_paganin_filter_tomopy(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
