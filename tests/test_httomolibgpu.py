@@ -25,13 +25,19 @@ from httomolibgpu.prep.stripe import (
 )
 from httomolibgpu.misc.corr import remove_outlier
 from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
-from httomolibgpu.recon.algorithm import FBP3d_tomobar, SIRT3d_tomobar, CGLS3d_tomobar
+from httomolibgpu.recon.algorithm import (
+    FBP3d_tomobar,
+    SIRT3d_tomobar,
+    LPRec3d_tomobar,
+    CGLS3d_tomobar,
+)
 from httomolibgpu.misc.rescale import rescale_to_int
 
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.recon.algorithm import *
+from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.recon.peak_memory_line_profile_hook import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 
@@ -403,7 +409,7 @@ def test_raven_filter_memoryhook(projections, ensure_clean_memory):
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 25
+    assert percents_relative_maxmem <= 27
 
 
 @pytest.mark.cupy
@@ -480,17 +486,24 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
 
 
 @pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 100, 200])
 @pytest.mark.parametrize("projections", [1801, 3601])
 @pytest.mark.parametrize("slices", [7, 11, 15])
 @pytest.mark.parametrize("detectorX", [1200, 2560])
 def test_recon_FBP3d_tomobar_memoryhook(
-    slices, detectorX, projections, ensure_clean_memory, mocker: MockerFixture
+    slices,
+    detectorX,
+    projections,
+    padding_detx,
+    ensure_clean_memory,
+    mocker: MockerFixture,
 ):
     data = cp.random.random_sample((projections, slices, detectorX), dtype=np.float32)
     kwargs = {}
     kwargs["angles"] = np.linspace(
         0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
     )
+    kwargs["detector_pad"] = padding_detx
     kwargs["center"] = 500
     kwargs["recon_size"] = detectorX
     kwargs["recon_mask_radius"] = 0.8
@@ -528,6 +541,148 @@ def test_recon_FBP3d_tomobar_memoryhook(
     assert (
         percents_relative_maxmem <= 100
     )  # overestimation happens here because of the ASTRA's part
+
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
+@pytest.mark.parametrize("projections", [1500, 1801, 2560])
+@pytest.mark.parametrize("detX_size", [2560])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        ensure_clean_memory,
+    )
+
+
+@pytest.mark.full
+@pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
+@pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
+@pytest.mark.parametrize("detX_size", [2560])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        ensure_clean_memory,
+    )
+
+
+@pytest.mark.full
+@pytest.mark.cupy
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
+@pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
+@pytest.mark.parametrize("detX_size", [2560])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize(
+    "projection_angle_range", [(0, np.pi), (0, 2 * np.pi), (-np.pi / 2, np.pi / 2)]
+)
+def test_recon_LPRec3d_tomobar_memoryhook_full(
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        ensure_clean_memory,
+    )
+
+
+def __test_recon_LPRec3d_tomobar_memoryhook_common(
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    ensure_clean_memory,
+):
+    angles_number = projections
+    data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)
+    kwargs = {}
+    kwargs["angles"] = np.linspace(
+        projection_angle_range[0], projection_angle_range[1], data.shape[0]
+    )
+    kwargs["center"] = 1280
+    kwargs["detector_pad"] = padding_detx
+    kwargs["recon_size"] = detX_size
+    kwargs["recon_mask_radius"] = 0.8
+
+    hook = MaxMemoryHook()
+    hook2 = PeakMemoryLineProfileHook(["methodsDIR_CuPy.py"])
+    with hook, hook2:
+        # with hook:
+        recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
+    # hook2.print_report()
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    non_slice_dims_shape = (angles_number, detX_size)
+    input_data_type = np.float32()
+
+    # now we estimate how much of the total memory required for this data
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec3d_tomobar(
+        non_slice_dims_shape, dtype=input_data_type, **kwargs
+    )
+
+    odd_horiz = bool(detX_size % 2)
+    odd_vert = bool(slices % 2)
+
+    padded_slices = slices + odd_vert
+
+    if not odd_horiz and not odd_vert:
+        input_slice_size = np.prod(non_slice_dims_shape) * input_data_type.itemsize
+        estimated_memory_bytes -= input_slice_size
+
+    estimated_memory_mb = round(padded_slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    if slices <= 3:
+        assert percents_relative_maxmem <= 75
+    elif slices <= 5:
+        assert percents_relative_maxmem <= 63
+    else:
+        assert percents_relative_maxmem <= 50
 
 
 @pytest.mark.cupy

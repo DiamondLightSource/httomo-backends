@@ -1,4 +1,12 @@
 misc:
+  rescale:
+    rescale_to_int:
+      pattern: all
+      output_dims_change: False
+      implementation: cpu
+      memory_gpu: None
+      save_result_default: False
+      padding: False
   morph:
     data_reducer:
       pattern: all
