@@ -354,6 +354,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     return (tot_memory_bytes * 1.05, fixed_amount + 250 * 1024 * 1024)
 
+
 def _calc_memory_bytes_SIRT3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
