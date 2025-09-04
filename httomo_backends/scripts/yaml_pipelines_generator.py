@@ -235,7 +235,7 @@ def yaml_pipelines_generator(
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="detector_pad",
                     comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction",
-                )                
+                )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="recon_mask_radius",
                     comment="Zero pixels outside the mask-circle radius.",
