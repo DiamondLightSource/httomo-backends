@@ -31,6 +31,13 @@ import ruamel.yaml
 import httomo_backends
 import yaml
 
+try:
+    from httomo import __version__
+except:
+    __version__ = "2.5"  # backup version
+    pass
+
+
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
 
@@ -115,6 +122,8 @@ def yaml_pipelines_generator(
                     yaml_template_method = yaml.load(stream)
                 except OSError as e:
                     print("loading yaml template failed", e)
+
+            pipeline_full.yaml_set_start_comment(f"This pipeline is supported by HTTomo ver. {__version__.split('.')[0]}.{__version__.split('.')[1]}")
 
             if "loaders" in module_name:
                 # should be the first method in the list
