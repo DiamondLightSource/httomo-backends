@@ -1,0 +1,13 @@
+- method: standard_tomo
+  module_path: httomo.data.hdf.loaders
+- method: normalize
+  module_path: httomolibgpu.prep.normalize
+- method: paganin_filter_tomopy
+  module_path: httomolibgpu.prep.phase
+  sweep_parameter: alpha
+  sweep_value1: 0.01
+  sweep_value2: 0.001
+  sweep_value3: 0.0001
+- method: FBP3d_tomobar
+  module_path: httomolibgpu.recon.algorithm  
+

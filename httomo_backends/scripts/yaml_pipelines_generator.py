@@ -41,6 +41,13 @@ class SweepRange:
         self._start, self._stop, self._step = start, stop, step
 
 
+class SweepValue:
+    """SweepValue class."""
+
+    def __init__(self, val1, val2, val3):
+        self._val1, self._val2, self._val3 = val1, val2, val3
+
+
 def __sweeprange_representer(
     dumper: yaml.SafeDumper, swp: SweepRange
 ) -> yaml.nodes.MappingNode:
@@ -53,6 +60,13 @@ def __sweeprange_representer(
             "step": swp._step,
         },
     )
+
+
+def __sweepvalue_representer(
+    dumper: yaml.SafeDumper, swp: SweepValue
+) -> yaml.nodes.MappingNode:
+    """Represent a sweepvalue as a YAML mapping node."""
+    return dumper.represent_sequence("!Sweep", [swp._val1, swp._val2, swp._val3])
 
 
 def __represent_none(self, data):
@@ -86,17 +100,24 @@ def yaml_pipelines_generator(
         # a loop over methods in the high-level pipeline file (directive)
         methods_no = len(pipeline_file_content)
         pipeline_full = CS()
-        sweep_enabled = False
+        sweep_enabled_range = False
+        sweep_enabled_value = False
         for i in range(methods_no):
             method_content = pipeline_file_content[i]
             method_name = method_content["method"]
             module_name = method_content["module_path"]
             if "sweep_parameter" in method_content:
                 sweep_parameter = method_content["sweep_parameter"]
-                sweep_start = method_content["sweep_start"]
-                sweep_stop = method_content["sweep_stop"]
-                sweep_step = method_content["sweep_step"]
-                sweep_enabled = True
+                if "sweep_start" in method_content:
+                    sweep_start = method_content["sweep_start"]
+                    sweep_stop = method_content["sweep_stop"]
+                    sweep_step = method_content["sweep_step"]
+                    sweep_enabled_range = True
+                else:
+                    sweep_val1 = method_content["sweep_value1"]
+                    sweep_val2 = method_content["sweep_value2"]
+                    sweep_val3 = method_content["sweep_value3"]
+                    sweep_enabled_value = True
 
             # get the corresponding yaml template from httomo-backends
             backend_name = module_name[0 : module_name.find(".")]
@@ -291,13 +312,20 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full += yaml_template_method
 
-            if sweep_enabled:
+            if sweep_enabled_range:
                 pipeline_full[i]["parameters"][sweep_parameter] = SweepRange(
                     start=sweep_start, stop=sweep_stop, step=sweep_step
                 )
+                yaml.representer.add_representer(SweepRange, __sweeprange_representer)
+                sweep_enabled_range = False
+            if sweep_enabled_value:
+                pipeline_full[i]["parameters"][sweep_parameter] = SweepValue(
+                    val1=sweep_val1, val2=sweep_val2, val3=sweep_val3
+                )
+                yaml.representer.add_representer(SweepValue, __sweepvalue_representer)
+                sweep_enabled_value = False
 
         yaml.representer.add_representer(type(None), __represent_none)
-        yaml.representer.add_representer(SweepRange, __sweeprange_representer)
         yaml.dump(pipeline_full, f)
 
     return 0
