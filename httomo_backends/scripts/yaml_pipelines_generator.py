@@ -33,20 +33,11 @@ import yaml
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
-
 class SweepRange:
     """SweepRange class."""
 
     def __init__(self, start, stop, step):
         self._start, self._stop, self._step = start, stop, step
-
-
-class SweepValue:
-    """SweepValue class."""
-
-    def __init__(self, val1, val2, val3):
-        self._val1, self._val2, self._val3 = val1, val2, val3
-
 
 def __sweeprange_representer(
     dumper: yaml.SafeDumper, swp: SweepRange
@@ -61,12 +52,18 @@ def __sweeprange_representer(
         },
     )
 
+class SweepManual:
+    """SweepManual class."""
 
-def __sweepvalue_representer(
-    dumper: yaml.SafeDumper, swp: SweepValue
-) -> yaml.nodes.MappingNode:
-    """Represent a sweepvalue as a YAML mapping node."""
-    return dumper.represent_sequence("!Sweep", [swp._val1, swp._val2, swp._val3])
+    def __init__(self, lst):
+        self._lst = lst
+
+
+def __sweepmanual_representer(
+    dumper: yaml.SafeDumper, swp: SweepManual
+) -> yaml.nodes.SequenceNode:
+    """Represent a sweepmanual as a YAML sequence node."""
+    return dumper.represent_sequence("!Sweep", swp._lst)
 
 
 def __represent_none(self, data):
@@ -114,9 +111,7 @@ def yaml_pipelines_generator(
                     sweep_step = method_content["sweep_step"]
                     sweep_enabled_range = True
                 else:
-                    sweep_val1 = method_content["sweep_value1"]
-                    sweep_val2 = method_content["sweep_value2"]
-                    sweep_val3 = method_content["sweep_value3"]
+                    sweep_values = method_content["sweep_values"]
                     sweep_enabled_value = True
 
             # get the corresponding yaml template from httomo-backends
@@ -319,10 +314,10 @@ def yaml_pipelines_generator(
                 yaml.representer.add_representer(SweepRange, __sweeprange_representer)
                 sweep_enabled_range = False
             if sweep_enabled_value:
-                pipeline_full[i]["parameters"][sweep_parameter] = SweepValue(
-                    val1=sweep_val1, val2=sweep_val2, val3=sweep_val3
+                pipeline_full[i]["parameters"][sweep_parameter] = SweepManual(
+                    list(sweep_values)
                 )
-                yaml.representer.add_representer(SweepValue, __sweepvalue_representer)
+                yaml.representer.add_representer(SweepManual, __sweepmanual_representer)
                 sweep_enabled_value = False
 
         yaml.representer.add_representer(type(None), __represent_none)
