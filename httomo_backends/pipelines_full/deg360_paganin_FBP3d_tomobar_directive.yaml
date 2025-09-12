@@ -1,9 +1,9 @@
 - method: standard_tomo
   module_path: httomo.data.hdf.loaders
-- method: normalize
-  module_path: httomolibgpu.prep.normalize  
 - method: find_center_360
   module_path: httomolibgpu.recon.rotation
+- method: normalize
+  module_path: httomolibgpu.prep.normalize  
 - method: sino_360_to_180
   module_path: httomolibgpu.misc.morph
 - method: remove_stripe_based_sorting
