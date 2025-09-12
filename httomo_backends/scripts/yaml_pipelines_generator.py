@@ -33,11 +33,13 @@ import yaml
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
+
 class SweepRange:
     """SweepRange class."""
 
     def __init__(self, start, stop, step):
         self._start, self._stop, self._step = start, stop, step
+
 
 def __sweeprange_representer(
     dumper: yaml.SafeDumper, swp: SweepRange
@@ -51,6 +53,7 @@ def __sweeprange_representer(
             "step": swp._step,
         },
     )
+
 
 class SweepManual:
     """SweepManual class."""

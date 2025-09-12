@@ -117,9 +117,7 @@ def test_normalize_memoryhook(flats, darks, ensure_clean_memory, dtype, slices):
 @pytest.mark.cupy
 def test_remove_outlier_memoryhook(flats, ensure_clean_memory, dtype, slices):
     hook = MaxMemoryHook()
-    data = cp.random.random_sample(
-        (slices, 2560, 2560), dtype=np.float32
-    )
+    data = cp.random.random_sample((slices, 2560, 2560), dtype=np.float32)
     if dtype == "uint16":
         data = data.astype(np.uint16)
     with hook:
