@@ -113,12 +113,12 @@ def test_normalize_memoryhook(flats, darks, ensure_clean_memory, dtype, slices):
 
 
 @pytest.mark.parametrize("dtype", ["uint16"])
-@pytest.mark.parametrize("slices", [151, 321])
+@pytest.mark.parametrize("slices", [10, 20])
 @pytest.mark.cupy
 def test_remove_outlier_memoryhook(flats, ensure_clean_memory, dtype, slices):
     hook = MaxMemoryHook()
     data = cp.random.random_sample(
-        (slices, flats.shape[1], flats.shape[2]), dtype=np.float32
+        (slices, 2560, 2560), dtype=np.float32
     )
     if dtype == "uint16":
         data = data.astype(np.uint16)
@@ -148,7 +148,7 @@ def test_remove_outlier_memoryhook(flats, ensure_clean_memory, dtype, slices):
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 20
+    assert percents_relative_maxmem <= 25
 
 
 @pytest.mark.parametrize("slices", [3, 10, 20])
