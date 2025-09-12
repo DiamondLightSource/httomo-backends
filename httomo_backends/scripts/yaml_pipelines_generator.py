@@ -33,13 +33,11 @@ import yaml
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
-
 class SweepRange:
     """SweepRange class."""
 
     def __init__(self, start, stop, step):
         self._start, self._stop, self._step = start, stop, step
-
 
 def __sweeprange_representer(
     dumper: yaml.SafeDumper, swp: SweepRange
@@ -53,6 +51,19 @@ def __sweeprange_representer(
             "step": swp._step,
         },
     )
+
+class SweepManual:
+    """SweepManual class."""
+
+    def __init__(self, lst):
+        self._lst = lst
+
+
+def __sweepmanual_representer(
+    dumper: yaml.SafeDumper, swp: SweepManual
+) -> yaml.nodes.SequenceNode:
+    """Represent a sweepmanual as a YAML sequence node."""
+    return dumper.represent_sequence("!Sweep", swp._lst)
 
 
 def __represent_none(self, data):
@@ -86,17 +97,22 @@ def yaml_pipelines_generator(
         # a loop over methods in the high-level pipeline file (directive)
         methods_no = len(pipeline_file_content)
         pipeline_full = CS()
-        sweep_enabled = False
+        sweep_enabled_range = False
+        sweep_enabled_value = False
         for i in range(methods_no):
             method_content = pipeline_file_content[i]
             method_name = method_content["method"]
             module_name = method_content["module_path"]
             if "sweep_parameter" in method_content:
                 sweep_parameter = method_content["sweep_parameter"]
-                sweep_start = method_content["sweep_start"]
-                sweep_stop = method_content["sweep_stop"]
-                sweep_step = method_content["sweep_step"]
-                sweep_enabled = True
+                if "sweep_start" in method_content:
+                    sweep_start = method_content["sweep_start"]
+                    sweep_stop = method_content["sweep_stop"]
+                    sweep_step = method_content["sweep_step"]
+                    sweep_enabled_range = True
+                else:
+                    sweep_values = method_content["sweep_values"]
+                    sweep_enabled_value = True
 
             # get the corresponding yaml template from httomo-backends
             backend_name = module_name[0 : module_name.find(".")]
@@ -291,13 +307,20 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full += yaml_template_method
 
-            if sweep_enabled:
+            if sweep_enabled_range:
                 pipeline_full[i]["parameters"][sweep_parameter] = SweepRange(
                     start=sweep_start, stop=sweep_stop, step=sweep_step
                 )
+                yaml.representer.add_representer(SweepRange, __sweeprange_representer)
+                sweep_enabled_range = False
+            if sweep_enabled_value:
+                pipeline_full[i]["parameters"][sweep_parameter] = SweepManual(
+                    list(sweep_values)
+                )
+                yaml.representer.add_representer(SweepManual, __sweepmanual_representer)
+                sweep_enabled_value = False
 
         yaml.representer.add_representer(type(None), __represent_none)
-        yaml.representer.add_representer(SweepRange, __sweeprange_representer)
         yaml.dump(pipeline_full, f)
 
     return 0
