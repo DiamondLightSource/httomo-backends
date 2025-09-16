@@ -31,10 +31,13 @@ import ruamel.yaml
 import httomo_backends
 import yaml
 
-from httomo import __version__ as httomo_version
+try:
+    from httomo import __version__ as httomo_version
+except:
+    httomo_version = "2.5"  # temporary version fix for sphinx build
+    pass
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
-
 
 class SweepRange:
     """SweepRange class."""
