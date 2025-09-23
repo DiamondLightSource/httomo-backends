@@ -216,6 +216,17 @@ def yaml_pipelines_generator(
                     key="metadata_path",
                     comment="Provide an absolute path to the text file with distortion coefficients.",
                 )
+            elif "data_resampler" in method_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Down/up sampling the data. --- ",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="newshape",
+                    comment="Provide a new shape for a 2D slice, e.g. [256, 256].",
+                )
             elif "sino_360_to_180" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
