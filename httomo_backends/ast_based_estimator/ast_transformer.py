@@ -3,62 +3,16 @@ import inspect
 import textwrap
 from types import FunctionType
 from typing import Any, Dict
-from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
 import httomo_backends.ast_based_estimator.fake as fake
 
 
 class MemoryEstimatorTransformer(ast.NodeTransformer):
     def __init__(self, output_function_name):
         self.output_function_name = output_function_name
-        self.custom_kernel_modules = []
-        self.custom_kernels = []
-
-    def visit_Call(self, node: ast.Call) -> ast.AST:
-        call_name = None
-        if isinstance(node.func, ast.Name):
-            call_name = node.func.id
-        if isinstance(node.func, ast.Attribute) and isinstance(
-            node.func.value, ast.Name
-        ):
-            call_name = node.func.attr
-
-        if call_name in ["globals"]:
-            return node
-
-        if call_name in self.custom_kernels:
-            return ast.Call(
-                func=ast.Name(id="noop", ctx=ast.Load()),
-                lineno=node.lineno,
-                args=[],
-                keywords=[],
-            )
-
-        return self.generic_visit(
-            ast.Call(
-                func=ast.Attribute(
-                    value=ast.Name(id="fake", ctx=ast.Load()),
-                    attr="override_globals_shim",
-                    ctx=ast.Load(),
-                ),
-                args=[
-                    node.func,
-                    ast.Subscript(
-                        value=ast.Call(
-                            func=ast.Name(id="globals", ctx=ast.Load()),
-                            args=[],
-                            keywords=[],
-                        ),
-                        slice=ast.Constant(value=self.output_function_name),
-                        ctx=ast.Load(),
-                    ),
-                    *node.args,
-                ],
-                keywords=[],
-            )
-        )
+        self.function_calls_in_statement = set()
 
     def visit_FunctionDef(self, node):
-        if node.name in ["noop", "override_globals_shim"]:
+        if node.name in ["override_globals_shim"]:
             return node
 
         new_args = []
@@ -74,12 +28,6 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
             new_args.append(arg)
 
         new_body = [
-            ast.FunctionDef(
-                name="noop",
-                args=ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], defaults=[]),
-                body=[ast.Pass()],
-                decorator_list=[],
-            ),
             ast.Assign(
                 targets=[ast.Name(id="data", ctx=ast.Store())],
                 value=ast.Call(
@@ -111,7 +59,37 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
                     targets=[ast.Name(id="return_value", ctx=ast.Store())],
                     value=statement.value,
                 )
-            new_body.append(statement)
+
+            visited_statement = self.generic_visit(statement)
+            for function_call in self.function_calls_in_statement:
+                new_body.append(
+                    ast.Expr(
+                        ast.Call(
+                            func=ast.Attribute(
+                                value=ast.Name(id="fake", ctx=ast.Load()),
+                                attr="override_globals",
+                                ctx=ast.Load(),
+                            ),
+                            args=[
+                                function_call,
+                                ast.Subscript(
+                                    value=ast.Call(
+                                        func=ast.Name(id="globals", ctx=ast.Load()),
+                                        args=[],
+                                        keywords=[],
+                                    ),
+                                    slice=ast.Constant(value=self.output_function_name),
+                                    ctx=ast.Load(),
+                                ),
+                            ],
+                            keywords=[],
+                        )
+                    )
+                )
+
+            self.function_calls_in_statement = set()
+
+            new_body.append(visited_statement)
 
         new_body.append(
             ast.Return(
@@ -130,6 +108,22 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
 
         return self.generic_visit(node)
 
+    def visit_Call(self, node: ast.Call) -> ast.AST:
+        call_name = None
+        if isinstance(node.func, ast.Name):
+            call_name = node.func.id
+        if isinstance(node.func, ast.Attribute) and isinstance(
+            node.func.value, ast.Name
+        ):
+            call_name = node.func.attr
+
+        if call_name in ["globals"]:
+            return node
+
+        self.function_calls_in_statement.add(node.func)
+
+        return self.generic_visit(node)
+
     def visit_Attribute(self, node):
         current = node
         while isinstance(current, ast.Attribute):
@@ -141,31 +135,6 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
                 slice=ast.Constant(value=node.attr),
                 ctx=ast.Load(),
             )
-
-        return self.generic_visit(node)
-
-    def visit_Assign(self, node):
-        if (
-            isinstance(node.value, ast.Call)
-            and isinstance(node.value.func, ast.Name)
-            and node.value.func.id == "load_cuda_module"
-        ):
-            self.custom_kernel_modules.extend(
-                [target.id for target in node.targets if isinstance(target, ast.Name)]
-            )
-            node.value = ast.Constant(value=None)
-
-        if (
-            isinstance(node.value, ast.Call)
-            and isinstance(node.value.func, ast.Attribute)
-            and isinstance(node.value.func.value, ast.Name)
-            and node.value.func.value.id in self.custom_kernel_modules
-            and node.value.func.attr == "get_function"
-        ):
-            self.custom_kernels.extend(
-                [target.id for target in node.targets if isinstance(target, ast.Name)]
-            )
-            node.value = ast.Constant(value=None)
 
         return self.generic_visit(node)
 
@@ -190,6 +159,7 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     global_namespace["fft_plan_cache"] = fft_plan_cache
     global_namespace["fake"] = fake
     global_namespace["cupy"] = fake.cupy
+    # global_namespace["httomolibgpu"] = fake.httomolibgpu
     global_namespace["cp"] = fake.cupy
     global_namespace["xp"] = fake.cupy
     global_namespace["fft"] = fake.cupyx.scipy.fft.fft
@@ -197,6 +167,7 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     global_namespace["rfftfreq"] = fake.cupyx.scipy.fft.rfftfreq
     global_namespace["rfft"] = fake.cupyx.scipy.fft.rfft
     global_namespace["irfft"] = fake.cupyx.scipy.fft.irfft
+    global_namespace["load_cuda_module"] = fake.tomobar.cuda_kernels.load_cuda_module
 
     namespace: Dict[str, Any] = {}
     exec(compile(tree, filename="<ast>", mode="exec"), global_namespace, namespace)
@@ -206,8 +177,8 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     return namespace[output_function_name]
 
 
-original_func = RecToolsDIRCuPy.__dict__["FOURIER_INV"]
-estimator = memory_estimator_from_function(original_func)
+# original_func = RecToolsDIRCuPy.__dict__["FOURIER_INV"]
+# estimator = memory_estimator_from_function(original_func)
 
 
 # import os

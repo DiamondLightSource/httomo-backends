@@ -1,13 +1,24 @@
 import numpy as np
+import sys
 
 from . import fft
 
 __all__ = ["fft"]
 
 
+__name__ = "cupy"
+
+
+def get_array_module(array):
+    return sys.modules[__name__]
+
+
 class ndarray:
     def __init__(self, shape, dtype="float32"):
         memory_usage = globals().get("memory_usage")
+
+        if not isinstance(shape, tuple) and not isinstance(shape, list):
+            shape = (shape,)
 
         self.shape = shape
         self.dtype = dtype
@@ -170,6 +181,23 @@ def pad(array, pad_width):
     )
 
 
+def swapaxes(array, axis1, axis2):
+    shape = list(array.shape)
+    shape[axis1], shape[axis2] = shape[axis2], shape[axis1]
+    return ndarray(tuple(shape), array.dtype)
+
+
+def require(array, dtype=None, requirements=None):
+    if not requirements:
+        return ndarray(array.shape, dtype)
+
+    copy = "OWNDATA" in requirements
+    if copy:
+        return ndarray(array.shape, dtype=dtype)
+
+    return array
+
+
 def exp(array):
     return ndarray(array.shape, array.dtype)
 
@@ -181,3 +209,20 @@ def argsort(a, axis=-1, kind=None):
         shape = a.shape
 
     return ndarray(shape, np.intp)
+
+
+def count_nonzero(array):
+    pass
+
+
+class RawKernel:
+    def __call__(self, grid, block, args, **kwargs):
+        pass
+
+
+class RawModule:
+    def __init__(self, options, code, name_expressions):
+        pass
+
+    def get_function(self, name: str):
+        return RawKernel()
