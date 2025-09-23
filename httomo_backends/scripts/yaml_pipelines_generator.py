@@ -34,7 +34,7 @@ import yaml
 try:
     from httomo import __version__ as httomo_version
 except:
-    httomo_version = "2.5"  # temporary version fix for sphinx build
+    httomo_version = "2.6"  # temporary version fix for sphinx build
     pass
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
