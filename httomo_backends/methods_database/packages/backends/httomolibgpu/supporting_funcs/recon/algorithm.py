@@ -488,6 +488,7 @@ def _calc_memory_bytes_FISTA3d_tomobar(
     out_data_size = np.prod(output_dims_larger_grid) * dtype.itemsize
     X_t = out_data_size
     X_old = out_data_size
+   
     grad_fidelity = out_data_size
 
     fista_part = (
@@ -499,7 +500,7 @@ def _calc_memory_bytes_FISTA3d_tomobar(
         + X_old
         + out_data_size
     )
-    regul_part = 6 * np.prod(output_dims_larger_grid) * dtype.itemsize
+    regul_part = 8 * np.prod(output_dims_larger_grid) * dtype.itemsize
 
     tot_memory_bytes = int(fista_part + regul_part)
     return (tot_memory_bytes, 0)
