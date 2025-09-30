@@ -174,6 +174,9 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     else:
         detector_pad = 0
 
+    min_mem_usage_filter = False
+    min_mem_usage_ifft2 = False
+
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH_prepad = non_slice_dims_shape[1]
     DetectorsLengthH = non_slice_dims_shape[1] + 2 * detector_pad
@@ -252,7 +255,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     irfft_result_size = angles_tot * (n + padding_m * 2) * np.float32().itemsize
 
     datac_size = angles_tot * n * np.complex64().itemsize / 2
-    fde_size = (2 * m + 2 * n) * (2 * m + 2 * n) * np.complex64().itemsize / 2
+    fde_size = 2 * n * 2 * n * np.complex64().itemsize / 2
     fft_plan_slice_size = (
         cufft_estimate_1d(nx=n, fft_type=CufftType.CUFFT_C2C, batch=angles_tot * SLICES)
         / SLICES
@@ -270,7 +273,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     )
     ifft2_plan_slice_size = (
         cufft_estimate_2d(
-            nx=(2 * m + 2 * n), ny=(2 * m + 2 * n), fft_type=CufftType.CUFFT_C2C
+            nx=2 * n, ny=2 * n, fft_type=CufftType.CUFFT_C2C
         )
         / 2
     )
@@ -309,24 +312,40 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(scaled_filter_size, False)
 
     add_to_memory_counters(tmp_p_input_slice, True)
+    if min_mem_usage_filter:
+        add_to_memory_counters(rfft_plan_slice_size * 2, False)
+        add_to_memory_counters(irfft_plan_slice_size * 2, False)
+        add_to_memory_counters(padded_tmp_p_input_slice, False)
 
-    add_to_memory_counters(rfft_plan_slice_size / chunk_count * 2, True)
-    add_to_memory_counters(irfft_plan_slice_size / chunk_count * 2, True)
-    # add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
-    for _ in range(0, chunk_count):
-        add_to_memory_counters(padded_tmp_p_input_slice / chunk_count, True)
+        add_to_memory_counters(rfft_result_size, False)
+        add_to_memory_counters(filtered_rfft_result_size, False)
+        add_to_memory_counters(-rfft_result_size, False)
+        add_to_memory_counters(-padded_tmp_p_input_slice, False)
 
-        add_to_memory_counters(rfft_result_size / chunk_count, True)
-        add_to_memory_counters(filtered_rfft_result_size / chunk_count, True)
-        add_to_memory_counters(-rfft_result_size / chunk_count, True)
-        add_to_memory_counters(-padded_tmp_p_input_slice / chunk_count, True)
+        add_to_memory_counters(irfft_scratch_memory_size, False)
+        add_to_memory_counters(-irfft_scratch_memory_size, False)
+        add_to_memory_counters(irfft_result_size, False)
+        add_to_memory_counters(-filtered_rfft_result_size, False)
 
-        add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
-        add_to_memory_counters(-irfft_scratch_memory_size / chunk_count, True)
-        add_to_memory_counters(irfft_result_size / chunk_count, True)
-        add_to_memory_counters(-filtered_rfft_result_size / chunk_count, True)
+        add_to_memory_counters(-irfft_result_size, False)
+    else:
+        add_to_memory_counters(rfft_plan_slice_size / chunk_count * 2, True)
+        add_to_memory_counters(irfft_plan_slice_size / chunk_count * 2, True)
+        # add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
+        for _ in range(0, chunk_count):
+            add_to_memory_counters(padded_tmp_p_input_slice / chunk_count, True)
 
-        add_to_memory_counters(-irfft_result_size / chunk_count, True)
+            add_to_memory_counters(rfft_result_size / chunk_count, True)
+            add_to_memory_counters(filtered_rfft_result_size / chunk_count, True)
+            add_to_memory_counters(-rfft_result_size / chunk_count, True)
+            add_to_memory_counters(-padded_tmp_p_input_slice / chunk_count, True)
+
+            add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
+            add_to_memory_counters(-irfft_scratch_memory_size / chunk_count, True)
+            add_to_memory_counters(irfft_result_size / chunk_count, True)
+            add_to_memory_counters(-filtered_rfft_result_size / chunk_count, True)
+
+            add_to_memory_counters(-irfft_result_size / chunk_count, True)
 
     add_to_memory_counters(-padded_in_slice_size, True)
     add_to_memory_counters(-filter_size, False)
@@ -342,17 +361,25 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     add_to_memory_counters(-fft_result_size, True)
 
-    add_to_memory_counters(ifft2_plan_slice_size / chunk_count * 2, True)
-    for _ in range(0, chunk_count):
-        add_to_memory_counters(fde_size / chunk_count, True)
-        add_to_memory_counters(-fde_size / chunk_count, True)
+    if min_mem_usage_ifft2:
+        add_to_memory_counters(ifft2_plan_slice_size * 2, False)
+        add_to_memory_counters(fde_size * 2, False)
+        add_to_memory_counters(-fde_size * 2, False)
+    else:
+        add_to_memory_counters(ifft2_plan_slice_size / chunk_count * 2, True)
+        for _ in range(0, chunk_count):
+            add_to_memory_counters(fde_size / chunk_count, True)
+            add_to_memory_counters(-fde_size / chunk_count, True)
 
     add_to_memory_counters(recon_output_size, True)
     add_to_memory_counters(-fde_size, True)
     add_to_memory_counters(circular_mask_size, False)
     add_to_memory_counters(after_recon_swapaxis_slice, True)
 
-    return (tot_memory_bytes * 1.05, fixed_amount + 250 * 1024 * 1024)
+    if min_mem_usage_ifft2 and min_mem_usage_filter:
+        return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
+    else:
+        return (tot_memory_bytes * 1.05, fixed_amount + 130 * 1024 * 1024)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
