@@ -198,7 +198,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         )
     )
 
-    center_size = 6144
+    center_size = 32768
     center_size = min(center_size, n * 2)
 
     oversampling_level = 2  # at least 2 or larger required
