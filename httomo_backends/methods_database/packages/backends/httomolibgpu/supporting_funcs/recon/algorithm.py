@@ -199,7 +199,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     )
 
     center_size = 6144
-    center_size = min(center_size, n * 2 + m * 2)
+    center_size = min(center_size, n * 2)
 
     oversampling_level = 2  # at least 2 or larger required
     ne = oversampling_level * n
@@ -379,7 +379,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     if min_mem_usage_ifft2 and min_mem_usage_filter:
         return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
     else:
-        return (tot_memory_bytes * 1.05, fixed_amount + 130 * 1024 * 1024)
+        return (tot_memory_bytes, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
