@@ -39,6 +39,7 @@ except:
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
+
 class SweepRange:
     """SweepRange class."""
 
@@ -145,7 +146,7 @@ def yaml_pipelines_generator(
             minor = version_split[1]
             pipeline_full.yaml_set_start_comment(
                 f"This pipeline is supported by HTTomo ver. {major}.{minor}"
-            )            
+            )
 
             if "loaders" in module_name:
                 # should be the first method in the list
@@ -276,7 +277,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="detector_pad",
-                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction",
+                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction. Set to true to enable automatic padding or an integer",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="recon_mask_radius",

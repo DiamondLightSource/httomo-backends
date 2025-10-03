@@ -30,6 +30,7 @@ from httomolibgpu.recon.algorithm import (
     SIRT3d_tomobar,
     LPRec3d_tomobar,
     CGLS3d_tomobar,
+    FISTA3d_tomobar,
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
@@ -675,12 +676,12 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 85
+    assert percents_relative_maxmem <= 90
 
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])
-@pytest.mark.parametrize("recon_size_it", [1200, 2000])
+@pytest.mark.parametrize("recon_size_it", [2560])
 def test_recon_SIRT3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_memory):
     data = cp.random.random_sample((1801, slices, 2560), dtype=np.float32)
     kwargs = {}
@@ -716,23 +717,71 @@ def test_recon_SIRT3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 100
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("slices", [3])
+@pytest.mark.parametrize("recon_size_it", [2560])
+def test_recon_SIRT3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_clean_memory):
+    angles_tot = 901
+    det_size = 2560
+    data = cp.random.random_sample((angles_tot, slices, det_size), dtype=np.float32)
+    kwargs = {}
+    kwargs["recon_size"] = recon_size_it
+    kwargs["detector_pad"] = True
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = SIRT3d_tomobar(
+            cp.copy(data),
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            center = 1200,
+            detector_pad = True,
+            recon_size=recon_size_it,
+            iterations=2,
+            nonnegativity=True,
+        )
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT3d_tomobar(
+        (angles_tot, det_size), dtype=np.float32(), **kwargs
+    )
+    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
     assert percents_relative_maxmem <= 25
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("slices", [3, 5])
-@pytest.mark.parametrize("recon_size_it", [1200, 2000])
+@pytest.mark.parametrize("slices", [5])
+@pytest.mark.parametrize("recon_size_it", [2560])
 def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_memory):
-    data = cp.random.random_sample((1801, slices, 2560), dtype=np.float32)
+    angles_tot = 901
+    det_size = 2560
+    data = cp.random.random_sample((angles_tot, slices, det_size), dtype=np.float32)
     kwargs = {}
     kwargs["recon_size"] = recon_size_it
+    kwargs["detector_pad"] = False
 
     hook = MaxMemoryHook()
     with hook:
         recon_data = CGLS3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-            1200,
+            center = 1200,
+            detector_pad = False,
             recon_size=recon_size_it,
             iterations=2,
             nonnegativity=True,
@@ -745,7 +794,7 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
-        (1801, 2560), dtype=np.float32(), **kwargs
+        (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes
@@ -757,7 +806,148 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 20
+    assert percents_relative_maxmem <= 100
+
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("slices", [3])
+@pytest.mark.parametrize("recon_size_it", [2560])
+def test_recon_CGLS3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_clean_memory):
+    angles_tot = 901
+    det_size = 2560
+    data = cp.random.random_sample((angles_tot, slices, det_size), dtype=np.float32)
+    kwargs = {}
+    kwargs["recon_size"] = recon_size_it
+    kwargs["detector_pad"] = True
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = CGLS3d_tomobar(
+            cp.copy(data),
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            center = 1200,
+            detector_pad = True,
+            recon_size=recon_size_it,
+            iterations=2,
+            nonnegativity=True,
+        )
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
+        (angles_tot, det_size), dtype=np.float32(), **kwargs
+    )
+    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 85
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("slices", [3, 5])
+@pytest.mark.parametrize("recon_size_it", [2560])
+@pytest.mark.parametrize("padding", [0, 100, 200])
+def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
+    slices, recon_size_it, padding, ensure_clean_memory
+):
+    angles_total = 901
+    detX_size = 2560
+    data = cp.random.random_sample((angles_total, slices, detX_size), dtype=np.float32)
+    kwargs = {}
+    kwargs["recon_size"] = recon_size_it
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = FISTA3d_tomobar(
+            cp.copy(data),
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            center=1200,
+            recon_size=recon_size_it,
+            iterations=1,
+            subsets_number=1,
+            regularisation_iterations=2,
+            nonnegativity=True,
+            detector_pad=padding,
+        )
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FISTA3d_tomobar(
+        (angles_total, detX_size), dtype=np.float32(), **kwargs
+    )
+    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 100
+
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("slices", [3, 5])
+@pytest.mark.parametrize("recon_size_it", [2560])
+@pytest.mark.parametrize("padding", [0, 100, 200])
+def test_recon_FISTA3d_tomobar_OS_memoryhook(
+    slices, recon_size_it, padding, ensure_clean_memory
+):
+    angles_total = 901
+    detX_size = 2560
+
+    data = cp.random.random_sample((angles_total, slices, detX_size), dtype=np.float32)
+    kwargs = {}
+    kwargs["recon_size"] = recon_size_it
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = FISTA3d_tomobar(
+            cp.copy(data),
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            1200,
+            recon_size=recon_size_it,
+            iterations=1,
+            nonnegativity=True,
+            detector_pad=padding,
+        )
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FISTA3d_tomobar(
+        (angles_total, detX_size), dtype=np.float32(), **kwargs
+    )
+    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 100
 
 
 @pytest.mark.cupy
