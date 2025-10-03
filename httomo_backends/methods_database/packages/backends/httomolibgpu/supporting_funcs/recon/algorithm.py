@@ -313,8 +313,8 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     add_to_memory_counters(tmp_p_input_slice, True)
     if min_mem_usage_filter:
-        add_to_memory_counters(rfft_plan_slice_size * 2, False)
-        add_to_memory_counters(irfft_plan_slice_size * 2, False)
+        add_to_memory_counters(rfft_plan_slice_size / 4, False)
+        add_to_memory_counters(irfft_plan_slice_size / 4, False)
         add_to_memory_counters(padded_tmp_p_input_slice, False)
 
         add_to_memory_counters(rfft_result_size, False)
@@ -362,7 +362,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(-fft_result_size, True)
 
     if min_mem_usage_ifft2:
-        add_to_memory_counters(ifft2_plan_slice_size * 2, False)
+        add_to_memory_counters(ifft2_plan_slice_size, False)
         add_to_memory_counters(fde_size * 2, False)
         add_to_memory_counters(-fde_size * 2, False)
     else:
