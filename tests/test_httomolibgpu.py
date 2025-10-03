@@ -761,7 +761,6 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     assert percents_relative_maxmem <= 20
 
 
-
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])
 @pytest.mark.parametrize("recon_size_it", [2560])
@@ -780,11 +779,11 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
         recon_data = FISTA3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-            center = 1200,
+            center=1200,
             recon_size=recon_size_it,
             iterations=1,
-            subsets_number = 1,
-            regularisation_iterations = 2,
+            subsets_number=1,
+            regularisation_iterations=2,
             nonnegativity=True,
             detector_pad=padding,
         )

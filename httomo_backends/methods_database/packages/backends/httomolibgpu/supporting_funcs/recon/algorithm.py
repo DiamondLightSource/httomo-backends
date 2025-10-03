@@ -42,7 +42,7 @@ __all__ = [
 
 
 def _calc_padding_FISTA3d_tomobar(**kwargs) -> Tuple[int, int]:
-    return (5, 5)
+    return (3, 3)
 
 
 def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
@@ -88,10 +88,11 @@ def _calc_memory_bytes_FBP3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
+    detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]
-    else:
-        detector_pad = 0
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
 
     angles_tot = non_slice_dims_shape[0]
     det_width = non_slice_dims_shape[1] + 2 * detector_pad
@@ -180,10 +181,11 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 ) -> Tuple[int, int]:
     # Based on: https://github.com/dkazanc/ToMoBAR/pull/112/commits/4704ecdc6ded3dd5ec0583c2008aa104f30a8a39
 
+    detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]
-    else:
-        detector_pad = 0
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
 
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH_prepad = non_slice_dims_shape[1]
@@ -372,10 +374,12 @@ def _calc_memory_bytes_SIRT3d_tomobar(
     **kwargs,
 ) -> Tuple[int, int]:
 
+    detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]
-    else:
-        detector_pad = 0
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+
     anglesnum = non_slice_dims_shape[0]
     DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
     # calculate the output shape
@@ -397,7 +401,7 @@ def _calc_memory_bytes_SIRT3d_tomobar(
     Res_times_R = Res
     C_times_res = out_data_size
 
-    astra_projection = in_data_size + out_data_size
+    astra_projection = 2.5*(in_data_size + out_data_size)
 
     tot_memory_bytes = int(
         recon_data_size_original
@@ -418,10 +422,11 @@ def _calc_memory_bytes_CGLS3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
+    detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]
-    else:
-        detector_pad = 0
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
 
     anglesnum = non_slice_dims_shape[0]
     DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
@@ -467,10 +472,11 @@ def _calc_memory_bytes_FISTA3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
+    detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]
-    else:
-        detector_pad = 0
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
 
     anglesnum = non_slice_dims_shape[0]
     DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
@@ -488,7 +494,7 @@ def _calc_memory_bytes_FISTA3d_tomobar(
     out_data_size = np.prod(output_dims_larger_grid) * dtype.itemsize
     X_t = out_data_size
     X_old = out_data_size
-   
+
     grad_fidelity = out_data_size
 
     fista_part = (
@@ -504,3 +510,8 @@ def _calc_memory_bytes_FISTA3d_tomobar(
 
     tot_memory_bytes = int(fista_part + regul_part)
     return (tot_memory_bytes, 0)
+
+
+def __estimate_detectorHoriz_padding(detX_size) -> int:
+    det_half = detX_size // 2
+    return int(np.sqrt(2 * (det_half**2)) // 2)
