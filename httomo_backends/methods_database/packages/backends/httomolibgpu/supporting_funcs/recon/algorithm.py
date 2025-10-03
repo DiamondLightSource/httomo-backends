@@ -93,6 +93,8 @@ def _calc_memory_bytes_FBP3d_tomobar(
         detector_pad = kwargs["detector_pad"]
     if detector_pad is True:
         detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0
 
     angles_tot = non_slice_dims_shape[0]
     det_width = non_slice_dims_shape[1] + 2 * detector_pad
@@ -186,6 +188,8 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         detector_pad = kwargs["detector_pad"]
     if detector_pad is True:
         detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0        
 
     min_mem_usage_filter = False
     min_mem_usage_ifft2 = False
@@ -406,6 +410,8 @@ def _calc_memory_bytes_SIRT3d_tomobar(
         detector_pad = kwargs["detector_pad"]
     if detector_pad is True:
         detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0        
 
     anglesnum = non_slice_dims_shape[0]
     DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
@@ -454,6 +460,8 @@ def _calc_memory_bytes_CGLS3d_tomobar(
         detector_pad = kwargs["detector_pad"]
     if detector_pad is True:
         detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0        
 
     anglesnum = non_slice_dims_shape[0]
     DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
@@ -504,6 +512,8 @@ def _calc_memory_bytes_FISTA3d_tomobar(
         detector_pad = kwargs["detector_pad"]
     if detector_pad is True:
         detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0        
 
     anglesnum = non_slice_dims_shape[0]
     DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
