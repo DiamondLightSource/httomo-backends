@@ -434,7 +434,7 @@ def _calc_memory_bytes_SIRT3d_tomobar(
     Res_times_R = Res
     C_times_res = out_data_size
 
-    astra_projection = 2.5*(in_data_size + out_data_size)
+    astra_projection = (in_data_size + out_data_size)
 
     tot_memory_bytes = int(
         recon_data_size_original

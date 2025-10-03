@@ -26,7 +26,7 @@ misc:
       save_result_default: False
       padding: True
       memory_gpu:
-        multiplier: 5
+        multiplier: 6.1
         method: direct
     total_variation_PD:
       pattern: all
@@ -35,7 +35,7 @@ misc:
       save_result_default: False
       padding: True
       memory_gpu:
-        multiplier: 7
+        multiplier: 9.1
         method: direct        
   morph:
     sino_360_to_180:
