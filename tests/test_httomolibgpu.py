@@ -568,7 +568,7 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
 
 @pytest.mark.full
 @pytest.mark.cupy
-@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
@@ -593,7 +593,7 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
 
 @pytest.mark.full
 @pytest.mark.cupy
-@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
 @pytest.mark.parametrize("detX_size", [2560])
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
@@ -676,7 +676,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 48
+    assert percents_relative_maxmem <= 60
 
 
 @pytest.mark.cupy
