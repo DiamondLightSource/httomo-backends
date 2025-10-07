@@ -388,7 +388,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     if min_mem_usage_ifft2 and min_mem_usage_filter:
         return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
     else:
-        return (tot_memory_bytes * 1.05, fixed_amount)
+        return (tot_memory_bytes * 1.1, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
