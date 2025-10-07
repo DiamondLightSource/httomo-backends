@@ -201,7 +201,11 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     center_size = 32768
     center_size = min(center_size, n * 2)
 
-    oversampling_level = 2  # at least 2 or larger required
+    chunk_count = 4
+    projection_chunk_count = 4
+    oversampling_level = 4  # at least 3 or larger required
+    power_of_2_oversampling = True
+
     ne = oversampling_level * n
     padding_m = ne // 2 - n // 2
 
@@ -215,8 +219,6 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         angle_range_pi_count = 1 + int(
             np.ceil(2)
         )  # assume a 2 * PI projection angle range
-
-    chunk_count = 4
 
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
     if odd_horiz:
@@ -329,23 +331,23 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
         add_to_memory_counters(-irfft_result_size, False)
     else:
-        add_to_memory_counters(rfft_plan_slice_size / chunk_count * 2, True)
-        add_to_memory_counters(irfft_plan_slice_size / chunk_count * 2, True)
-        # add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
+        add_to_memory_counters(rfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True)
+        add_to_memory_counters(irfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True)
+        # add_to_memory_counters(irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
         for _ in range(0, chunk_count):
-            add_to_memory_counters(padded_tmp_p_input_slice / chunk_count, True)
+            add_to_memory_counters(padded_tmp_p_input_slice / chunk_count / projection_chunk_count, True)
 
-            add_to_memory_counters(rfft_result_size / chunk_count, True)
-            add_to_memory_counters(filtered_rfft_result_size / chunk_count, True)
-            add_to_memory_counters(-rfft_result_size / chunk_count, True)
-            add_to_memory_counters(-padded_tmp_p_input_slice / chunk_count, True)
+            add_to_memory_counters(rfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(filtered_rfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-rfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-padded_tmp_p_input_slice / chunk_count / projection_chunk_count, True)
 
-            add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
-            add_to_memory_counters(-irfft_scratch_memory_size / chunk_count, True)
-            add_to_memory_counters(irfft_result_size / chunk_count, True)
-            add_to_memory_counters(-filtered_rfft_result_size / chunk_count, True)
+            add_to_memory_counters(irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(irfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-filtered_rfft_result_size / chunk_count / projection_chunk_count, True)
 
-            add_to_memory_counters(-irfft_result_size / chunk_count, True)
+            add_to_memory_counters(-irfft_result_size / chunk_count / projection_chunk_count, True)
 
     add_to_memory_counters(-padded_in_slice_size, True)
     add_to_memory_counters(-filter_size, False)
@@ -379,7 +381,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     if min_mem_usage_ifft2 and min_mem_usage_filter:
         return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
     else:
-        return (tot_memory_bytes, fixed_amount)
+        return (tot_memory_bytes * 1.01, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
