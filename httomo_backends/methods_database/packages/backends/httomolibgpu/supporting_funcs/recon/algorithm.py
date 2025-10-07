@@ -206,7 +206,14 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     oversampling_level = 4  # at least 3 or larger required
     power_of_2_oversampling = True
 
-    ne = oversampling_level * n
+    if power_of_2_oversampling:
+        ne = 2 ** math.ceil(math.log2(DetectorsLengthH_prepad * 3))
+        if n > ne:
+            ne = 2 ** math.ceil(math.log2(n))
+    else:
+        ne = int(oversampling_level * DetectorsLengthH_prepad)
+        ne = max(ne, n)
+
     padding_m = ne // 2 - n // 2
 
     if "angles" in kwargs:
@@ -381,7 +388,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     if min_mem_usage_ifft2 and min_mem_usage_filter:
         return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
     else:
-        return (tot_memory_bytes * 1.01, fixed_amount)
+        return (tot_memory_bytes * 1.05, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
