@@ -42,7 +42,7 @@ __all__ = [
 
 
 def _calc_padding_FISTA3d_tomobar(**kwargs) -> Tuple[int, int]:
-    return (3, 3)
+    return (5, 5)
 
 
 def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
