@@ -1,0 +1,9 @@
+- method: CGLS3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: 0
+    recon_size: null
+    iterations: 20
+    nonnegativity: true
+    neglog: false
