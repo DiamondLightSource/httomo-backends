@@ -192,7 +192,11 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         detector_pad = 0        
 
     min_mem_usage_filter = False
+    if "min_mem_usage_filter" in kwargs:
+        min_mem_usage_filter = kwargs["min_mem_usage_filter"]
     min_mem_usage_ifft2 = False
+    if "min_mem_usage_ifft2" in kwargs:
+        min_mem_usage_ifft2 = kwargs["min_mem_usage_ifft2"]
 
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH_prepad = non_slice_dims_shape[1]
@@ -339,21 +343,21 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
     add_to_memory_counters(tmp_p_input_slice, True)
     if min_mem_usage_filter:
-        add_to_memory_counters(rfft_plan_slice_size / 4, False)
-        add_to_memory_counters(irfft_plan_slice_size / 4, False)
-        add_to_memory_counters(padded_tmp_p_input_slice, False)
+        add_to_memory_counters(rfft_plan_slice_size / 4 / projection_chunk_count, False)
+        add_to_memory_counters(irfft_plan_slice_size / 4 / projection_chunk_count, False)
+        add_to_memory_counters(padded_tmp_p_input_slice / projection_chunk_count, False)
 
-        add_to_memory_counters(rfft_result_size, False)
-        add_to_memory_counters(filtered_rfft_result_size, False)
-        add_to_memory_counters(-rfft_result_size, False)
-        add_to_memory_counters(-padded_tmp_p_input_slice, False)
+        add_to_memory_counters(rfft_result_size / projection_chunk_count, False)
+        add_to_memory_counters(filtered_rfft_result_size / projection_chunk_count, False)
+        add_to_memory_counters(-rfft_result_size / projection_chunk_count, False)
+        add_to_memory_counters(-padded_tmp_p_input_slice / projection_chunk_count, False)
 
-        add_to_memory_counters(irfft_scratch_memory_size, False)
-        add_to_memory_counters(-irfft_scratch_memory_size, False)
-        add_to_memory_counters(irfft_result_size, False)
-        add_to_memory_counters(-filtered_rfft_result_size, False)
+        add_to_memory_counters(irfft_scratch_memory_size / projection_chunk_count, False)
+        add_to_memory_counters(-irfft_scratch_memory_size / projection_chunk_count, False)
+        add_to_memory_counters(irfft_result_size / projection_chunk_count, False)
+        add_to_memory_counters(-filtered_rfft_result_size / projection_chunk_count, False)
 
-        add_to_memory_counters(-irfft_result_size, False)
+        add_to_memory_counters(-irfft_result_size / projection_chunk_count, False)
     else:
         add_to_memory_counters(rfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True)
         add_to_memory_counters(irfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True)
@@ -402,8 +406,10 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(circular_mask_size, False)
     add_to_memory_counters(after_recon_swapaxis_slice, True)
 
-    if min_mem_usage_ifft2 and min_mem_usage_filter:
-        return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
+    if min_mem_usage_filter and min_mem_usage_ifft2:
+        return (tot_memory_bytes * 1.1, fixed_amount)
+    elif min_mem_usage_filter and not min_mem_usage_ifft2:
+        return (tot_memory_bytes * 1.15, fixed_amount)
     else:
         return (tot_memory_bytes * 1.1, fixed_amount)
 
