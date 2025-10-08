@@ -542,6 +542,7 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
+@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560])
 @pytest.mark.parametrize("detX_size", [2560])
@@ -552,6 +553,7 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
     detX_size,
     projections,
     projection_angle_range,
+    min_mem_usage_filter_ifft2,
     padding_detx,
     ensure_clean_memory,
 ):
@@ -561,12 +563,14 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
         projections,
         projection_angle_range,
         padding_detx,
+        min_mem_usage_filter_ifft2,
         ensure_clean_memory,
     )
 
 
 @pytest.mark.full
 @pytest.mark.cupy
+@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
 @pytest.mark.parametrize("detX_size", [2560])
@@ -578,6 +582,7 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
     projections,
     projection_angle_range,
     padding_detx,
+    min_mem_usage_filter_ifft2,
     ensure_clean_memory,
 ):
     __test_recon_LPRec3d_tomobar_memoryhook_common(
@@ -586,12 +591,14 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
         projections,
         projection_angle_range,
         padding_detx,
+        min_mem_usage_filter_ifft2,
         ensure_clean_memory,
     )
 
 
 @pytest.mark.full
 @pytest.mark.cupy
+@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
 @pytest.mark.parametrize("detX_size", [2560])
@@ -605,6 +612,7 @@ def test_recon_LPRec3d_tomobar_memoryhook_full(
     projections,
     projection_angle_range,
     padding_detx,
+    min_mem_usage_filter_ifft2,
     ensure_clean_memory,
 ):
     __test_recon_LPRec3d_tomobar_memoryhook_common(
@@ -613,6 +621,7 @@ def test_recon_LPRec3d_tomobar_memoryhook_full(
         projections,
         projection_angle_range,
         padding_detx,
+        min_mem_usage_filter_ifft2,
         ensure_clean_memory,
     )
 
@@ -623,6 +632,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     projections,
     projection_angle_range,
     padding_detx,
+    min_mem_usage_filter_ifft2,
     ensure_clean_memory,
 ):
     angles_number = projections
@@ -633,6 +643,8 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     )
     kwargs["center"] = 1280
     kwargs["detector_pad"] = padding_detx
+    kwargs["min_mem_usage_filter"] = min_mem_usage_filter_ifft2[0]
+    kwargs["min_mem_usage_ifft2"] = min_mem_usage_filter_ifft2[1]
     kwargs["recon_size"] = detX_size
     kwargs["recon_mask_radius"] = 0.8
 
