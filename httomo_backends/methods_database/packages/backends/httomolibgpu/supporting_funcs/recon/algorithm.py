@@ -146,11 +146,11 @@ def _calc_memory_bytes_FBP3d_tomobar(
 
     # 7. astra backprojection will generate an output array
     # https://github.com/dkazanc/ToMoBAR/blob/54137829b6326406e09f6ef9c95eb35c213838a7/tomobar/astra_wrappers/astra_base.py#L524
-    output_dims = _calc_output_dim_FBP3d_tomobar(non_slice_dims_shape, **kwargs)
+    output_dims = _calc_output_dim_FBP3d_tomobar((angles_tot, det_width), **kwargs)
     recon_output_size = np.prod(output_dims) * np.float32().itemsize
 
     # 7. astra backprojection makes a copy of the input
-    astra_input_slice_size = np.prod(non_slice_dims_shape) * np.float32().itemsize
+    astra_input_slice_size = (angles_tot * det_width) * np.float32().itemsize
 
     ## now we calculate back projection memory (2 copies of the input + reconstruction output)
     projection_mem_size = (

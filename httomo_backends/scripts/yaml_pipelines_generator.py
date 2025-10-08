@@ -31,11 +31,6 @@ import ruamel.yaml
 import httomo_backends
 import yaml
 
-try:
-    from httomo import __version__ as httomo_version
-except:
-    httomo_version = "2.6"  # temporary version fix for sphinx build
-    pass
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
@@ -141,12 +136,9 @@ def yaml_pipelines_generator(
                 except OSError as e:
                     print("loading yaml template failed", e)
 
-            version_split = httomo_version.split(".")
-            major = version_split[0]
-            minor = version_split[1]
             pipeline_full.yaml_set_start_comment(
-                f"This pipeline is supported by HTTomo ver. {major}.{minor}"
-            )
+                "This pipeline should be supported by the latest developments of HTTomo. Use module load httomo/latest module at Diamond."
+            )            
 
             if "loaders" in module_name:
                 # should be the first method in the list
