@@ -31,13 +31,9 @@ import ruamel.yaml
 import httomo_backends
 import yaml
 
-try:
-    from httomo import __version__ as httomo_version
-except:
-    httomo_version = "2.6"  # temporary version fix for sphinx build
-    pass
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
+
 
 class SweepRange:
     """SweepRange class."""
@@ -140,11 +136,8 @@ def yaml_pipelines_generator(
                 except OSError as e:
                     print("loading yaml template failed", e)
 
-            version_split = httomo_version.split(".")
-            major = version_split[0]
-            minor = version_split[1]
             pipeline_full.yaml_set_start_comment(
-                f"This pipeline is supported by HTTomo ver. {major}.{minor}"
+                "This pipeline should be supported by the latest developments of HTTomo. Use module load httomo/latest module at Diamond."
             )            
 
             if "loaders" in module_name:
@@ -276,7 +269,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="detector_pad",
-                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction",
+                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction. Set to true to enable automatic padding or an integer",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="recon_mask_radius",

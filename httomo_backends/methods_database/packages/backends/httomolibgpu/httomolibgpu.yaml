@@ -26,7 +26,7 @@ misc:
       save_result_default: False
       padding: True
       memory_gpu:
-        multiplier: 5
+        multiplier: 6.1
         method: direct
     total_variation_PD:
       pattern: all
@@ -35,7 +35,7 @@ misc:
       save_result_default: False
       padding: True
       memory_gpu:
-        multiplier: 7
+        multiplier: 9.1
         method: direct        
   morph:
     sino_360_to_180:
@@ -178,6 +178,15 @@ recon:
       implementation: gpu_cupy
       save_result_default: True
       padding: False
+      memory_gpu:
+        multiplier: None
+        method: module
+    FISTA3d_tomobar:
+      pattern: sinogram
+      output_dims_change: True
+      implementation: gpu_cupy
+      save_result_default: True
+      padding: True
       memory_gpu:
         multiplier: None
         method: module
