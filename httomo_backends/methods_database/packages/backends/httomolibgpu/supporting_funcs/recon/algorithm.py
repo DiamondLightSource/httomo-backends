@@ -407,7 +407,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     add_to_memory_counters(after_recon_swapaxis_slice, True)
 
     if min_mem_usage_filter and min_mem_usage_ifft2:
-        return (tot_memory_bytes * 1.15, 4 * 1024 * 1024 + fixed_amount)
+        return (tot_memory_bytes * 1.15, fixed_amount)
     elif min_mem_usage_filter and not min_mem_usage_ifft2:
         return (tot_memory_bytes + 60 * 1024 * 1024, fixed_amount)
     else:
