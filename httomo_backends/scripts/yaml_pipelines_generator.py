@@ -247,7 +247,7 @@ def yaml_pipelines_generator(
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="alpha",
-                    comment="Controls the balance between the strength of the filter and the amount of noise reduction. Higher leads to less noise and more blur.",
+                    comment="Controls the balance between the strength of the filter and the amount of noise reduction. Smaller values lead to less noise and more blur.",
                 )
             elif "stripe" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
