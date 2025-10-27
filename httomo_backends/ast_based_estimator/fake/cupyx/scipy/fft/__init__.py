@@ -1,5 +1,5 @@
 import numpy as np
-from ....cupy import ndarray
+from httomo_backends.ast_based_estimator.fake.cupy import ndarray
 
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
 

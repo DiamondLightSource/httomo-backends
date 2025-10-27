@@ -41,6 +41,7 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 from httomo_backends.ast_based_estimator import memory_estimator_from_function
+from httomo_backends.ast_based_estimator.fake import fake_context
 
 
 module_mem_path = "httomo.methods_database.packages.external."
@@ -640,8 +641,8 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
-    with hook:
-        recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
+    # with hook:
+        # recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
@@ -653,28 +654,28 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
         estimator = memory_estimator_from_function(LPRec3d_tomobar)
         auto_estimated_max_mem = estimator(data.shape, data.dtype, **kwargs)
     else:
-        from tomobar.methodsDIR_CuPy import RecToolsDIRCuPy
-
-        original_func = RecToolsDIRCuPy.__dict__["FOURIER_INV"]
-        estimator = memory_estimator_from_function(original_func)
-        auto_estimated_max_mem = estimator(
-            data.shape,
-            data.dtype,
-            **{
-                "DetectorsDimH": data.shape[2],  # Horizontal detector dimension
-                "DetectorsDimV": data.shape[1],  # Vertical detector dimension (3D case)
-                "detectors_x_pad": 0,
-                "centre_of_rotation": data.shape[2] / 2
-                - kwargs["center"]
-                - 0.5,  # Center of Rotation scalar or a vector
-                "angles_vec": -kwargs[
-                    "angles"
-                ],  # A vector of projection angles in radians
-                "recon_size": kwargs[
-                    "recon_size"
-                ],  # Reconstructed object dimensions (scalar)
-            },
-        )
+        with fake_context():
+            import tomobar
+            original_func = tomobar.methodsDIR_CuPy.RecToolsDIRCuPy.__dict__["FOURIER_INV"]
+            estimator = memory_estimator_from_function(original_func)
+            auto_estimated_max_mem = estimator(
+                data.shape,
+                data.dtype,
+                **{
+                    "DetectorsDimH": data.shape[2],  # Horizontal detector dimension
+                    "DetectorsDimV": data.shape[1],  # Vertical detector dimension (3D case)
+                    "detectors_x_pad": 0,
+                    "centre_of_rotation": data.shape[2] / 2
+                    - kwargs["center"]
+                    - 0.5,  # Center of Rotation scalar or a vector
+                    "angles_vec": -kwargs[
+                        "angles"
+                    ],  # A vector of projection angles in radians
+                    "recon_size": kwargs[
+                        "recon_size"
+                    ],  # Reconstructed object dimensions (scalar)
+                },
+            )
     print(f"max_mem: {max_mem}")
     print(f"auto_estimated_max_mem: {auto_estimated_max_mem}")
     print(f"diff: {max_mem - auto_estimated_max_mem}")

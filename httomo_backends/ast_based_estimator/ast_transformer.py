@@ -3,7 +3,6 @@ import inspect
 import textwrap
 from types import FunctionType
 from typing import Any, Dict
-import httomo_backends.ast_based_estimator.fake as fake
 
 
 class MemoryEstimatorTransformer(ast.NodeTransformer):
@@ -12,9 +11,6 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
         self.function_calls_in_statement = set()
 
     def visit_FunctionDef(self, node):
-        if node.name in ["override_globals_shim"]:
-            return node
-
         new_args = []
         for arg in node.args.args:
             if arg.arg == "self":
@@ -33,7 +29,7 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
                 value=ast.Call(
                     lineno=node.lineno,
                     func=ast.Attribute(
-                        value=ast.Name(id="xp", ctx=ast.Load()),
+                        value=ast.Name(id="cp", ctx=ast.Load()),
                         attr="ndarray",
                         ctx=ast.Load(),
                     ),
@@ -61,34 +57,6 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
                 )
 
             visited_statement = self.generic_visit(statement)
-            for function_call in self.function_calls_in_statement:
-                new_body.append(
-                    ast.Expr(
-                        ast.Call(
-                            func=ast.Attribute(
-                                value=ast.Name(id="fake", ctx=ast.Load()),
-                                attr="override_globals",
-                                ctx=ast.Load(),
-                            ),
-                            args=[
-                                function_call,
-                                ast.Subscript(
-                                    value=ast.Call(
-                                        func=ast.Name(id="globals", ctx=ast.Load()),
-                                        args=[],
-                                        keywords=[],
-                                    ),
-                                    slice=ast.Constant(value=self.output_function_name),
-                                    ctx=ast.Load(),
-                                ),
-                            ],
-                            keywords=[],
-                        )
-                    )
-                )
-
-            self.function_calls_in_statement = set()
-
             new_body.append(visited_statement)
 
         new_body.append(
@@ -157,17 +125,6 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
     global_namespace = dict(func.__globals__)
     global_namespace["memory_usage"] = memory_usage
     global_namespace["fft_plan_cache"] = fft_plan_cache
-    global_namespace["fake"] = fake
-    global_namespace["cupy"] = fake.cupy
-    # global_namespace["httomolibgpu"] = fake.httomolibgpu
-    global_namespace["cp"] = fake.cupy
-    global_namespace["xp"] = fake.cupy
-    global_namespace["fft"] = fake.cupyx.scipy.fft.fft
-    global_namespace["ifft2"] = fake.cupyx.scipy.fft.ifft2
-    global_namespace["rfftfreq"] = fake.cupyx.scipy.fft.rfftfreq
-    global_namespace["rfft"] = fake.cupyx.scipy.fft.rfft
-    global_namespace["irfft"] = fake.cupyx.scipy.fft.irfft
-    global_namespace["load_cuda_module"] = fake.tomobar.cuda_kernels.load_cuda_module
 
     namespace: Dict[str, Any] = {}
     exec(compile(tree, filename="<ast>", mode="exec"), global_namespace, namespace)
