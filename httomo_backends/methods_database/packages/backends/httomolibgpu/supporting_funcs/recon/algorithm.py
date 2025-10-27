@@ -218,8 +218,19 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     center_size = 32768
     center_size = min(center_size, n * 2)
 
-    oversampling_level = 2  # at least 2 or larger required
-    ne = oversampling_level * n
+    chunk_count = 4
+    projection_chunk_count = 4
+    oversampling_level = 4  # at least 3 or larger required
+    power_of_2_oversampling = True
+
+    if power_of_2_oversampling:
+        ne = 2 ** math.ceil(math.log2(DetectorsLengthH_prepad * 3))
+        if n > ne:
+            ne = 2 ** math.ceil(math.log2(n))
+    else:
+        ne = int(oversampling_level * DetectorsLengthH_prepad)
+        ne = max(ne, n)
+
     padding_m = ne // 2 - n // 2
 
     if "angles" in kwargs:
@@ -232,8 +243,6 @@ def _calc_memory_bytes_LPRec3d_tomobar(
         angle_range_pi_count = 1 + int(
             np.ceil(2)
         )  # assume a 2 * PI projection angle range
-
-    chunk_count = 4
 
     output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
     if odd_horiz:
@@ -346,23 +355,23 @@ def _calc_memory_bytes_LPRec3d_tomobar(
 
         add_to_memory_counters(-irfft_result_size, False)
     else:
-        add_to_memory_counters(rfft_plan_slice_size / chunk_count * 2, True)
-        add_to_memory_counters(irfft_plan_slice_size / chunk_count * 2, True)
-        # add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
+        add_to_memory_counters(rfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True)
+        add_to_memory_counters(irfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True)
+        # add_to_memory_counters(irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
         for _ in range(0, chunk_count):
-            add_to_memory_counters(padded_tmp_p_input_slice / chunk_count, True)
+            add_to_memory_counters(padded_tmp_p_input_slice / chunk_count / projection_chunk_count, True)
 
-            add_to_memory_counters(rfft_result_size / chunk_count, True)
-            add_to_memory_counters(filtered_rfft_result_size / chunk_count, True)
-            add_to_memory_counters(-rfft_result_size / chunk_count, True)
-            add_to_memory_counters(-padded_tmp_p_input_slice / chunk_count, True)
+            add_to_memory_counters(rfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(filtered_rfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-rfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-padded_tmp_p_input_slice / chunk_count / projection_chunk_count, True)
 
-            add_to_memory_counters(irfft_scratch_memory_size / chunk_count, True)
-            add_to_memory_counters(-irfft_scratch_memory_size / chunk_count, True)
-            add_to_memory_counters(irfft_result_size / chunk_count, True)
-            add_to_memory_counters(-filtered_rfft_result_size / chunk_count, True)
+            add_to_memory_counters(irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(irfft_result_size / chunk_count / projection_chunk_count, True)
+            add_to_memory_counters(-filtered_rfft_result_size / chunk_count / projection_chunk_count, True)
 
-            add_to_memory_counters(-irfft_result_size / chunk_count, True)
+            add_to_memory_counters(-irfft_result_size / chunk_count / projection_chunk_count, True)
 
     add_to_memory_counters(-padded_in_slice_size, True)
     add_to_memory_counters(-filter_size, False)
@@ -396,7 +405,7 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     if min_mem_usage_ifft2 and min_mem_usage_filter:
         return (tot_memory_bytes * 1.1 + 30 * 1024 * 1024, fixed_amount)
     else:
-        return (tot_memory_bytes, fixed_amount)
+        return (tot_memory_bytes * 1.1, fixed_amount)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
@@ -551,4 +560,6 @@ def _calc_memory_bytes_FISTA3d_tomobar(
 
 def __estimate_detectorHoriz_padding(detX_size) -> int:
     det_half = detX_size // 2
-    return int(np.sqrt(2 * (det_half**2)) // 2)
+    padded_value_exact = int(np.sqrt(2 * (det_half**2))) - det_half
+    padded_add_margin = int(0.1 * padded_value_exact)
+    return padded_value_exact + padded_add_margin
