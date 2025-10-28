@@ -1,0 +1,2 @@
+class CUDARuntimeError(RuntimeError):
+    pass

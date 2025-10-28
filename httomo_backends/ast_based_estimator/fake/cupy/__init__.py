@@ -1,9 +1,9 @@
 import numpy as np
 import sys
 
-from . import fft
+from . import cuda, fft
 
-__all__ = ["fft"]
+__all__ = ["cuda", "fft"]
 
 
 __name__ = "cupy"
