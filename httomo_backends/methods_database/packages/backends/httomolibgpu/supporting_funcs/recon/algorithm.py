@@ -197,6 +197,9 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     min_mem_usage_ifft2 = False
     if "min_mem_usage_ifft2" in kwargs:
         min_mem_usage_ifft2 = kwargs["min_mem_usage_ifft2"]
+    power_of_2_cropping = False
+    if "power_of_2_cropping" in kwargs:
+        power_of_2_cropping = kwargs["power_of_2_cropping"]
 
     angles_tot = non_slice_dims_shape[0]
     DetectorsLengthH_prepad = non_slice_dims_shape[1]
@@ -205,6 +208,10 @@ def _calc_memory_bytes_LPRec3d_tomobar(
     _CENTER_SIZE_MIN = 192  # must be divisible by 8
 
     n = DetectorsLengthH
+    if(power_of_2_cropping):
+        n_pow2 = 2 ** math.ceil(math.log2(n))
+        if( 0.9 < n / n_pow2 ):
+            n = n_pow2
 
     odd_horiz = False
     if (n % 2) != 0:
