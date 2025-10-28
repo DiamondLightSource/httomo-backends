@@ -2,6 +2,7 @@ import contextlib
 import importlib
 import pkgutil
 import sys
+import types
 
 
 def list_submodules():
@@ -19,13 +20,16 @@ def list_submodules():
 
 
 @contextlib.contextmanager
-def fake_context():
+def fake_context(*modules_to_reload: types.ModuleType):
     originals = {}
 
     submodules = list_submodules()
     for name, module in submodules.items():
         originals[name] = sys.modules.get(name)
         sys.modules[name] = module
+
+    for module in modules_to_reload:
+        importlib.reload(module)
 
     try:
         yield
@@ -35,3 +39,6 @@ def fake_context():
                 del sys.modules[name]
             else:
                 sys.modules[name] = originals[name]
+
+        for module in modules_to_reload:
+            importlib.reload(module)

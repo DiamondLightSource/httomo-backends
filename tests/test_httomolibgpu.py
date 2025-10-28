@@ -654,8 +654,8 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
         estimator = memory_estimator_from_function(LPRec3d_tomobar)
         auto_estimated_max_mem = estimator(data.shape, data.dtype, **kwargs)
     else:
-        with fake_context():
-            import tomobar
+        import tomobar
+        with fake_context(tomobar.methodsDIR_CuPy):
             original_func = tomobar.methodsDIR_CuPy.RecToolsDIRCuPy.__dict__["FOURIER_INV"]
             estimator = memory_estimator_from_function(original_func)
             auto_estimated_max_mem = estimator(
