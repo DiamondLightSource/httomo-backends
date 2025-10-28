@@ -24,7 +24,7 @@ dev_template = "{tag}"
 
 [project]
 name = "httomo-backends"
-version = "0.7.1"
+version = "0.7.2"
 description = "Supplementary files for HTTomo backends."
 readme = "README.rst"
 license = {text = "BSD-3-Clause"}
@@ -55,7 +55,6 @@ dependencies = [
     "astra-toolbox",
     "tomobar",
     "scikit-image",
-    "ccpi-regularisation-cupy",
 ]
 
 [project.optional-dependencies]
