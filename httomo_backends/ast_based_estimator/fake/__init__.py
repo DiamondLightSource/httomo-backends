@@ -19,6 +19,16 @@ def list_submodules():
     }
 
 
+def recursive_reload(module):
+    importlib.reload(module)
+
+    if hasattr(module, "__path__"):
+        prefix = module.__name__ + "."
+        for _, name, _ in pkgutil.walk_packages(module.__path__, prefix):
+            if name in sys.modules:
+                recursive_reload(sys.modules[name])
+
+
 @contextlib.contextmanager
 def fake_context(*modules_to_reload: types.ModuleType):
     originals = {}
@@ -29,7 +39,7 @@ def fake_context(*modules_to_reload: types.ModuleType):
         sys.modules[name] = module
 
     for module in modules_to_reload:
-        importlib.reload(module)
+        recursive_reload(module)
 
     try:
         yield
@@ -41,4 +51,4 @@ def fake_context(*modules_to_reload: types.ModuleType):
                 sys.modules[name] = originals[name]
 
         for module in modules_to_reload:
-            importlib.reload(module)
+            recursive_reload(module)
