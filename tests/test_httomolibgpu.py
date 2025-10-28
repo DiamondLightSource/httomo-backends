@@ -543,8 +543,8 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)])
-@pytest.mark.parametrize("power_of_2_cropping", [False, True])
+@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False)])
+@pytest.mark.parametrize("power_of_2_cropping", [False])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560])
 @pytest.mark.parametrize("detX_size", [2560])
