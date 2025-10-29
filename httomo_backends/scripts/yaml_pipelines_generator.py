@@ -157,7 +157,7 @@ def yaml_pipelines_generator(
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="ind",
-                    comment="A vertical slice (sinogram) index to calculate CoR, `mid` can be used for middle",
+                    comment="A vertical slice (sinogram) index to calculate CoR, 'mid' can be used for middle",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="cor_initialisation_value",
@@ -169,7 +169,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="side",
-                    comment="'None' corresponds to fully automated determination, '0' to the left side, '1' to the right side.",
+                    comment="'None' corresponds to fully automated determination, 'left' to the left side, 'right' to the right side.",
                 )
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="cor",
@@ -182,7 +182,7 @@ def yaml_pipelines_generator(
             elif "corr" in module_name and "remove_outlier" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
-                    "--- Removing unresponsive pixels in the data, aka zingers. Use if sharp streaks are present in the reconstruction. To be applied before normalisation. ---",
+                    "--- Removing unresponsive/dead pixels in the data, aka zingers. Use if sharp streaks are present in the reconstruction. To be applied before normalisation. ---",
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
@@ -223,7 +223,7 @@ def yaml_pipelines_generator(
             elif "sino_360_to_180" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
-                    "--- Using the overlap provided, converting 360 degrees scan to 180 degrees scan. --- ",
+                    "--- Using the overlap and side provided, converting 360 degrees scan to 180 degrees scan. --- ",
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
@@ -236,7 +236,7 @@ def yaml_pipelines_generator(
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="minus_log",
-                    comment="If Paganin method is used bellow, set it to false.",
+                    comment="If Paganin method is used bellow, set it to 'false'.",
                 )
             elif "phase" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
@@ -269,7 +269,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="detector_pad",
-                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction. Set to true to enable automatic padding or an integer",
+                    comment="Horizontal detector padding to minimise circle/arc-type artifacts in the reconstruction. Set to 'true' to enable automatic padding or an integer",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="recon_mask_radius",
@@ -284,7 +284,7 @@ def yaml_pipelines_generator(
                     pipeline_full[i]["parameters"]["algorithm"] = "gridrec"
                     pipeline_full[i]["parameters"].yaml_add_eol_comment(
                         key="algorithm",
-                        comment="Select the required algorithm, e.g. `gridrec`",
+                        comment="Select the required algorithm, e.g. 'gridrec'",
                     )
             elif "denoise" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
