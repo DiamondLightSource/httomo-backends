@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 
+from .. import memory_usage
 from . import cuda, fft
 
 __all__ = ["cuda", "fft"]
@@ -15,40 +16,37 @@ def get_array_module(array):
 
 class ndarray:
     def __init__(self, shape, dtype="float32"):
-        memory_usage = globals().get("memory_usage")
-
         if not isinstance(shape, tuple) and not isinstance(shape, list):
             shape = (shape,)
 
         self.shape = shape
         self.dtype = dtype
-        self.memory_usage = memory_usage
 
-        if self.memory_usage:
-            self.memory_usage["current_peak_memory"] += (
+        if memory_usage:
+            memory_usage["current_peak_memory"] += (
                 np.prod(self.shape) * np.dtype(self.dtype).itemsize
             )
-            self.memory_usage["peak_memory"] = max(
-                self.memory_usage["peak_memory"],
-                self.memory_usage["current_peak_memory"],
+            memory_usage["peak_memory"] = max(
+                memory_usage["peak_memory"],
+                memory_usage["current_peak_memory"],
             )
 
         print(f"[CREATE] ndarray(shape={self.shape}, dtype={self.dtype})")
 
     def __del__(self):
-        if self.memory_usage:
-            self.memory_usage["current_peak_memory"] -= (
+        if memory_usage:
+            memory_usage["current_peak_memory"] -= (
                 np.prod(self.shape) * np.dtype(self.dtype).itemsize
             )
-            self.memory_usage["peak_memory"] = max(
-                self.memory_usage["peak_memory"],
-                self.memory_usage["current_peak_memory"],
+            memory_usage["peak_memory"] = max(
+                memory_usage["peak_memory"],
+                memory_usage["current_peak_memory"],
             )
 
         print(f"[DELETE] ndarray(shape={self.shape}, dtype={self.dtype})")
 
     def __repr__(self):
-        return f"ndarray(memory_usage={self.memory_usage}, shape={self.shape}, dtype={self.dtype})"
+        return f"ndarray(memory_usage={memory_usage}, shape={self.shape}, dtype={self.dtype})"
 
     def _binary_op(self, other):
         if isinstance(other, ndarray):
@@ -174,7 +172,7 @@ def asarray(array, dtype):
     return ndarray(array.shape, dtype)
 
 
-def pad(array, pad_width):
+def pad(array, pad_width, mode):
     return ndarray(
         tuple(s + p[0] + p[1] for (s, p) in zip(array.shape, pad_width)),
         array.dtype,

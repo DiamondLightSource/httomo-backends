@@ -1,5 +1,6 @@
 import numpy as np
-from httomo_backends.ast_based_estimator.fake.cupy import ndarray
+from .... import fft_plan_cache
+from ....cupy import ndarray
 
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
 
@@ -28,8 +29,6 @@ def _convert_dtype(a, value_type):
 
 
 def fft(array):
-    global fft_plan_cache
-
     array = _convert_dtype(array, "C2C")
     shape = array.shape
 
@@ -46,8 +45,6 @@ def fft(array):
 
 
 def rfft(array, axis=-1):
-    global fft_plan_cache
-
     array = _convert_dtype(array, "R2C")
     shape = list(array.shape)
     shape[axis] = shape[axis] // 2 + 1
@@ -66,8 +63,6 @@ def rfft(array, axis=-1):
 
 
 def irfft(array, axis=-1):
-    global fft_plan_cache
-
     array = _convert_dtype(array, "C2R")
     shape = list(array.shape)
     shape[axis] = 2 * (shape[axis] + 1)
@@ -85,9 +80,7 @@ def irfft(array, axis=-1):
     return ndarray(shape, array.dtype)
 
 
-def ifft2(array):
-    global fft_plan_cache
-
+def ifft2(array, axes, overwrite_x):
     array = _convert_dtype(array, "C2C")
     shape = array.shape
 
@@ -99,6 +92,9 @@ def ifft2(array):
                 nx=shape[-1], ny=shape[-2], fft_type=CufftType.CUFFT_C2C
             )
             fft_plan_cache[plan_key] = ndarray(plan_size, np.byte)
+
+    # if overwrite_x:
+    #     return array
 
     return ndarray(shape, array.dtype)
 

@@ -31,6 +31,12 @@ def recursive_reload(module):
 
 @contextlib.contextmanager
 def fake_context(*modules_to_reload: types.ModuleType):
+    memory_usage = {"peak_memory": 0, "current_peak_memory": 0}
+    fft_plan_cache = {}
+
+    globals()["memory_usage"] = memory_usage
+    globals()["fft_plan_cache"] = fft_plan_cache
+
     originals = {}
 
     submodules = list_submodules()
@@ -44,6 +50,9 @@ def fake_context(*modules_to_reload: types.ModuleType):
     try:
         yield
     finally:
+        del globals()["memory_usage"]
+        del globals()["fft_plan_cache"]
+
         for name, module in submodules.items():
             if originals[name] is None:
                 del sys.modules[name]

@@ -4,11 +4,12 @@ import textwrap
 from types import FunctionType
 from typing import Any, Dict
 
+from . import fake
+
 
 class MemoryEstimatorTransformer(ast.NodeTransformer):
     def __init__(self, output_function_name):
         self.output_function_name = output_function_name
-        self.function_calls_in_statement = set()
 
     def visit_FunctionDef(self, node):
         new_args = []
@@ -62,7 +63,11 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
         new_body.append(
             ast.Return(
                 value=ast.Subscript(
-                    value=ast.Name(id="memory_usage", ctx=ast.Load()),
+                    value=ast.Attribute(
+                        value=ast.Name(id="fake", ctx=ast.Load()),
+                        attr="memory_usage",
+                        ctx=ast.Load(),
+                    ),
                     slice=ast.Constant(value="peak_memory"),
                     ctx=ast.Load(),
                 )
@@ -73,22 +78,6 @@ class MemoryEstimatorTransformer(ast.NodeTransformer):
         node.args.args = new_args
         node.body = new_body
         node.returns = ast.Name(id="int", ctx=ast.Load())
-
-        return self.generic_visit(node)
-
-    def visit_Call(self, node: ast.Call) -> ast.AST:
-        call_name = None
-        if isinstance(node.func, ast.Name):
-            call_name = node.func.id
-        if isinstance(node.func, ast.Attribute) and isinstance(
-            node.func.value, ast.Name
-        ):
-            call_name = node.func.attr
-
-        if call_name in ["globals"]:
-            return node
-
-        self.function_calls_in_statement.add(node.func)
 
         return self.generic_visit(node)
 
@@ -119,18 +108,11 @@ def memory_estimator_from_function(func: FunctionType) -> FunctionType:
 
     print(ast.unparse(tree))
 
-    memory_usage = {"peak_memory": 0, "current_peak_memory": 0}
-    fft_plan_cache = {}
-
     global_namespace = dict(func.__globals__)
-    global_namespace["memory_usage"] = memory_usage
-    global_namespace["fft_plan_cache"] = fft_plan_cache
+    global_namespace["fake"] = fake
 
     namespace: Dict[str, Any] = {}
     exec(compile(tree, filename="<ast>", mode="exec"), global_namespace, namespace)
-    namespace[output_function_name].__globals__[output_function_name] = namespace[
-        output_function_name
-    ]
     return namespace[output_function_name]
 
 

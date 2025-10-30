@@ -641,8 +641,8 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
-    # with hook:
-        # recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
+    with hook:
+        recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
