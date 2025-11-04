@@ -649,10 +649,12 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
         hook.max_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
-    # if True:
-    if False:
-        estimator = memory_estimator_from_function(LPRec3d_tomobar)
-        auto_estimated_max_mem = estimator(data.shape, data.dtype, **kwargs)
+    if True:
+    # if False:
+        with fake_context(httomolibgpu):
+            from httomolibgpu.recon.algorithm import LPRec3d_tomobar as LPRec3d
+            estimator = memory_estimator_from_function(LPRec3d)
+            auto_estimated_max_mem = estimator(data.shape, data.dtype, **kwargs)
     else:
         import tomobar
         with fake_context(tomobar):

@@ -200,6 +200,10 @@ def exp(array):
     return ndarray(array.shape, array.dtype)
 
 
+def mean(array, axis, dtype, out):
+    return ndarray(array.shape, array.dtype)
+
+
 def argsort(a, axis=-1, kind=None):
     if axis is None:
         shape = (np.prod(a.shape),)

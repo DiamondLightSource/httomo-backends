@@ -28,6 +28,10 @@ def _convert_dtype(a, value_type):
     return a
 
 
+def fftshift(array, axes):
+    return ndarray(array.shape, array.dtype)
+
+
 def fft(array):
     array = _convert_dtype(array, "C2C")
     shape = array.shape
@@ -76,6 +80,25 @@ def irfft(array, axis=-1):
                 nx=shape[axis], fft_type=CufftType.CUFFT_C2R, batch=shape[axis - 1]
             )
             fft_plan_cache[plan_key] = ndarray(plan_size, np.byte)
+
+    return ndarray(shape, array.dtype)
+
+
+def fft2(array, axes, overwrite_x):
+    array = _convert_dtype(array, "R2C")
+    shape = array.shape
+
+    if fft_plan_cache:
+        plan_key = (shape, CufftType.CUFFT_R2C, array.size // array.shape[-1])
+        cached_plan = fft_plan_cache.get(plan_key)
+        if cached_plan is None:
+            plan_size = cufft_estimate_2d(
+                nx=shape[-1], ny=shape[-2], fft_type=CufftType.CUFFT_R2C
+            )
+            fft_plan_cache[plan_key] = ndarray(plan_size, np.byte)
+
+    # if overwrite_x:
+    #     return array
 
     return ndarray(shape, array.dtype)
 

@@ -23,9 +23,20 @@ def recursive_reload(module):
     importlib.reload(module)
 
     if hasattr(module, "__path__"):
-        prefix = module.__name__ + "."
-        for _, name, _ in pkgutil.walk_packages(module.__path__, prefix):
+        prefix = f"{module.__name__}."
+        cupywrapper_name = f"{prefix}cupywrapper"
+
+        package_names = [x.name for x in pkgutil.walk_packages(module.__path__, prefix)]
+        package_names = (
+            [cupywrapper_name] + [x for x in package_names if x != cupywrapper_name]
+            if cupywrapper_name in package_names
+            else package_names
+        )
+        print(f"********* package_names: {package_names}")
+
+        for name in package_names:
             if name in sys.modules:
+                print(f"reloading {name}")
                 recursive_reload(sys.modules[name])
 
 
