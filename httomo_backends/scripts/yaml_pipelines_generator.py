@@ -261,10 +261,6 @@ def yaml_pipelines_generator(
                     key="energy",
                     comment="Beam energy in keV.",
                 )
-                pipeline_full[i]["parameters"].yaml_add_eol_comment(
-                    key="generalised_paganin",
-                    comment="Filter using a newer generalised formulation for Paganin which can potentially boost the resolution.",
-                )
             elif "stripe" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
