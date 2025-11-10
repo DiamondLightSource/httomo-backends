@@ -78,7 +78,7 @@ prep:
         multiplier: None
         method: module
   phase:
-    paganin_filter_tomopy:
+    paganin_filter:
       pattern: projection
       output_dims_change: False
       implementation: gpu_cupy
