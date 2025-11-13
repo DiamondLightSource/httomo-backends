@@ -33,6 +33,8 @@ from httomolibgpu.recon.algorithm import (
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
+import tomobar
+
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
@@ -581,14 +583,10 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("projections", [1500])
+@pytest.mark.parametrize("projections", [1500, 1801, 2560])
 @pytest.mark.parametrize("detX_size", [2560])
-@pytest.mark.parametrize("slices", [3])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10])
 @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
-# @pytest.mark.parametrize("projections", [1500, 1801, 2560])
-# @pytest.mark.parametrize("detX_size", [2560])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10])
-# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
     slices, detX_size, projections, projection_angle_range, ensure_clean_memory
 ):
@@ -651,12 +649,11 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
 
     if True:
     # if False:
-        with fake_context(httomolibgpu):
+        with fake_context(httomolibgpu, tomobar):
             from httomolibgpu.recon.algorithm import LPRec3d_tomobar as LPRec3d
             estimator = memory_estimator_from_function(LPRec3d)
             auto_estimated_max_mem = estimator(data.shape, data.dtype, **kwargs)
     else:
-        import tomobar
         with fake_context(tomobar):
             original_func = tomobar.methodsDIR_CuPy.RecToolsDIRCuPy.__dict__["FOURIER_INV"]
             estimator = memory_estimator_from_function(original_func)

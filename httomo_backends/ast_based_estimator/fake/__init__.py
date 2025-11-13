@@ -32,11 +32,9 @@ def recursive_reload(module):
             if cupywrapper_name in package_names
             else package_names
         )
-        print(f"********* package_names: {package_names}")
 
         for name in package_names:
             if name in sys.modules:
-                print(f"reloading {name}")
                 recursive_reload(sys.modules[name])
 
 

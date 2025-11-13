@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import sys
 
@@ -31,7 +32,7 @@ class ndarray:
                 memory_usage["current_peak_memory"],
             )
 
-        print(f"[CREATE] ndarray(shape={self.shape}, dtype={self.dtype})")
+        # print(f"[CREATE] ndarray(shape={self.shape}, dtype={self.dtype})")
 
     def __del__(self):
         if memory_usage:
@@ -43,7 +44,7 @@ class ndarray:
                 memory_usage["current_peak_memory"],
             )
 
-        print(f"[DELETE] ndarray(shape={self.shape}, dtype={self.dtype})")
+        # print(f"[DELETE] ndarray(shape={self.shape}, dtype={self.dtype})")
 
     def __repr__(self):
         return f"ndarray(memory_usage={memory_usage}, shape={self.shape}, dtype={self.dtype})"
@@ -82,6 +83,12 @@ class ndarray:
     def __rtruediv__(self, other):
         return self._binary_op(other)
 
+    def __pow__(self, other):
+        return self._binary_op(other)
+
+    def __le__(self, other):
+        return self._binary_op(other)
+
     def __getitem__(self, key):
         if isinstance(key, ndarray):
             return ndarray(key.shape, self.dtype)
@@ -89,11 +96,23 @@ class ndarray:
         if not isinstance(key, tuple):
             key = (key,)
 
-        key = key + (slice(None),) * (len(self.shape) - len(key))
+        if Ellipsis in key:
+            ellipsis_index = key.index(Ellipsis)
+            num_missing = len(self.shape) - (len(key) - 1)  # -1 for the ellipsis itself
+            key = (
+                key[:ellipsis_index]
+                + (slice(None),) * num_missing
+                + key[ellipsis_index + 1 :]
+            )
+
+        if len(key) < len(self.shape):
+            key = key + (slice(None),) * (len(self.shape) - len(key))
 
         new_shape = []
         for dim_size, idx in zip(self.shape, key):
-            if isinstance(idx, int):
+            if idx is None:
+                new_shape.append(1)
+            elif isinstance(idx, int):
                 continue
             elif isinstance(idx, slice):
                 idx = slice(
@@ -138,6 +157,9 @@ complex64 = np.complex64
 bool_ = np.bool_
 
 pi = np.pi
+
+
+newaxis = None
 
 
 def dtype(self, obj):
@@ -204,6 +226,10 @@ def mean(array, axis, dtype, out):
     return ndarray(array.shape, array.dtype)
 
 
+def sqrt(array, dtype=None, out=None):
+    return ndarray(array.shape, array.dtype)
+
+
 def argsort(a, axis=-1, kind=None):
     if axis is None:
         shape = (np.prod(a.shape),)
@@ -217,6 +243,94 @@ def count_nonzero(array):
     pass
 
 
+def arange(start, stop=None, step=1, dtype=None):
+    if stop is None:
+        stop = start
+        start = 0
+
+    size = int(np.ceil((stop - start) / step))
+    return ndarray(size, dtype)
+
+
+def indices(dimensions, dtype=int):
+    dimensions = tuple(dimensions)
+    N = len(dimensions)
+    return ndarray((N,) + dimensions, dtype=dtype)
+
+
+class nd_grid:
+    def __init__(self, sparse=False):
+        self.sparse = sparse
+
+    def __getitem__(self, key):
+        if isinstance(key, slice):
+            step = key.step
+            stop = key.stop
+            start = key.start
+            if start is None:
+                start = 0
+            if isinstance(step, complex):
+                step = abs(step)
+                length = int(step)
+                if step != 1:
+                    step = (key.stop - start) / float(step - 1)
+                stop = key.stop + step
+                return arange(0, length, 1, float) * step + start
+            else:
+                return arange(start, stop, step)
+
+        size = []
+        typ = int
+        for k in range(len(key)):
+            step = key[k].step
+            start = key[k].start
+            if start is None:
+                start = 0
+            if step is None:
+                step = 1
+            if isinstance(step, complex):
+                size.append(int(abs(step)))
+                typ = float
+            else:
+                size.append(int(math.ceil((key[k].stop - start) / (step * 1.0))))
+            if (
+                isinstance(step, float)
+                or isinstance(start, float)
+                or isinstance(key[k].stop, float)
+            ):
+                typ = float
+        if self.sparse:
+            nn = [arange(_x, dtype=_t) for _x, _t in zip(size, (typ,) * len(size))]
+        else:
+            nn = indices(size, typ)
+        for k in range(len(size)):
+            step = key[k].step
+            start = key[k].start
+            if start is None:
+                start = 0
+            if step is None:
+                step = 1
+            if isinstance(step, complex):
+                step = int(abs(step))
+                if step != 1:
+                    step = (key[k].stop - start) / float(step - 1)
+            nn[k] = nn[k] * step + start
+        if self.sparse:
+            slobj = [newaxis] * len(size)
+            for k in range(len(size)):
+                slobj[k] = slice(None, None)
+                nn[k] = nn[k][tuple(slobj)]
+                slobj[k] = newaxis
+        return nn
+
+    def __len__(self):
+        return 0
+
+
+mgrid = nd_grid(sparse=False)
+ogrid = nd_grid(sparse=True)
+
+
 class RawKernel:
     def __call__(self, grid, block, args, **kwargs):
         pass
@@ -228,3 +342,11 @@ class RawModule:
 
     def get_function(self, name: str):
         return RawKernel()
+
+
+class MemoryPool:
+    def free_all_blocks(self, stream=None):
+        pass
+
+
+_default_memory_pool = MemoryPool()
