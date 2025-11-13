@@ -18,8 +18,11 @@ def _calc_memory_bytes_rescale_to_int(
         itemsize = 2
     else:
         itemsize = 4
-    safety = 128
+    safety_multiplier = 1.1
     return (
-        int(np.prod(non_slice_dims_shape)) * (dtype.itemsize + itemsize) + safety,
+        int(
+            safety_multiplier
+            * ((np.prod(non_slice_dims_shape)) * (dtype.itemsize + itemsize))
+        ),
         0,
     )

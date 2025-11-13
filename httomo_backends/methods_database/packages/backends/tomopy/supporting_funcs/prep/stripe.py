@@ -18,7 +18,7 @@
 # Created By  : Tomography Team at DLS <scientificsoftware@diamond.ac.uk>
 # Created Date: 18/July/2024
 # ---------------------------------------------------------------------------
-""" Modules for memory estimation, padding, data dims estimation """
+"""Modules for memory estimation, padding, data dims estimation"""
 
 from typing import Tuple
 

@@ -15,6 +15,6 @@
 - method: calculate_stats
   module_path: httomo.methods
 - method: rescale_to_int
-  module_path: httomolibgpu.misc.rescale
+  module_path: httomolib.misc.rescale
 - method: save_to_images
   module_path: httomolib.misc.images

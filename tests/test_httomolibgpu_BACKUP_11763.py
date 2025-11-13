@@ -30,7 +30,10 @@ from httomolibgpu.recon.algorithm import (
     SIRT3d_tomobar,
     LPRec3d_tomobar,
     CGLS3d_tomobar,
+<<<<<<< HEAD
+=======
     FISTA3d_tomobar,
+>>>>>>> main
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
@@ -555,6 +558,12 @@ def test_recon_FBP3d_tomobar_memoryhook(
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
 @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
+<<<<<<< HEAD
+    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+=======
     slices,
     detX_size,
     projections,
@@ -573,6 +582,7 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
         min_mem_usage_filter_ifft2,
         power_of_2_cropping,
         ensure_clean_memory,
+>>>>>>> main
     )
 
 
@@ -586,6 +596,12 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
 @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
 @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
+<<<<<<< HEAD
+    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+=======
     slices,
     detX_size,
     projections,
@@ -604,6 +620,7 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
         min_mem_usage_filter_ifft2,
         power_of_2_cropping,
         ensure_clean_memory,
+>>>>>>> main
     )
 
 
@@ -619,6 +636,12 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
     "projection_angle_range", [(0, np.pi), (0, 2 * np.pi), (-np.pi / 2, np.pi / 2)]
 )
 def test_recon_LPRec3d_tomobar_memoryhook_full(
+<<<<<<< HEAD
+    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+=======
     slices,
     detX_size,
     projections,
@@ -637,10 +660,14 @@ def test_recon_LPRec3d_tomobar_memoryhook_full(
         min_mem_usage_filter_ifft2,
         power_of_2_cropping,
         ensure_clean_memory,
+>>>>>>> main
     )
 
 
 def __test_recon_LPRec3d_tomobar_memoryhook_common(
+<<<<<<< HEAD
+    slices, detX_size, projections, projection_angle_range, ensure_clean_memory
+=======
     slices,
     detX_size,
     projections,
@@ -649,6 +676,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     min_mem_usage_filter_ifft2,
     power_of_2_cropping,
     ensure_clean_memory,
+>>>>>>> main
 ):
     angles_number = projections
     data = cp.random.random_sample((angles_number, slices, detX_size), dtype=np.float32)

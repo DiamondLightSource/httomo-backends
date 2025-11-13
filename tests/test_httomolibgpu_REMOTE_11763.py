@@ -34,8 +34,6 @@ from httomolibgpu.recon.algorithm import (
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
-import tomobar
-
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
@@ -43,8 +41,6 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.recon.peak_memory_line_profile_hook import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
-from httomo_backends.ast_based_estimator import memory_estimator_from_function
-from httomo_backends.ast_based_estimator.fake import fake_context
 
 
 module_mem_path = "httomo.methods_database.packages.external."
@@ -675,38 +671,6 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     max_mem = (
         hook.max_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
-
-    if True:
-    # if False:
-        with fake_context(httomolibgpu, tomobar):
-            from httomolibgpu.recon.algorithm import LPRec3d_tomobar as LPRec3d
-            estimator = memory_estimator_from_function(LPRec3d)
-            auto_estimated_max_mem = estimator(data.shape, data.dtype, **kwargs)
-    else:
-        with fake_context(tomobar):
-            original_func = tomobar.methodsDIR_CuPy.RecToolsDIRCuPy.__dict__["FOURIER_INV"]
-            estimator = memory_estimator_from_function(original_func)
-            auto_estimated_max_mem = estimator(
-                data.shape,
-                data.dtype,
-                **{
-                    "DetectorsDimH": data.shape[2],  # Horizontal detector dimension
-                    "DetectorsDimV": data.shape[1],  # Vertical detector dimension (3D case)
-                    "detectors_x_pad": 0,
-                    "centre_of_rotation": data.shape[2] / 2
-                    - kwargs["center"]
-                    - 0.5,  # Center of Rotation scalar or a vector
-                    "angles_vec": -kwargs[
-                        "angles"
-                    ],  # A vector of projection angles in radians
-                    "recon_size": kwargs[
-                        "recon_size"
-                    ],  # Reconstructed object dimensions (scalar)
-                },
-            )
-    print(f"max_mem: {max_mem}")
-    print(f"auto_estimated_max_mem: {auto_estimated_max_mem}")
-    print(f"diff: {max_mem - auto_estimated_max_mem}")
 
     non_slice_dims_shape = (angles_number, detX_size)
     input_data_type = np.float32()
