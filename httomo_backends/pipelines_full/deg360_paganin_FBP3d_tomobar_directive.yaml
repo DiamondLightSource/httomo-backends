@@ -8,7 +8,7 @@
   module_path: httomolibgpu.misc.morph
 - method: remove_stripe_based_sorting
   module_path: httomolibgpu.prep.stripe
-- method: paganin_filter_tomopy
+- method: paganin_filter
   module_path: httomolibgpu.prep.phase
 - method: FBP3d_tomobar
   module_path: httomolibgpu.recon.algorithm

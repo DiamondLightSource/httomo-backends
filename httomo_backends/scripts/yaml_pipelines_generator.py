@@ -138,7 +138,7 @@ def yaml_pipelines_generator(
 
             pipeline_full.yaml_set_start_comment(
                 "This pipeline should be supported by the latest developments of HTTomo. Use module load httomo/latest module at Diamond."
-            )            
+            )
 
             if "loaders" in module_name:
                 # should be the first method in the list
@@ -246,8 +246,20 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
-                    key="alpha",
-                    comment="Controls the balance between the strength of the filter and the amount of noise reduction. Smaller values lead to less noise and more blur.",
+                    key="ratio_delta_beta",
+                    comment="The ratio of delta/beta for filter strength control. Larger values lead to more smoothing.",
+                )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="pixel_size",
+                    comment="Detector pixel size (resolution) in MICRON units.",
+                )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="distance",
+                    comment="Propagation distance of the wavefront from sample to detector in METRE units.",
+                )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="energy",
+                    comment="Beam energy in keV.",
                 )
             elif "stripe" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
@@ -273,7 +285,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="recon_mask_radius",
-                    comment="Zero pixels outside the mask-circle radius.",
+                    comment="Zero pixels outside the mask-circle radius. Make radius equal to 2.0 to remove the mask effect.",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="neglog",

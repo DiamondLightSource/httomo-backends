@@ -20,18 +20,17 @@
 # ---------------------------------------------------------------------------
 """Modules for memory estimation for phase retrieval and phase-contrast enhancement"""
 
-import math
 from typing import Tuple
 import numpy as np
 
 from httomo_backends.cufft import CufftType, cufft_estimate_2d
 
 __all__ = [
-    "_calc_memory_bytes_paganin_filter_tomopy",
+    "_calc_memory_bytes_paganin_filter",
 ]
 
 
-def _calc_memory_bytes_paganin_filter_tomopy(
+def _calc_memory_bytes_paganin_filter(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     **kwargs,
