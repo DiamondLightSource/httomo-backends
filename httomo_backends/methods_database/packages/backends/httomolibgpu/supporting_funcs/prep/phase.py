@@ -35,7 +35,6 @@ def _calc_memory_bytes_paganin_filter(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-    from httomolibgpu.prep.phase import _shift_bit_length
 
     # Input (unpadded)
     unpadded_in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
@@ -43,7 +42,7 @@ def _calc_memory_bytes_paganin_filter(
     # estimate padding size here based on non_slice dimensions
     pad_tup = []
     for dim_len in non_slice_dims_shape:
-        diff = _shift_bit_length(dim_len + 1) - dim_len
+        diff = __shift_bit_length(dim_len + 1) - dim_len
         if dim_len % 2 == 0:
             pad_width = diff // 2
             pad_width = (pad_width, pad_width)
@@ -106,3 +105,7 @@ def _calc_memory_bytes_paganin_filter(
     subtract_bytes = int(filter_size + grid_size)
 
     return (tot_memory_bytes, subtract_bytes)
+
+
+def __shift_bit_length(x: int) -> int:
+    return 1 << (x - 1).bit_length()
