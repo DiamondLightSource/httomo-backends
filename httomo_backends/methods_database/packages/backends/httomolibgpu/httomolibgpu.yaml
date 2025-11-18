@@ -1,4 +1,14 @@
 misc:
+  utils:
+    data_checker:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: False
+      memory_gpu:
+        multiplier: 1.0
+        method: direct
   corr:
     median_filter:
       pattern: all
