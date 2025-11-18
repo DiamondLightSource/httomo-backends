@@ -135,6 +135,15 @@ prep:
       memory_gpu:
         multiplier: 1.17
         method: direct
+    remove_stripe_fw:
+      pattern: sinogram
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: False
+      memory_gpu:
+        multiplier: None
+        method: iterative
     remove_stripe_ti:
       pattern: sinogram
       output_dims_change: False
