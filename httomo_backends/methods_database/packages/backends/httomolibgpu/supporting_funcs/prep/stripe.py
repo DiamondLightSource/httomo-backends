@@ -25,7 +25,7 @@ from typing import Tuple
 import numpy as np
 
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
-from httomolibgpu.prep.stripe import DeviceMemStack, remove_stripe_fw
+from httomolibgpu.prep.stripe import remove_stripe_fw
 
 
 __all__ = [
@@ -60,9 +60,7 @@ def _calc_memory_bytes_for_slices_remove_stripe_fw(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-    mem_stack = DeviceMemStack()
-    remove_stripe_fw(dims_shape, mem_stack=mem_stack, **kwargs)
-    return mem_stack.highwater, 0
+    return remove_stripe_fw(dims_shape, calc_peak_gpu_mem=True, **kwargs), 0
 
 
 def _calc_memory_bytes_remove_all_stripe(
