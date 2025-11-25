@@ -15,7 +15,7 @@ from httomo_backends.methods_database.query import MethodsDatabaseQuery
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
 from httomolibgpu.prep.normalize import normalize
-from httomolibgpu.prep.phase import paganin_filter_tomopy
+from httomolibgpu.prep.phase import paganin_filter
 from httomolibgpu.prep.alignment import distortion_correction_proj_discorpy
 from httomolibgpu.prep.stripe import (
     remove_stripe_based_sorting,
@@ -232,11 +232,11 @@ def test_denoiser_PD_TV_memoryhook(ensure_clean_memory, slices):
 @pytest.mark.parametrize("slices", [64, 128])
 @pytest.mark.parametrize("dim_x", [81, 260, 320])
 @pytest.mark.parametrize("dim_y", [340, 135, 96])
-def test_paganin_filter_tomopy_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
+def test_paganin_filter_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
     data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
     hook = MaxMemoryHook()
     with hook:
-        data_filtered = paganin_filter_tomopy(cp.copy(data)).get()
+        data_filtered = paganin_filter(cp.copy(data)).get()
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (
@@ -244,7 +244,7 @@ def test_paganin_filter_tomopy_memoryhook(slices, dim_x, dim_y, ensure_clean_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_paganin_filter_tomopy(
+    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_paganin_filter(
         (dim_x, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -578,7 +578,9 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
 
 @pytest.mark.full
 @pytest.mark.cupy
-@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)])
+@pytest.mark.parametrize(
+    "min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)]
+)
 @pytest.mark.parametrize("power_of_2_cropping", [False, True])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
@@ -609,7 +611,9 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
 
 @pytest.mark.full
 @pytest.mark.cupy
-@pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)])
+@pytest.mark.parametrize(
+    "min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)]
+)
 @pytest.mark.parametrize("power_of_2_cropping", [False, True])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
 @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
@@ -778,10 +782,13 @@ def test_recon_SIRT3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     assert estimated_memory_mb >= max_mem_mb
     assert percents_relative_maxmem <= 100
 
+
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3])
 @pytest.mark.parametrize("recon_size_it", [2560])
-def test_recon_SIRT3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_clean_memory):
+def test_recon_SIRT3d_tomobar_autopad_memoryhook(
+    slices, recon_size_it, ensure_clean_memory
+):
     angles_tot = 901
     det_size = 2560
     data = cp.random.random_sample((angles_tot, slices, det_size), dtype=np.float32)
@@ -794,8 +801,8 @@ def test_recon_SIRT3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_c
         recon_data = SIRT3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-            center = 1200,
-            detector_pad = True,
+            center=1200,
+            detector_pad=True,
             recon_size=recon_size_it,
             iterations=2,
             nonnegativity=True,
@@ -839,8 +846,8 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
         recon_data = CGLS3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-            center = 1200,
-            detector_pad = False,
+            center=1200,
+            detector_pad=False,
             recon_size=recon_size_it,
             iterations=2,
             nonnegativity=True,
@@ -871,7 +878,9 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3])
 @pytest.mark.parametrize("recon_size_it", [2560])
-def test_recon_CGLS3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_clean_memory):
+def test_recon_CGLS3d_tomobar_autopad_memoryhook(
+    slices, recon_size_it, ensure_clean_memory
+):
     angles_tot = 901
     det_size = 2560
     data = cp.random.random_sample((angles_tot, slices, det_size), dtype=np.float32)
@@ -884,8 +893,8 @@ def test_recon_CGLS3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_c
         recon_data = CGLS3d_tomobar(
             cp.copy(data),
             np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
-            center = 1200,
-            detector_pad = True,
+            center=1200,
+            detector_pad=True,
             recon_size=recon_size_it,
             iterations=2,
             nonnegativity=True,
@@ -911,6 +920,7 @@ def test_recon_CGLS3d_tomobar_autopad_memoryhook(slices, recon_size_it, ensure_c
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
     assert percents_relative_maxmem <= 85
+
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])

@@ -4,9 +4,9 @@
   module_path: httomolibgpu.recon.rotation  
 - method: normalize
   module_path: httomolibgpu.prep.normalize
-- method: paganin_filter_tomopy
+- method: paganin_filter
   module_path: httomolibgpu.prep.phase
-  sweep_parameter: alpha
-  sweep_values: [0.01, 0.001, 0.0001]
+  sweep_parameter: ratio_delta_beta
+  sweep_values: [10, 150, 350]
 - method: FBP3d_tomobar
   module_path: httomolibgpu.recon.algorithm
