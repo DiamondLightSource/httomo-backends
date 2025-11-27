@@ -1,3 +1,4 @@
+- httomolibgpu.misc.utils
 - httomolibgpu.misc.corr
 - httomolibgpu.misc.denoise
 - httomolibgpu.misc.morph
