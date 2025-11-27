@@ -15,3 +15,4 @@
         stop: null
     darks: null
     flats: null
+    continuous_scan_subset: null
