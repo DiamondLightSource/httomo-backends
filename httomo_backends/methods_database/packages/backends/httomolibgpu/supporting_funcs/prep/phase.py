@@ -27,7 +27,16 @@ from httomo_backends.cufft import CufftType, cufft_estimate_2d
 
 __all__ = [
     "_calc_memory_bytes_paganin_filter",
+    "_calc_memory_bytes_paganin_filter_savu_legacy",
 ]
+
+
+def _calc_memory_bytes_paganin_filter_savu_legacy(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    return _calc_memory_bytes_paganin_filter(non_slice_dims_shape, dtype, **kwargs)
 
 
 def _calc_memory_bytes_paganin_filter(

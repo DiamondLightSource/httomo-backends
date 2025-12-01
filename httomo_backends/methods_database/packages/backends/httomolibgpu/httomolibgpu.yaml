@@ -97,6 +97,15 @@ prep:
       memory_gpu:
         multiplier: None
         method: module
+    paganin_filter_savu_legacy:
+      pattern: projection
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: False
+      memory_gpu:
+        multiplier: None
+        method: module       
   alignment:
     distortion_correction_proj_discorpy:
       pattern: projection
