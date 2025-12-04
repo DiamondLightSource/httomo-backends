@@ -277,11 +277,10 @@ def test_paganin_filter_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_paganin_filter(
-        (dim_x, dim_y), dtype=np.float32()
+    estimated_memory_bytes = _calc_memory_bytes_for_slices_paganin_filter(
+        (slices, dim_x, dim_y), dtype=np.float32()
     )
-    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
-    max_mem -= subtract_bytes
+    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
     max_mem_mb = round(max_mem / (1024**2), 2)
 
     # now we compare both memory estimations
@@ -290,7 +289,7 @@ def test_paganin_filter_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
     # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 20
+    assert percents_relative_maxmem <= 1
 
 
 @pytest.mark.cupy

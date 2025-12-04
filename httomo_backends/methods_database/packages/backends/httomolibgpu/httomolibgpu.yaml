@@ -105,7 +105,7 @@ prep:
       padding: False
       memory_gpu:
         multiplier: None
-        method: module
+        method: iterative
     paganin_filter_savu_legacy:
       pattern: projection
       output_dims_change: False
