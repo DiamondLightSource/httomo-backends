@@ -391,8 +391,10 @@ def test_remove_stripe_fw_memoryhook(slices, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_for_slices_remove_stripe_fw(
-        (slices, dim_x, dim_y), dtype=np.float32()
+    (estimated_memory_bytes, subtract_bytes) = (
+        _calc_memory_bytes_for_slices_remove_stripe_fw(
+            (slices, dim_x, dim_y), dtype=np.float32()
+        )
     )
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes
