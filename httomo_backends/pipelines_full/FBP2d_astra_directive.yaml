@@ -1,9 +1,9 @@
 - method: standard_tomo
   module_path: httomo.data.hdf.loaders
-- method: find_center_vo
-  module_path: httomolibgpu.recon.rotation
 - method: normalize
   module_path: httomolibgpu.prep.normalize
+- method: find_center_vo
+  module_path: httomolibgpu.recon.rotation  
 - method: FBP2d_astra
   module_path: httomolibgpu.recon.algorithm
 
