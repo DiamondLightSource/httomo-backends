@@ -3,11 +3,10 @@ import numpy as np
 
 
 __all__ = [
-    "_calc_memory_bytes_normalize",
+    "_calc_memory_bytes_dark_flat_field_correction",
 ]
 
-
-def _calc_memory_bytes_normalize(
+def _calc_memory_bytes_dark_flat_field_correction(
     non_slice_dims_shape: Tuple[int, int],
     dtype: np.dtype,
     **kwargs,
