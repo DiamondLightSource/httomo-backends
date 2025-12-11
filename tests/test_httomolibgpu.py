@@ -78,7 +78,9 @@ class MaxMemoryHook(cp.cuda.MemoryHook):
 @pytest.mark.parametrize("dtype", ["uint16", "float32"])
 @pytest.mark.parametrize("slices", [50, 121])
 @pytest.mark.cupy
-def test_dark_flat_field_correction_memoryhook(flats, darks, ensure_clean_memory, dtype, slices):
+def test_dark_flat_field_correction_memoryhook(
+    flats, darks, ensure_clean_memory, dtype, slices
+):
     hook = MaxMemoryHook()
     data = cp.random.random_sample(
         (slices, flats.shape[1], flats.shape[2]), dtype=np.float32
@@ -96,8 +98,8 @@ def test_dark_flat_field_correction_memoryhook(flats, darks, ensure_clean_memory
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_dark_flat_field_correction(
-        data.shape[1:], dtype=data.dtype
+    (estimated_memory_bytes, subtract_bytes) = (
+        _calc_memory_bytes_dark_flat_field_correction(data.shape[1:], dtype=data.dtype)
     )
 
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -128,9 +130,7 @@ def test_minus_log_memoryhook(ensure_clean_memory, slices):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    method_query = MethodsDatabaseQuery(
-        "httomolibgpu.prep.normalize", "minus_log"
-    )
+    method_query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "minus_log")
     memory_requirements = method_query.get_memory_gpu_params()
     assert memory_requirements is not None
     assert memory_requirements.multiplier is not None

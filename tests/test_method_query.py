@@ -32,12 +32,16 @@ def test_get_invalid_method():
 
 
 def test_httomolibgpu_pattern():
-    query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.normalize", "dark_flat_field_correction"
+    )
     assert query.get_pattern() == Pattern.projection
 
 
 def test_httomolibgpu_implementation():
-    query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.normalize", "dark_flat_field_correction"
+    )
     assert query.get_implementation() == "gpu_cupy"
 
 
@@ -47,12 +51,16 @@ def test_httomolibgpu_implementation2():
 
 
 def test_httomolibgpu_output_dims_change():
-    query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.normalize", "dark_flat_field_correction"
+    )
     assert query.get_output_dims_change() is False
 
 
 def test_httomolibgpu_default_save_result():
-    query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.normalize", "dark_flat_field_correction"
+    )
 
     assert query.save_result_default() is False
 
@@ -64,7 +72,9 @@ def test_httomolibgpu_default_save_result_recon():
 
 
 def test_httomolibgpu_padding_false():
-    query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.normalize", "dark_flat_field_correction"
+    )
     assert query.padding() is False
 
 
@@ -90,7 +100,9 @@ def test_all_methods_have_padding_parameter():
 
 
 def test_get_gpu_memory_params():
-    query = MethodsDatabaseQuery("httomolibgpu.prep.normalize", "normalize")
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.prep.normalize", "dark_flat_field_correction"
+    )
     mempars = query.get_memory_gpu_params()
     assert mempars is not None
     assert mempars.method == "module"
