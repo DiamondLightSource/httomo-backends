@@ -24,9 +24,11 @@ from typing import Tuple
 import numpy as np
 
 from httomo_backends.cufft import CufftType, cufft_estimate_2d
+from httomolibgpu.prep.phase import paganin_filter
 
 __all__ = [
     "_calc_memory_bytes_paganin_filter",
+    "_calc_memory_bytes_for_slices_paganin_filter",
     "_calc_memory_bytes_paganin_filter_savu_legacy",
 ]
 
@@ -118,3 +120,11 @@ def _calc_memory_bytes_paganin_filter(
 
 def __shift_bit_length(x: int) -> int:
     return 1 << (x - 1).bit_length()
+
+
+def _calc_memory_bytes_for_slices_paganin_filter(
+    dims_shape: Tuple[int, int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> int:
+    return paganin_filter(dims_shape, calc_peak_gpu_mem=True, **kwargs)
