@@ -122,7 +122,7 @@ def test_minus_log_memoryhook(ensure_clean_memory, slices):
     data = cp.random.random_sample((slices, 2560, 2560), dtype=np.float32)
 
     with hook:
-        minus_log(data)
+        minus_log(cp.copy(data))
 
     # make sure estimator function is within range (80% min, 100% max)
     max_mem = (

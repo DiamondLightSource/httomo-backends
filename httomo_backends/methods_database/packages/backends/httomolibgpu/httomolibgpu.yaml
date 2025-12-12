@@ -94,7 +94,7 @@ prep:
       save_result_default: False
       padding: False
       memory_gpu:
-        multiplier: 2.0
+        multiplier: 3.0
         method: direct      
   phase:
     paganin_filter:
