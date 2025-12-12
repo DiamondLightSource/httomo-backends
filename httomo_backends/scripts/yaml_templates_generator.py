@@ -221,6 +221,10 @@ def _get_discard_keys() -> List[str]:
         "step_xy",
         "jpeg_quality",
         "watermark_vals",
+        "power_of_2_oversampling",
+        "power_of_2_cropping",
+        "min_mem_usage_filter",
+        "min_mem_usage_ifft2",
     ]
     return discard_keys
 

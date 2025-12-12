@@ -94,6 +94,7 @@ def yaml_pipelines_generator(
     with open(path_to_pipelines, "r") as file:
         try:
             pipeline_file_content = yaml.load(file)
+            # print(f"Loading pipeline: {file.name}") # useful for debugging
         except OSError as e:
             print("loading yaml file with methods failed", e)
 
@@ -227,17 +228,20 @@ def yaml_pipelines_generator(
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
-            elif "normalize" in module_name:
+            elif "dark_flat_field_correction" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
-                    "--- Normalisation of projection data using collected flats/darks images. --- ",
+                    "--- Flat-field and dark-field projection correction. --- ",
                     indent=0,
                 )
                 pipeline_full += yaml_template_method
-                pipeline_full[i]["parameters"].yaml_add_eol_comment(
-                    key="minus_log",
-                    comment="If Paganin method is used bellow, set it to 'false'.",
+            elif "minus_log" in method_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Negative log is required for reconstruction to convert raw intensity measurements into the line integrals of attenuation. --- ",
+                    indent=0,
                 )
+                pipeline_full += yaml_template_method
             elif "phase" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,

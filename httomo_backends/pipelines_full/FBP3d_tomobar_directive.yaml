@@ -1,13 +1,15 @@
 - method: standard_tomo
   module_path: httomo.data.hdf.loaders
-- method: find_center_vo
-  module_path: httomolibgpu.recon.rotation
 - method: remove_outlier
   module_path: httomolibgpu.misc.corr
-- method: normalize
+- method: dark_flat_field_correction
   module_path: httomolibgpu.prep.normalize
+- method: find_center_vo
+  module_path: httomolibgpu.recon.rotation 
 - method: remove_all_stripe
   module_path: httomolibgpu.prep.stripe
+- method: minus_log
+  module_path: httomolibgpu.prep.normalize  
 - method: FBP3d_tomobar
   module_path: httomolibgpu.recon.algorithm
 - method: calculate_stats
