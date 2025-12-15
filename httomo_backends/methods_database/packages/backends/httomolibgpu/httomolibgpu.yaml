@@ -78,7 +78,7 @@ misc:
         method: module
 prep:
   normalize:
-    normalize:
+    dark_flat_field_correction:
       pattern: projection
       output_dims_change: False
       implementation: gpu_cupy
@@ -87,6 +87,15 @@ prep:
       memory_gpu:
         multiplier: None
         method: module
+    minus_log:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: False
+      memory_gpu:
+        multiplier: 3.0
+        method: direct      
   phase:
     paganin_filter:
       pattern: projection

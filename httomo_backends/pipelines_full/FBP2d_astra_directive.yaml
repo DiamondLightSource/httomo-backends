@@ -1,9 +1,11 @@
 - method: standard_tomo
   module_path: httomo.data.hdf.loaders
+- method: dark_flat_field_correction
+  module_path: httomolibgpu.prep.normalize
 - method: find_center_vo
   module_path: httomolibgpu.recon.rotation
-- method: normalize
-  module_path: httomolibgpu.prep.normalize
+- method: minus_log
+  module_path: httomolibgpu.prep.normalize   
 - method: FBP2d_astra
   module_path: httomolibgpu.recon.algorithm
 
