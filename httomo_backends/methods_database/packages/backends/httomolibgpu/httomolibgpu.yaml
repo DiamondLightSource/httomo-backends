@@ -114,7 +114,7 @@ prep:
       padding: False
       memory_gpu:
         multiplier: None
-        method: module       
+        method: iterative       
   alignment:
     distortion_correction_proj_discorpy:
       pattern: projection
