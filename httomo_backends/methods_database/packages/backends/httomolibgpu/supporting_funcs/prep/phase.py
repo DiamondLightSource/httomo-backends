@@ -45,4 +45,3 @@ def _calc_memory_bytes_for_slices_paganin_filter_savu_legacy(
     **kwargs,
 ) -> int:
     return paganin_filter_savu_legacy(dims_shape, calc_peak_gpu_mem=True, **kwargs)
-

@@ -296,7 +296,9 @@ def test_paganin_filter_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
 @pytest.mark.parametrize("slices", [64, 128])
 @pytest.mark.parametrize("dim_x", [81, 260, 320])
 @pytest.mark.parametrize("dim_y", [340, 135, 96])
-def test_paganin_filter_savu_legacy_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
+def test_paganin_filter_savu_legacy_memoryhook(
+    slices, dim_x, dim_y, ensure_clean_memory
+):
     data = cp.random.random_sample((slices, dim_x, dim_y), dtype=np.float32)
     hook = MaxMemoryHook()
     with hook:

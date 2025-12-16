@@ -150,9 +150,7 @@ class MethodsDatabaseQuery:
         module_mem: Callable = getattr(
             smodule, "_calc_memory_bytes_for_slices_" + self.method_name
         )
-        memory_bytes: int = module_mem(
-            dims_shape, dtype, **kwargs
-        )
+        memory_bytes: int = module_mem(dims_shape, dtype, **kwargs)
         return memory_bytes
 
     def calculate_output_dims(
