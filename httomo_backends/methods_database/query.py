@@ -143,6 +143,16 @@ class MethodsDatabaseQuery:
         )
         return memory_bytes
 
+    def calculate_memory_bytes_for_slices(
+        self, dims_shape: Tuple[int, int, int], dtype: np.dtype, **kwargs
+    ) -> int:
+        smodule = self._import_supporting_funcs_module()
+        module_mem: Callable = getattr(
+            smodule, "_calc_memory_bytes_for_slices_" + self.method_name
+        )
+        memory_bytes: int = module_mem(dims_shape, dtype, **kwargs)
+        return memory_bytes
+
     def calculate_output_dims(
         self, non_slice_dims_shape: Tuple[int, int], **kwargs
     ) -> Tuple[int, int]:

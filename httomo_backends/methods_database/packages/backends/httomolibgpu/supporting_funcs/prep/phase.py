@@ -23,98 +23,25 @@
 from typing import Tuple
 import numpy as np
 
-from httomo_backends.cufft import CufftType, cufft_estimate_2d
+from httomolibgpu.prep.phase import paganin_filter, paganin_filter_savu_legacy
 
 __all__ = [
-    "_calc_memory_bytes_paganin_filter",
-    "_calc_memory_bytes_paganin_filter_savu_legacy",
+    "_calc_memory_bytes_for_slices_paganin_filter",
+    "_calc_memory_bytes_for_slices_paganin_filter_savu_legacy",
 ]
 
 
-def _calc_memory_bytes_paganin_filter_savu_legacy(
-    non_slice_dims_shape: Tuple[int, int],
+def _calc_memory_bytes_for_slices_paganin_filter(
+    dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> Tuple[int, int]:
-    return _calc_memory_bytes_paganin_filter(non_slice_dims_shape, dtype, **kwargs)
+) -> int:
+    return paganin_filter(dims_shape, calc_peak_gpu_mem=True, **kwargs)
 
 
-def _calc_memory_bytes_paganin_filter(
-    non_slice_dims_shape: Tuple[int, int],
+def _calc_memory_bytes_for_slices_paganin_filter_savu_legacy(
+    dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> Tuple[int, int]:
-
-    # Input (unpadded)
-    unpadded_in_slice_size = np.prod(non_slice_dims_shape) * dtype.itemsize
-
-    # estimate padding size here based on non_slice dimensions
-    pad_tup = []
-    for dim_len in non_slice_dims_shape:
-        diff = __shift_bit_length(dim_len + 1) - dim_len
-        if dim_len % 2 == 0:
-            pad_width = diff // 2
-            pad_width = (pad_width, pad_width)
-        else:
-            # need an uneven padding for odd-number lengths
-            left_pad = diff // 2
-            right_pad = diff - left_pad
-            pad_width = (left_pad, right_pad)
-        pad_tup.append(pad_width)
-
-    # Padded input
-    padded_in_slice_size = (
-        (non_slice_dims_shape[0] + pad_tup[0][0] + pad_tup[0][1])
-        * (non_slice_dims_shape[1] + pad_tup[1][0] + pad_tup[1][1])
-        * dtype.itemsize
-    )
-
-    # Padded input cast to `complex64`
-    complex_slice = padded_in_slice_size / dtype.itemsize * np.complex64().nbytes
-
-    # Plan size for 2D FFT
-    ny = non_slice_dims_shape[0] + pad_tup[0][0] + pad_tup[0][1]
-    nx = non_slice_dims_shape[1] + pad_tup[1][0] + pad_tup[1][1]
-    fftplan_slice_size = cufft_estimate_2d(
-        nx=nx,
-        ny=ny,
-        fft_type=CufftType.CUFFT_C2C,
-    )
-
-    # Size of "reciprocal grid" generated, based on padded projections shape
-    grid_size = np.prod((ny, nx)) * np.float32().nbytes
-    filter_size = grid_size
-
-    # Size of cropped/unpadded + cast to float32 result of 2D IFFT
-    cropped_float32_res_slice = np.prod(non_slice_dims_shape) * np.float32().nbytes
-
-    # Size of negative log of cropped float32 result of 2D IFFT
-    negative_log_slice = cropped_float32_res_slice
-
-    # If the FFT plan size is negligible for some reason, this changes where the peak GPU
-    # memory usage occurs. Hence, the if/else branching below for calculating the total bytes.
-    NEGLIGIBLE_FFT_PLAN_SIZE = 16
-    if fftplan_slice_size < NEGLIGIBLE_FFT_PLAN_SIZE:
-        tot_memory_bytes = int(
-            unpadded_in_slice_size + padded_in_slice_size + complex_slice
-        )
-    else:
-        tot_memory_bytes = int(
-            unpadded_in_slice_size
-            + padded_in_slice_size
-            + complex_slice
-            # The padded float32 array is deallocated when a copy is made when casting to complex64
-            # and the variable `padded_tomo` is reassigned to the complex64 version
-            - padded_in_slice_size
-            + fftplan_slice_size
-            + cropped_float32_res_slice
-            + negative_log_slice
-        )
-
-    subtract_bytes = int(filter_size + grid_size)
-
-    return (tot_memory_bytes, subtract_bytes)
-
-
-def __shift_bit_length(x: int) -> int:
-    return 1 << (x - 1).bit_length()
+) -> int:
+    return paganin_filter_savu_legacy(dims_shape, calc_peak_gpu_mem=True, **kwargs)
