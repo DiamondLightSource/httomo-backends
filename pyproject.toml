@@ -45,9 +45,9 @@ classifiers = [
 
 requires-python = ">=3.10"
 dependencies = [
-    "numpy<2",
+    "numpy==2.3.*",
     "pyyaml",
-    "cupy==12.3.0",
+    "cupy==13.6.*",
     "nvtx",
     "toml",
     "imageio",
