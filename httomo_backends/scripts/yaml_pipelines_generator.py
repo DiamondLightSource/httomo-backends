@@ -265,6 +265,14 @@ def yaml_pipelines_generator(
                     key="energy",
                     comment="Beam energy in keV.",
                 )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="calculate_padding_value_method",
+                    comment="Select type of padding from 'next_power_of_2', 'next_fast_length' and 'use_pad_x_y'.",
+                )
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="pad_x_y",
+                    comment="Manual padding is enabled when 'calculate_padding_value_method' is set to 'use_pad_x_y'.",
+                )
             elif "stripe" in module_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
