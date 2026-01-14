@@ -7,6 +7,7 @@ if "linux" not in sys.platform:
     raise RuntimeError("Linux is currently the only supported platform")
 
 _linux_version_list = [
+    12,
     11,
     10,
     9,
