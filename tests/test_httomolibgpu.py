@@ -32,6 +32,7 @@ from httomolibgpu.recon.algorithm import (
     LPRec3d_tomobar,
     CGLS3d_tomobar,
     FISTA3d_tomobar,
+    ADMM3d_tomobar,
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
@@ -1032,6 +1033,53 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
     assert percents_relative_maxmem <= 100
+
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("repeats", [1, 3, 5])
+@pytest.mark.parametrize("padding", [0, 100, 200])
+def test_recon_ADMM3d_tomobar_nonOS_memoryhook(
+    data, repeats, padding, ensure_clean_memory
+):
+    data = cp.repeat(data, repeats, axis=0)
+    args = {
+        "angles": np.linspace(
+            0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
+        ),
+        "center": 1200,
+        "iterations": 1,
+        "subsets_number": 1,
+        "regularisation_iterations": 2,
+        "nonnegativity": True,
+        "detector_pad": padding,
+    }
+
+    # now we estimate how much of the total memory required for this data
+    estimated_memory_bytes = _calc_memory_bytes_for_slices_ADMM3d_tomobar(
+        (data.shape[1], data.shape[0], data.shape[2]), dtype=np.float32(), **args
+    )
+    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = ADMM3d_tomobar(cp.asarray(data, dtype="float32"), **args)
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+
+    # allocation is dependent on input data and gmres iterations
+    assert percents_relative_maxmem <= 300
 
 
 @pytest.mark.cupy

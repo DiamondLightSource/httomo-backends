@@ -24,6 +24,7 @@ import math
 from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
+from httomolibgpu.recon.algorithm import ADMM3d_tomobar
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
@@ -31,12 +32,14 @@ __all__ = [
     "_calc_memory_bytes_SIRT3d_tomobar",
     "_calc_memory_bytes_CGLS3d_tomobar",
     "_calc_memory_bytes_FISTA3d_tomobar",
+    "_calc_memory_bytes_for_slices_ADMM3d_tomobar",
     "_calc_output_dim_FBP2d_astra",
     "_calc_output_dim_FBP3d_tomobar",
     "_calc_output_dim_LPRec3d_tomobar",
     "_calc_output_dim_SIRT3d_tomobar",
     "_calc_output_dim_CGLS3d_tomobar",
     "_calc_output_dim_FISTA3d_tomobar",
+    "_calc_output_dim_ADMM3d_tomobar",
     "_calc_padding_FISTA3d_tomobar",
 ]
 
@@ -80,6 +83,10 @@ def _calc_output_dim_CGLS3d_tomobar(non_slice_dims_shape, **kwargs):
 
 
 def _calc_output_dim_FISTA3d_tomobar(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
+
+def _calc_output_dim_ADMM3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
@@ -602,6 +609,23 @@ def _calc_memory_bytes_FISTA3d_tomobar(
 
     tot_memory_bytes = int(fista_part + regul_part)
     return (tot_memory_bytes, 0)
+
+
+def _calc_memory_bytes_for_slices_ADMM3d_tomobar(
+    dims_shape: Tuple[int, int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> int:
+    if "angles" not in kwargs:
+        kwargs["angles"] = np.linspace(
+            0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, dims_shape[0]
+        )
+    peak_mem = ADMM3d_tomobar(
+        data=(dims_shape[1], dims_shape[0], dims_shape[2]),
+        calc_peak_gpu_mem=True,
+        **kwargs,
+    )
+    return peak_mem
 
 
 def __estimate_detectorHoriz_padding(detX_size) -> int:
