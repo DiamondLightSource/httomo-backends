@@ -1181,3 +1181,24 @@ def test_median_filter_padding_calculator_fetches_default_param_value():
         _calc_padding_median_filter(**{})
     except KeyError as e:
         pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_data_resampler_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_data_resampler((2, 2), np.float32(), **{"newshape": (1, 1)})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_sino_360_to_180_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_sino_360_to_180((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_sino_360_to_180_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_sino_360_to_180((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")

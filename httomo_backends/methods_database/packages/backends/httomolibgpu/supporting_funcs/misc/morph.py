@@ -20,9 +20,12 @@
 # ---------------------------------------------------------------------------
 """Modules for memory estimation for morph functions"""
 
+import inspect
 import math
 from typing import Tuple
 import numpy as np
+
+from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
 
 __all__ = [
     "_calc_memory_bytes_data_resampler",
@@ -42,6 +45,10 @@ def _calc_memory_bytes_data_resampler(
     **kwargs,
 ) -> Tuple[int, int]:
     newshape = kwargs["newshape"]
+
+    if "interpolation" not in kwargs:
+        params = inspect.signature(data_resampler).parameters
+        kwargs["interpolation"] = params["interpolation"].default
     interpolation = kwargs["interpolation"]
 
     input_size = np.prod(non_slice_dims_shape) * dtype.itemsize
@@ -62,7 +69,9 @@ def _calc_output_dim_sino_360_to_180(
     non_slice_dims_shape: Tuple[int, int],
     **kwargs,
 ) -> Tuple[int, int]:
-    assert "overlap" in kwargs, "Expected overlap in method parameters"
+    if "overlap" not in kwargs:
+        params = inspect.signature(sino_360_to_180).parameters
+        kwargs["overlap"] = params["overlap"].default
     overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
@@ -75,7 +84,9 @@ def _calc_memory_bytes_sino_360_to_180(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-    assert "overlap" in kwargs, "Expected overlap in method parameters"
+    if "overlap" not in kwargs:
+        params = inspect.signature(sino_360_to_180).parameters
+        kwargs["overlap"] = params["overlap"].default
     overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
