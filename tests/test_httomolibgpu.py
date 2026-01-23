@@ -35,6 +35,7 @@ from httomolibgpu.recon.algorithm import (
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
+from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.corr import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
@@ -1166,3 +1167,17 @@ def test_FBP2d_astra_output_dim():
         recon_size=recon_size,
     )
     assert output_dims == (recon_size, recon_size)
+
+
+def test_remove_outlier_padding_calculator_fetches_default_param_value():
+    try:
+        _calc_padding_remove_outlier(**{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_median_filter_padding_calculator_fetches_default_param_value():
+    try:
+        _calc_padding_median_filter(**{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
