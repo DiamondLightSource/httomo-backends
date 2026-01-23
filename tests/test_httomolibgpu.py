@@ -1202,3 +1202,10 @@ def test_sino_360_to_180_memory_estimator_fetches_default_param_value():
         _calc_memory_bytes_sino_360_to_180((1, 1), np.float32(), **{})
     except KeyError as e:
         pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_rescale_to_int_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_rescale_to_int((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")

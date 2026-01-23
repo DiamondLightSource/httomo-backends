@@ -1,5 +1,8 @@
+import inspect
 from typing import Tuple
 import numpy as np
+
+from httomolibgpu.misc.rescale import rescale_to_int
 
 __all__ = [
     "_calc_memory_bytes_rescale_to_int",
@@ -11,6 +14,9 @@ def _calc_memory_bytes_rescale_to_int(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
+    if "bits" not in kwargs:
+        params = inspect.signature(rescale_to_int).parameters
+        kwargs["bits"] = params["bits"].default
     bits: int = kwargs["bits"]
     if bits == 8:
         itemsize = 1
