@@ -1209,3 +1209,10 @@ def test_rescale_to_int_memory_estimator_fetches_default_param_value():
         _calc_memory_bytes_rescale_to_int((1, 1), np.float32(), **{})
     except KeyError as e:
         pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_raven_filter_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_raven_filter((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")

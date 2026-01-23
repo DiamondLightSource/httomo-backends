@@ -20,12 +20,13 @@
 # ---------------------------------------------------------------------------
 """Modules for memory estimation for stripe removal methods"""
 
+import inspect
 import math
 from typing import Tuple
 import numpy as np
 
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
-from httomolibgpu.prep.stripe import remove_stripe_fw
+from httomolibgpu.prep.stripe import raven_filter, remove_stripe_fw
 
 
 __all__ = [
@@ -87,7 +88,14 @@ def _calc_memory_bytes_raven_filter(
     **kwargs,
 ) -> Tuple[int, int]:
 
+    if "pad_x" not in kwargs:
+        params = inspect.signature(raven_filter).parameters
+        kwargs["pad_x"] = params["pad_x"].default
     pad_x = kwargs["pad_x"]
+
+    if "pad_y" not in kwargs:
+        params = inspect.signature(raven_filter).parameters
+        kwargs["pad_y"] = params["pad_y"].default
     pad_y = kwargs["pad_y"]
 
     # Unpadded input
