@@ -23,11 +23,12 @@
 import math
 from typing import Tuple
 import numpy as np
-from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
+from httomo_backends.cufft import CufftType, cufft_estimate_1d
+from httomolibgpu.recon.algorithm import LPRec3d_tomobar
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
-    "_calc_memory_bytes_LPRec3d_tomobar",
+    "_calc_memory_bytes_for_slices_LPRec3d_tomobar",
     "_calc_memory_bytes_SIRT3d_tomobar",
     "_calc_memory_bytes_CGLS3d_tomobar",
     "_calc_memory_bytes_FISTA3d_tomobar",
@@ -176,282 +177,12 @@ def _calc_memory_bytes_FBP3d_tomobar(
     return (tot_memory_bytes, fixed_amount)
 
 
-def _calc_memory_bytes_LPRec3d_tomobar(
-    non_slice_dims_shape: Tuple[int, int],
+def _calc_memory_bytes_for_slices_LPRec3d_tomobar(
+    dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> Tuple[int, int]:
-    # Based on: https://github.com/dkazanc/ToMoBAR/pull/112/commits/4704ecdc6ded3dd5ec0583c2008aa104f30a8a39
-
-    detector_pad = 0
-    if "detector_pad" in kwargs:
-        detector_pad = kwargs["detector_pad"]
-    if detector_pad is True:
-        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
-    elif detector_pad is False:
-        detector_pad = 0
-
-    min_mem_usage_filter = False
-    if "min_mem_usage_filter" in kwargs:
-        min_mem_usage_filter = kwargs["min_mem_usage_filter"]
-    min_mem_usage_ifft2 = False
-    if "min_mem_usage_ifft2" in kwargs:
-        min_mem_usage_ifft2 = kwargs["min_mem_usage_ifft2"]
-    power_of_2_cropping = False
-    if "power_of_2_cropping" in kwargs:
-        power_of_2_cropping = kwargs["power_of_2_cropping"]
-
-    angles_tot = non_slice_dims_shape[0]
-    DetectorsLengthH_prepad = non_slice_dims_shape[1]
-    DetectorsLengthH = non_slice_dims_shape[1] + 2 * detector_pad
-    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
-    _CENTER_SIZE_MIN = 192  # must be divisible by 8
-
-    n = DetectorsLengthH
-    if power_of_2_cropping:
-        n_pow2 = 2 ** math.ceil(math.log2(n))
-        if 0.9 < n / n_pow2:
-            n = n_pow2
-
-    odd_horiz = False
-    if (n % 2) != 0:
-        n = n + 1  # dealing with the odd horizontal detector size
-        odd_horiz = True
-
-    eps = 1e-4  # accuracy of usfft
-    mu = -np.log(eps) / (2 * n * n)
-    m = int(
-        np.ceil(
-            2 * n * 1 / np.pi * np.sqrt(-mu * np.log(eps) + (mu * n) * (mu * n) / 4)
-        )
-    )
-
-    center_size = 32768
-    center_size = min(center_size, n * 2)
-
-    chunk_count = 4
-    projection_chunk_count = 4
-    oversampling_level = 4  # at least 3 or larger required
-    power_of_2_oversampling = True
-
-    if power_of_2_oversampling:
-        ne = 2 ** math.ceil(math.log2(DetectorsLengthH_prepad * 3))
-        if n > ne:
-            ne = 2 ** math.ceil(math.log2(n))
-    else:
-        ne = int(oversampling_level * DetectorsLengthH_prepad)
-        ne = max(ne, n)
-
-    padding_m = ne // 2 - n // 2
-
-    if "angles" in kwargs:
-        angles = kwargs["angles"]
-        sorted_theta_cpu = np.sort(angles)
-        theta_full_range = abs(sorted_theta_cpu[angles_tot - 1] - sorted_theta_cpu[0])
-        angle_range_pi_count = 1 + int(np.ceil(theta_full_range / math.pi))
-        angle_range_pi_count += 1  # account for difference from actual algorithm
-    else:
-        angle_range_pi_count = 1 + int(
-            np.ceil(2)
-        )  # assume a 2 * PI projection angle range
-
-    output_dims = __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
-    if odd_horiz:
-        output_dims = tuple(x + 1 for x in output_dims)
-
-    in_slice_size = (angles_tot * DetectorsLengthH) * dtype.itemsize
-    padded_in_slice_size = angles_tot * n * np.float32().itemsize
-
-    theta_size = angles_tot * np.float32().itemsize
-    filter_size = (n // 2 + 1) * np.float32().itemsize
-    rfftfreq_size = filter_size
-    scaled_filter_size = filter_size
-
-    tmp_p_input_slice = angles_tot * n * np.float32().itemsize
-
-    padded_tmp_p_input_slice = angles_tot * (n + padding_m * 2) * np.float32().itemsize
-    rfft_plan_slice_size = (
-        cufft_estimate_1d(
-            nx=n + padding_m * 2,
-            fft_type=CufftType.CUFFT_R2C,
-            batch=angles_tot * SLICES,
-        )
-        / SLICES
-    )
-    rfft_result_size = angles_tot * (n + padding_m * 2) * np.complex64().itemsize
-    filtered_rfft_result_size = rfft_result_size
-    irfft_plan_slice_size = (
-        cufft_estimate_1d(
-            nx=(n + padding_m * 2),
-            fft_type=CufftType.CUFFT_C2R,
-            batch=angles_tot * SLICES,
-        )
-        / SLICES
-    )
-    irfft_scratch_memory_size = filtered_rfft_result_size * 2
-    irfft_result_size = angles_tot * (n + padding_m * 2) * np.float32().itemsize
-
-    datac_size = angles_tot * n * np.complex64().itemsize / 2
-    fde_size = 2 * n * 2 * n * np.complex64().itemsize / 2
-    fft_plan_slice_size = (
-        cufft_estimate_1d(nx=n, fft_type=CufftType.CUFFT_C2C, batch=angles_tot * SLICES)
-        / SLICES
-    )
-    fft_result_size = datac_size
-
-    sorted_theta_indices_size = angles_tot * np.int64().itemsize
-    sorted_theta_size = angles_tot * np.float32().itemsize
-    angle_range_size = (
-        center_size * center_size * (1 + angle_range_pi_count * 2) * np.int16().itemsize
-    )
-
-    recon_output_size = (
-        DetectorsLengthH_prepad * DetectorsLengthH_prepad * np.float32().itemsize
-    )
-    ifft2_plan_slice_size = (
-        cufft_estimate_2d(nx=2 * n, ny=2 * n, fft_type=CufftType.CUFFT_C2C) / 2
-    )
-    circular_mask_size = np.prod(output_dims) / 2 * np.int64().itemsize * 4
-    after_recon_swapaxis_slice = recon_output_size
-
-    tot_memory_bytes = 0
-    current_tot_memory_bytes = 0
-
-    fixed_amount = 0
-    current_fixed_amount = 0
-
-    def add_to_memory_counters(amount, per_slice: bool):
-        nonlocal tot_memory_bytes
-        nonlocal current_tot_memory_bytes
-        nonlocal fixed_amount
-        nonlocal current_fixed_amount
-
-        if per_slice:
-            current_tot_memory_bytes += amount
-            tot_memory_bytes = max(tot_memory_bytes, current_tot_memory_bytes)
-        else:
-            current_fixed_amount += amount
-            fixed_amount = max(fixed_amount, current_fixed_amount)
-
-    add_to_memory_counters(in_slice_size, True)
-    add_to_memory_counters(padded_in_slice_size, True)
-
-    add_to_memory_counters(theta_size, False)
-    if center_size >= _CENTER_SIZE_MIN:
-        add_to_memory_counters(sorted_theta_indices_size, False)
-        add_to_memory_counters(sorted_theta_size, False)
-        add_to_memory_counters(angle_range_size, False)
-    add_to_memory_counters(filter_size, False)
-    add_to_memory_counters(rfftfreq_size, False)
-    add_to_memory_counters(scaled_filter_size, False)
-
-    add_to_memory_counters(tmp_p_input_slice, True)
-    if min_mem_usage_filter:
-        add_to_memory_counters(rfft_plan_slice_size / 4 / projection_chunk_count, False)
-        add_to_memory_counters(
-            irfft_plan_slice_size / 4 / projection_chunk_count, False
-        )
-        add_to_memory_counters(padded_tmp_p_input_slice / projection_chunk_count, False)
-
-        add_to_memory_counters(rfft_result_size / projection_chunk_count, False)
-        add_to_memory_counters(
-            filtered_rfft_result_size / projection_chunk_count, False
-        )
-        add_to_memory_counters(-rfft_result_size / projection_chunk_count, False)
-        add_to_memory_counters(
-            -padded_tmp_p_input_slice / projection_chunk_count, False
-        )
-
-        add_to_memory_counters(
-            irfft_scratch_memory_size / projection_chunk_count, False
-        )
-        add_to_memory_counters(
-            -irfft_scratch_memory_size / projection_chunk_count, False
-        )
-        add_to_memory_counters(irfft_result_size / projection_chunk_count, False)
-        add_to_memory_counters(
-            -filtered_rfft_result_size / projection_chunk_count, False
-        )
-
-        add_to_memory_counters(-irfft_result_size / projection_chunk_count, False)
-    else:
-        add_to_memory_counters(
-            rfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True
-        )
-        add_to_memory_counters(
-            irfft_plan_slice_size / chunk_count / projection_chunk_count * 2, True
-        )
-        # add_to_memory_counters(irfft_scratch_memory_size / chunk_count / projection_chunk_count, True)
-        for _ in range(0, chunk_count):
-            add_to_memory_counters(
-                padded_tmp_p_input_slice / chunk_count / projection_chunk_count, True
-            )
-
-            add_to_memory_counters(
-                rfft_result_size / chunk_count / projection_chunk_count, True
-            )
-            add_to_memory_counters(
-                filtered_rfft_result_size / chunk_count / projection_chunk_count, True
-            )
-            add_to_memory_counters(
-                -rfft_result_size / chunk_count / projection_chunk_count, True
-            )
-            add_to_memory_counters(
-                -padded_tmp_p_input_slice / chunk_count / projection_chunk_count, True
-            )
-
-            add_to_memory_counters(
-                irfft_scratch_memory_size / chunk_count / projection_chunk_count, True
-            )
-            add_to_memory_counters(
-                -irfft_scratch_memory_size / chunk_count / projection_chunk_count, True
-            )
-            add_to_memory_counters(
-                irfft_result_size / chunk_count / projection_chunk_count, True
-            )
-            add_to_memory_counters(
-                -filtered_rfft_result_size / chunk_count / projection_chunk_count, True
-            )
-
-            add_to_memory_counters(
-                -irfft_result_size / chunk_count / projection_chunk_count, True
-            )
-
-    add_to_memory_counters(-padded_in_slice_size, True)
-    add_to_memory_counters(-filter_size, False)
-    add_to_memory_counters(-rfftfreq_size, False)
-    add_to_memory_counters(-scaled_filter_size, False)
-
-    add_to_memory_counters(datac_size, True)
-    add_to_memory_counters(fde_size, True)
-    add_to_memory_counters(-tmp_p_input_slice, True)
-    add_to_memory_counters(fft_plan_slice_size, True)
-    add_to_memory_counters(fft_result_size, True)
-    add_to_memory_counters(-datac_size, True)
-
-    add_to_memory_counters(-fft_result_size, True)
-
-    if min_mem_usage_ifft2:
-        add_to_memory_counters(ifft2_plan_slice_size, False)
-        add_to_memory_counters(fde_size * 2, False)
-        add_to_memory_counters(-fde_size * 2, False)
-    else:
-        add_to_memory_counters(ifft2_plan_slice_size / chunk_count * 2, True)
-        for _ in range(0, chunk_count):
-            add_to_memory_counters(fde_size / chunk_count, True)
-            add_to_memory_counters(-fde_size / chunk_count, True)
-
-    add_to_memory_counters(recon_output_size, True)
-    add_to_memory_counters(-fde_size, True)
-    add_to_memory_counters(circular_mask_size, False)
-    add_to_memory_counters(after_recon_swapaxis_slice, True)
-
-    if min_mem_usage_filter and min_mem_usage_ifft2:
-        return (tot_memory_bytes * 1.15, fixed_amount)
-    elif min_mem_usage_filter and not min_mem_usage_ifft2:
-        return (tot_memory_bytes + 60 * 1024 * 1024, fixed_amount)
-    else:
-        return (tot_memory_bytes * 1.1, fixed_amount)
+) -> int:
+    return LPRec3d_tomobar(dims_shape, calc_peak_gpu_mem=True, **kwargs)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
@@ -459,7 +190,6 @@ def _calc_memory_bytes_SIRT3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-
     detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]

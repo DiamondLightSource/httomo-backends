@@ -199,7 +199,7 @@ recon:
       padding: False
       memory_gpu:
         multiplier: None
-        method: module
+        method: iterative
     SIRT3d_tomobar:
       pattern: sinogram
       output_dims_change: True
