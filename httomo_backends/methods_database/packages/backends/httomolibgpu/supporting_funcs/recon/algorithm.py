@@ -52,7 +52,7 @@ def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
 
     """
     DetectorsLengthH = non_slice_dims_shape[1]
-    recon_size = kwargs["recon_size"]
+    recon_size = kwargs.get("recon_size", None)
     if recon_size is None:
         recon_size = DetectorsLengthH
     output_dims = (recon_size, recon_size)

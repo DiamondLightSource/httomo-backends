@@ -35,6 +35,7 @@ from httomolibgpu.recon.algorithm import (
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
+from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.corr import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
@@ -1166,3 +1167,94 @@ def test_FBP2d_astra_output_dim():
         recon_size=recon_size,
     )
     assert output_dims == (recon_size, recon_size)
+
+
+def test_remove_outlier_padding_calculator_fetches_default_param_value():
+    try:
+        _calc_padding_remove_outlier(**{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_median_filter_padding_calculator_fetches_default_param_value():
+    try:
+        _calc_padding_median_filter(**{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_data_resampler_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_data_resampler((2, 2), np.float32(), **{"newshape": (1, 1)})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_sino_360_to_180_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_sino_360_to_180((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_sino_360_to_180_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_sino_360_to_180((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_rescale_to_int_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_rescale_to_int((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_raven_filter_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_raven_filter((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_FBP2d_astra_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_FBP2d_astra((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_FBP3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_FBP3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_LPRec3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_LPRec3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_SIRT3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_SIRT3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_CGLS3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_CGLS3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_FISTA3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_FISTA3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
