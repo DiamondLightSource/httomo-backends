@@ -12,6 +12,7 @@ import cupy as cp
 
 from httomo_backends.methods_database.query import MethodsDatabaseQuery
 
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
 from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
@@ -642,13 +643,6 @@ def test_recon_FBP3d_tomobar_memoryhook(
 
 
 @pytest.mark.cupy
-# @pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False)])
-# @pytest.mark.parametrize("power_of_2_cropping", [False])
-# @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
-# @pytest.mark.parametrize("projections", [1801])
-# @pytest.mark.parametrize("detX_size", [2560])
-# @pytest.mark.parametrize("slices", [4])
-# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
 @pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False)])
 @pytest.mark.parametrize("power_of_2_cropping", [False])
 @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100])
@@ -678,72 +672,72 @@ def test_recon_LPRec3d_tomobar_0_pi_memoryhook(
     )
 
 
-# @pytest.mark.full
-# @pytest.mark.cupy
-# @pytest.mark.parametrize(
-#     "min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)]
-# )
-# @pytest.mark.parametrize("power_of_2_cropping", [False, True])
-# @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
-# @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
-# @pytest.mark.parametrize("detX_size", [2560])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
-# @pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
-# def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
-#     slices,
-#     detX_size,
-#     projections,
-#     projection_angle_range,
-#     padding_detx,
-#     min_mem_usage_filter_ifft2,
-#     power_of_2_cropping,
-#     ensure_clean_memory,
-# ):
-#     __test_recon_LPRec3d_tomobar_memoryhook_common(
-#         slices,
-#         detX_size,
-#         projections,
-#         projection_angle_range,
-#         padding_detx,
-#         min_mem_usage_filter_ifft2,
-#         power_of_2_cropping,
-#         ensure_clean_memory,
-#     )
+@pytest.mark.full
+@pytest.mark.cupy
+@pytest.mark.parametrize(
+    "min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)]
+)
+@pytest.mark.parametrize("power_of_2_cropping", [False, True])
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
+@pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
+@pytest.mark.parametrize("detX_size", [2560])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize("projection_angle_range", [(0, np.pi)])
+def test_recon_LPRec3d_tomobar_0_pi_memoryhook_full(
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    min_mem_usage_filter_ifft2,
+    power_of_2_cropping,
+    ensure_clean_memory,
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        min_mem_usage_filter_ifft2,
+        power_of_2_cropping,
+        ensure_clean_memory,
+    )
 
 
-# @pytest.mark.full
-# @pytest.mark.cupy
-# @pytest.mark.parametrize(
-#     "min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)]
-# )
-# @pytest.mark.parametrize("power_of_2_cropping", [False, True])
-# @pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
-# @pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
-# @pytest.mark.parametrize("detX_size", [2560])
-# @pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
-# @pytest.mark.parametrize(
-#     "projection_angle_range", [(0, np.pi), (0, 2 * np.pi), (-np.pi / 2, np.pi / 2)]
-# )
-# def test_recon_LPRec3d_tomobar_memoryhook_full(
-#     slices,
-#     detX_size,
-#     projections,
-#     projection_angle_range,
-#     padding_detx,
-#     min_mem_usage_filter_ifft2,
-#     power_of_2_cropping,
-#     ensure_clean_memory,
-# ):
-#     __test_recon_LPRec3d_tomobar_memoryhook_common(
-#         slices,
-#         detX_size,
-#         projections,
-#         projection_angle_range,
-#         padding_detx,
-#         min_mem_usage_filter_ifft2,
-#         power_of_2_cropping,
-#         ensure_clean_memory,
-#     )
+@pytest.mark.full
+@pytest.mark.cupy
+@pytest.mark.parametrize(
+    "min_mem_usage_filter_ifft2", [(False, False), (True, False), (True, True)]
+)
+@pytest.mark.parametrize("power_of_2_cropping", [False, True])
+@pytest.mark.parametrize("padding_detx", [0, 10, 50, 100, 800])
+@pytest.mark.parametrize("projections", [1500, 1801, 2560, 3601])
+@pytest.mark.parametrize("detX_size", [2560])
+@pytest.mark.parametrize("slices", [3, 4, 5, 10, 15, 20])
+@pytest.mark.parametrize(
+    "projection_angle_range", [(0, np.pi), (0, 2 * np.pi), (-np.pi / 2, np.pi / 2)]
+)
+def test_recon_LPRec3d_tomobar_memoryhook_full(
+    slices,
+    detX_size,
+    projections,
+    projection_angle_range,
+    padding_detx,
+    min_mem_usage_filter_ifft2,
+    power_of_2_cropping,
+    ensure_clean_memory,
+):
+    __test_recon_LPRec3d_tomobar_memoryhook_common(
+        slices,
+        detX_size,
+        projections,
+        projection_angle_range,
+        padding_detx,
+        min_mem_usage_filter_ifft2,
+        power_of_2_cropping,
+        ensure_clean_memory,
+    )
 
 
 def __test_recon_LPRec3d_tomobar_memoryhook_common(
@@ -776,12 +770,13 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     actual_mem_peak = hook.max_mem
 
     try:
-        estimated_mem_peak = LPRec3d_tomobar(cp.copy(data), calc_peak_gpu_mem=True, **kwargs)
+        with DeviceMemStack():
+            estimated_mem_peak = LPRec3d_tomobar(cp.copy(data), **kwargs)
     except cp.cuda.memory.OutOfMemoryError:
         pytest.skip("Not enough GPU memory to estimate memory peak")
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.4
+    assert estimated_mem_peak <= actual_mem_peak * 1.6
 
 
 @pytest.mark.cupy

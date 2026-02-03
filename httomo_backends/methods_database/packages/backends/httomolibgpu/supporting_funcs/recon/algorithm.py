@@ -25,6 +25,7 @@ from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
 from httomolibgpu.recon.algorithm import LPRec3d_tomobar
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
@@ -182,7 +183,8 @@ def _calc_memory_bytes_for_slices_LPRec3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> int:
-    return LPRec3d_tomobar(dims_shape, calc_peak_gpu_mem=True, **kwargs)
+    with DeviceMemStack():
+        return LPRec3d_tomobar(dims_shape, **kwargs)
 
 
 def _calc_memory_bytes_SIRT3d_tomobar(
