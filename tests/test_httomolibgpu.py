@@ -1039,16 +1039,15 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])
 @pytest.mark.parametrize("recon_size_it", [2560])
-@pytest.mark.parametrize("padding", [0, 100, 200])
+@pytest.mark.parametrize("padding", [0, 100, 200, True])
 @pytest.mark.parametrize("subsets", [1, 6])
+@pytest.mark.parametrize("initialisation", ["FBP", None])
 def test_recon_ADMM3d_tomobar_memoryhook(
-    slices, recon_size_it, padding, subsets, ensure_clean_memory
+    slices, recon_size_it, padding, subsets, initialisation, ensure_clean_memory
 ):
     angles_total = 901
     detX_size = 2560
     data = cp.random.random_sample((angles_total, slices, detX_size), dtype=np.float32)
-    kwargs = {}
-    kwargs["recon_size"] = recon_size_it
 
     hook = MaxMemoryHook()
     with hook:
@@ -1062,6 +1061,7 @@ def test_recon_ADMM3d_tomobar_memoryhook(
             regularisation_iterations=2,
             nonnegativity=True,
             detector_pad=padding,
+            initialisation=initialisation,
         )
 
     # make sure estimator function is within range (80% min, 100% max)
@@ -1071,7 +1071,16 @@ def test_recon_ADMM3d_tomobar_memoryhook(
 
     # now we estimate how much of the total memory required for this data
     (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_ADMM3d_tomobar(
-        (angles_total, detX_size), dtype=np.float32(), **kwargs
+        (angles_total, detX_size),
+        dtype=np.float32(),
+        center=1200,
+        recon_size=recon_size_it,
+        iterations=1,
+        subsets_number=subsets,
+        regularisation_iterations=2,
+        nonnegativity=True,
+        detector_pad=padding,
+        initialisation=initialisation,
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
     max_mem -= subtract_bytes
