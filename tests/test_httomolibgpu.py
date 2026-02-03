@@ -1040,8 +1040,9 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
 @pytest.mark.parametrize("slices", [3, 5])
 @pytest.mark.parametrize("recon_size_it", [2560])
 @pytest.mark.parametrize("padding", [0, 100, 200])
-def test_recon_ADMM3d_tomobar_nonOS_memoryhook(
-    slices, recon_size_it, padding, ensure_clean_memory
+@pytest.mark.parametrize("subsets", [1, 6])
+def test_recon_ADMM3d_tomobar_memoryhook(
+    slices, recon_size_it, padding, subsets, ensure_clean_memory
 ):
     angles_total = 901
     detX_size = 2560
@@ -1057,7 +1058,7 @@ def test_recon_ADMM3d_tomobar_nonOS_memoryhook(
             center=1200,
             recon_size=recon_size_it,
             iterations=1,
-            subsets_number=1,
+            subsets_number=subsets,
             regularisation_iterations=2,
             nonnegativity=True,
             detector_pad=padding,
