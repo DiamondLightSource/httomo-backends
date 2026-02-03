@@ -2,7 +2,6 @@ import ctypes
 import sys
 from enum import Enum
 
-
 if "linux" not in sys.platform:
     raise RuntimeError("Linux is currently the only supported platform")
 

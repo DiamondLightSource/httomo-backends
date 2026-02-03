@@ -25,12 +25,12 @@
 Please run the generator as:
     python -m yaml_pipelines_generator -i /path/to/pipelines.yml -o /path/to/output/
 """
+
 import argparse
 import os
 import ruamel.yaml
 import httomo_backends
 import yaml
-
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 

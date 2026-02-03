@@ -45,7 +45,6 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
 
-
 module_mem_path = "httomo.methods_database.packages.external."
 
 
@@ -101,7 +100,7 @@ def test_dark_flat_field_correction_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = (
+    estimated_memory_bytes, subtract_bytes = (
         _calc_memory_bytes_dark_flat_field_correction(data.shape[1:], dtype=data.dtype)
     )
 
@@ -432,7 +431,7 @@ def test_remove_stripe_ti_memoryhook(slices, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_remove_stripe_ti(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_remove_stripe_ti(
         (dim_x, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -496,7 +495,7 @@ def test_raven_filter_memoryhook(projections, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_raven_filter(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_raven_filter(
         (projections, horiz_det), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(vert_det * estimated_memory_bytes / (1024**2), 2)
@@ -529,7 +528,7 @@ def test_remove_all_stripe_memoryhook(angles, dim_x_slices, dim_y, ensure_clean_
     max_mem_mb = round(max_mem / (1024**2), 2)  # now in mbs
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_remove_all_stripe(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_remove_all_stripe(
         (angles, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(dim_x_slices * estimated_memory_bytes / (1024**2), 2)
@@ -567,7 +566,7 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_data_resampler(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_data_resampler(
         (recon_size, recon_size), dtype=np.float32(), **kwargs
     )
     # as this is slice-by-slice implementation we should be adding slices number
@@ -625,7 +624,7 @@ def test_recon_FBP3d_tomobar_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FBP3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FBP3d_tomobar(
         (projections, detectorX), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -781,7 +780,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     input_data_type = np.float32()
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_LPRec3d_tomobar(
         non_slice_dims_shape, dtype=input_data_type, **kwargs
     )
 
@@ -832,7 +831,7 @@ def test_recon_SIRT3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_SIRT3d_tomobar(
         (1801, 2560), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -879,7 +878,7 @@ def test_recon_SIRT3d_tomobar_autopad_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_SIRT3d_tomobar(
         (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -924,7 +923,7 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_CGLS3d_tomobar(
         (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -971,7 +970,7 @@ def test_recon_CGLS3d_tomobar_autopad_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_CGLS3d_tomobar(
         (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1020,7 +1019,7 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FISTA3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FISTA3d_tomobar(
         (angles_total, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1070,7 +1069,7 @@ def test_recon_ADMM3d_tomobar_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_ADMM3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_ADMM3d_tomobar(
         (angles_total, detX_size),
         dtype=np.float32(),
         center=1200,
@@ -1127,7 +1126,7 @@ def test_recon_FISTA3d_tomobar_OS_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FISTA3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FISTA3d_tomobar(
         (angles_total, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1166,7 +1165,7 @@ def test_rescale_to_int_memoryhook(
     max_mem_mb = round(max_mem / (1024**2), 2)
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_rescale_to_int(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_rescale_to_int(
         (data.shape[0], data.shape[2]), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1201,7 +1200,7 @@ def test_sino_360_to_180_memoryhook(
         sino_360_to_180(cp.copy(data), overlap)
 
     # Call memory estimator to estimate memory usage
-    (estimated_bytes, subtract_bytes) = _calc_memory_bytes_sino_360_to_180(
+    estimated_bytes, subtract_bytes = _calc_memory_bytes_sino_360_to_180(
         non_slice_dims_shape=(shape[0], shape[2]),
         dtype=np.float32(),
         overlap=overlap,

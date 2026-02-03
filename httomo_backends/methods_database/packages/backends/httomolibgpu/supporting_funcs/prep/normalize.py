@@ -1,7 +1,6 @@
 from typing import Tuple
 import numpy as np
 
-
 __all__ = [
     "_calc_memory_bytes_dark_flat_field_correction",
 ]

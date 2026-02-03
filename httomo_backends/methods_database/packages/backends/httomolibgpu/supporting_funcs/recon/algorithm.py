@@ -48,8 +48,10 @@ __all__ = [
 def _calc_padding_FISTA3d_tomobar(**kwargs) -> Tuple[int, int]:
     return (5, 5)
 
+
 def _calc_padding_ADMM3d_tomobar(**kwargs) -> Tuple[int, int]:
     return (5, 5)
+
 
 def __calc_output_dim_recon(non_slice_dims_shape, **kwargs):
     """Function to calculate output dimensions for all reconstructors.
