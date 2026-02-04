@@ -12,6 +12,7 @@ import cupy as cp
 
 from httomo_backends.methods_database.query import MethodsDatabaseQuery
 
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
 from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
@@ -765,45 +766,19 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
     kwargs["recon_mask_radius"] = 0.8
 
     hook = MaxMemoryHook()
-    hook2 = PeakMemoryLineProfileHook(["methodsDIR_CuPy.py"])
-    with hook, hook2:
-        # with hook:
-        recon_data = LPRec3d_tomobar(cp.copy(data), **kwargs)
-    # hook2.print_report()
+    with hook:
+        LPRec3d_tomobar(cp.copy(data), **kwargs)
+    actual_mem_peak = hook.max_mem
 
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = (
-        hook.max_mem
-    )  # the amount of memory in bytes needed for the method according to memoryhook
+    try:
+        with DeviceMemStack():
+            kwargs["data_dtype"] = data.dtype
+            estimated_mem_peak = LPRec3d_tomobar(data.shape, **kwargs)
+    except cp.cuda.memory.OutOfMemoryError:
+        pytest.skip("Not enough GPU memory to estimate memory peak")
 
-    non_slice_dims_shape = (angles_number, detX_size)
-    input_data_type = np.float32()
-
-    # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_LPRec3d_tomobar(
-        non_slice_dims_shape, dtype=input_data_type, **kwargs
-    )
-
-    odd_horiz = bool(detX_size % 2)
-    odd_vert = bool(slices % 2)
-
-    padded_slices = slices + odd_vert
-
-    if not odd_horiz and not odd_vert:
-        input_slice_size = np.prod(non_slice_dims_shape) * input_data_type.itemsize
-        estimated_memory_bytes -= input_slice_size
-
-    estimated_memory_mb = round(padded_slices * estimated_memory_bytes / (1024**2), 2)
-    max_mem -= subtract_bytes
-    max_mem_mb = round(max_mem / (1024**2), 2)
-
-    # now we compare both memory estimations
-    difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
-    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
-    # the resulting percent value should not deviate from max_mem on more than 20%
-    assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 60
+    assert actual_mem_peak * 0.99 <= estimated_mem_peak
+    assert estimated_mem_peak <= actual_mem_peak * 1.6
 
 
 @pytest.mark.cupy
