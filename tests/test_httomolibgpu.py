@@ -771,7 +771,8 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
 
     try:
         with DeviceMemStack():
-            estimated_mem_peak = LPRec3d_tomobar(cp.copy(data), **kwargs)
+            kwargs["data_dtype"] = data.dtype
+            estimated_mem_peak = LPRec3d_tomobar(data.shape, **kwargs)
     except cp.cuda.memory.OutOfMemoryError:
         pytest.skip("Not enough GPU memory to estimate memory peak")
 

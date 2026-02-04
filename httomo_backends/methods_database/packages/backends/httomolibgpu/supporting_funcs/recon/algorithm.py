@@ -184,6 +184,7 @@ def _calc_memory_bytes_for_slices_LPRec3d_tomobar(
     **kwargs,
 ) -> int:
     with DeviceMemStack():
+        kwargs["data_dtype"] = dtype
         return LPRec3d_tomobar(dims_shape, **kwargs)
 
 
