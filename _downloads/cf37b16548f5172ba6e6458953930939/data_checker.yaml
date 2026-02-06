@@ -1,0 +1,7 @@
+- method: data_checker
+  module_path: httomolibgpu.misc.utils
+  parameters:
+    infsnans_correct: true
+    zeros_warning: false
+    data_to_method_name: null
+    verbosity: true

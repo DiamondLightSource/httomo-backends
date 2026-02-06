@@ -1,0 +1,7 @@
+- method: save_to_images
+  module_path: httomolib.misc.images
+  parameters:
+    subfolder_name: images
+    axis: auto
+    file_format: tif
+    asynchronous: true
