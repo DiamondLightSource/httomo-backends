@@ -24,6 +24,7 @@ import math
 from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
+from httomolibgpu.recon.algorithm import ADMM3d_tomobar
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
@@ -31,17 +32,24 @@ __all__ = [
     "_calc_memory_bytes_SIRT3d_tomobar",
     "_calc_memory_bytes_CGLS3d_tomobar",
     "_calc_memory_bytes_FISTA3d_tomobar",
+    "_calc_memory_bytes_ADMM3d_tomobar",
     "_calc_output_dim_FBP2d_astra",
     "_calc_output_dim_FBP3d_tomobar",
     "_calc_output_dim_LPRec3d_tomobar",
     "_calc_output_dim_SIRT3d_tomobar",
     "_calc_output_dim_CGLS3d_tomobar",
     "_calc_output_dim_FISTA3d_tomobar",
+    "_calc_output_dim_ADMM3d_tomobar",
     "_calc_padding_FISTA3d_tomobar",
+    "_calc_padding_ADMM3d_tomobar",
 ]
 
 
 def _calc_padding_FISTA3d_tomobar(**kwargs) -> Tuple[int, int]:
+    return (5, 5)
+
+
+def _calc_padding_ADMM3d_tomobar(**kwargs) -> Tuple[int, int]:
     return (5, 5)
 
 
@@ -80,6 +88,10 @@ def _calc_output_dim_CGLS3d_tomobar(non_slice_dims_shape, **kwargs):
 
 
 def _calc_output_dim_FISTA3d_tomobar(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
+
+def _calc_output_dim_ADMM3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 
@@ -601,6 +613,58 @@ def _calc_memory_bytes_FISTA3d_tomobar(
     regul_part = 8 * np.prod(output_dims_larger_grid) * dtype.itemsize
 
     tot_memory_bytes = int(fista_part + regul_part)
+    return (tot_memory_bytes, 0)
+
+
+def _calc_memory_bytes_ADMM3d_tomobar(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    detector_pad = 0
+    if "detector_pad" in kwargs:
+        detector_pad = kwargs["detector_pad"]
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0
+
+    anglesnum = non_slice_dims_shape[0]
+    DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
+
+    # calculate the output shape
+    output_dims = _calc_output_dim_FISTA3d_tomobar(non_slice_dims_shape, **kwargs)
+    recon_data_size_original = (
+        np.prod(output_dims) * dtype.itemsize
+    )  # recon user-defined size
+
+    in_data_siz_pad = (anglesnum * DetectorsLengthH_padded) * dtype.itemsize
+    output_dims_larger_grid = (DetectorsLengthH_padded, DetectorsLengthH_padded)
+
+    out_data_size = np.prod(output_dims_larger_grid) * dtype.itemsize
+    x0 = out_data_size
+    x = out_data_size
+    z = out_data_size
+    u = out_data_size
+    grad_data = out_data_size
+    grad_admm = out_data_size
+    arithmetic = 3 * out_data_size
+
+    admm_part = (
+        recon_data_size_original
+        + in_data_siz_pad
+        + x0
+        + x
+        + z
+        + u
+        + grad_data
+        + grad_admm
+        + out_data_size
+        + arithmetic
+    )
+    regul_part = 8 * np.prod(output_dims_larger_grid) * dtype.itemsize
+
+    tot_memory_bytes = int(admm_part + regul_part)
     return (tot_memory_bytes, 0)
 
 

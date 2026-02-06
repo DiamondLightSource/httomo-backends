@@ -28,7 +28,6 @@ import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d
 from httomolibgpu.prep.stripe import raven_filter, remove_stripe_fw
 
-
 __all__ = [
     "_calc_memory_bytes_for_slices_remove_stripe_fw",
     "_calc_memory_bytes_remove_stripe_ti",
