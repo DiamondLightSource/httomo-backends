@@ -75,7 +75,6 @@ def _calc_output_dim_sino_360_to_180(
     overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
-    #stitched_sino_width = original_sino_width * 2 - math.ceil(overlap)
     stitched_sino_width = original_sino_width * 2
     return non_slice_dims_shape[0] // 2, stitched_sino_width
 
@@ -91,7 +90,6 @@ def _calc_memory_bytes_sino_360_to_180(
     overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
-    #stitched_sino_width = original_sino_width * 2 - math.ceil(overlap)
     stitched_sino_width = original_sino_width * 2
 
     n = non_slice_dims_shape[0] // 2
@@ -108,7 +106,7 @@ def _calc_memory_bytes_sino_360_to_180(
 
     total_memory_bytes = (
         input_slice_size
-        + 2*output_slice_size
+        + output_slice_size
         # In both the `if` branch and the `else` branch checking the `rotation` variable value,
         # in total, there are 4 copies of subsets of the `data` array that are made (note that
         # the expressions below are referencing the `if` branch and are slightly different in
