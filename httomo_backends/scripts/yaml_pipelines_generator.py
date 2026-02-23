@@ -289,7 +289,7 @@ def yaml_pipelines_generator(
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="center",
-                    comment="Reference to center of rotation side output above OR a float number.",
+                    comment="Reference to center of rotation side output, a float number or 'null' for a middle of the horizontal dimension.",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="detector_pad",
