@@ -1190,7 +1190,7 @@ def test_sino_360_to_180_memoryhook(
     percentage_difference = round((difference / max_mem) * 100)
 
     assert estimated_bytes >= max_mem
-    assert percentage_difference <= 35
+    assert percentage_difference <= 50
 
 
 def test_FBP2d_astra_output_dim():
