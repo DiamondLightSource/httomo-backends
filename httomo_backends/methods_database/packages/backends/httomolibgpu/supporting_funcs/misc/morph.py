@@ -90,13 +90,16 @@ def _calc_memory_bytes_sino_360_to_180(
     overlap: float = kwargs["overlap"]
 
     original_sino_width = non_slice_dims_shape[1]
-    stitched_sino_width = original_sino_width * 2
+    stitched_sino_width = original_sino_width * 2 - math.ceil(overlap)
+    stitched_sino_padded = original_sino_width * 2
 
     n = non_slice_dims_shape[0] // 2
     stitched_non_slice_dims = (n, stitched_sino_width)
+    stitched_pad_non_slice_dims = (n, stitched_sino_padded)
 
     input_slice_size = int(np.prod(non_slice_dims_shape)) * dtype.itemsize
     output_slice_size = int(np.prod(stitched_non_slice_dims)) * dtype.itemsize
+    output_slice_size_pad = int(np.prod(stitched_pad_non_slice_dims)) * dtype.itemsize
 
     summand_shape: Tuple[int, int] = (n, int(overlap))
     # Multiplication between a subset of the original data (`float32`) and the 1D weights array
@@ -107,6 +110,7 @@ def _calc_memory_bytes_sino_360_to_180(
     total_memory_bytes = (
         input_slice_size
         + output_slice_size
+        + output_slice_size_pad
         # In both the `if` branch and the `else` branch checking the `rotation` variable value,
         # in total, there are 4 copies of subsets of the `data` array that are made (note that
         # the expressions below are referencing the `if` branch and are slightly different in
