@@ -23,7 +23,6 @@
 from typing import Tuple
 import numpy as np
 
-
 __all__ = [
     "_calc_output_dim_recon",
 ]

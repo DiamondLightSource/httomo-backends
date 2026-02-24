@@ -24,6 +24,7 @@
 Please run the generator as:
     python -m yaml_templates_generator -i /path/to/modules.yml -o /path/to/output/
 """
+
 import argparse
 import importlib
 import inspect

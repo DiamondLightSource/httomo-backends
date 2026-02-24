@@ -33,9 +33,11 @@ from httomolibgpu.recon.algorithm import (
     LPRec3d_tomobar,
     CGLS3d_tomobar,
     FISTA3d_tomobar,
+    ADMM3d_tomobar,
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
+from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.corr import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.stripe import *
@@ -43,7 +45,6 @@ from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.recon.peak_memory_line_profile_hook import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.rescale import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.normalize import *
-
 
 module_mem_path = "httomo.methods_database.packages.external."
 
@@ -100,7 +101,7 @@ def test_dark_flat_field_correction_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = (
+    estimated_memory_bytes, subtract_bytes = (
         _calc_memory_bytes_dark_flat_field_correction(data.shape[1:], dtype=data.dtype)
     )
 
@@ -431,7 +432,7 @@ def test_remove_stripe_ti_memoryhook(slices, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_remove_stripe_ti(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_remove_stripe_ti(
         (dim_x, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -495,7 +496,7 @@ def test_raven_filter_memoryhook(projections, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_raven_filter(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_raven_filter(
         (projections, horiz_det), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(vert_det * estimated_memory_bytes / (1024**2), 2)
@@ -528,7 +529,7 @@ def test_remove_all_stripe_memoryhook(angles, dim_x_slices, dim_y, ensure_clean_
     max_mem_mb = round(max_mem / (1024**2), 2)  # now in mbs
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_remove_all_stripe(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_remove_all_stripe(
         (angles, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(dim_x_slices * estimated_memory_bytes / (1024**2), 2)
@@ -566,7 +567,7 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_data_resampler(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_data_resampler(
         (recon_size, recon_size), dtype=np.float32(), **kwargs
     )
     # as this is slice-by-slice implementation we should be adding slices number
@@ -624,7 +625,7 @@ def test_recon_FBP3d_tomobar_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FBP3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FBP3d_tomobar(
         (projections, detectorX), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -805,7 +806,7 @@ def test_recon_SIRT3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_SIRT3d_tomobar(
         (1801, 2560), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -852,7 +853,7 @@ def test_recon_SIRT3d_tomobar_autopad_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_SIRT3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_SIRT3d_tomobar(
         (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -897,7 +898,7 @@ def test_recon_CGLS3d_tomobar_memoryhook(slices, recon_size_it, ensure_clean_mem
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_CGLS3d_tomobar(
         (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -944,7 +945,7 @@ def test_recon_CGLS3d_tomobar_autopad_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_CGLS3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_CGLS3d_tomobar(
         (angles_tot, det_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -993,7 +994,7 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FISTA3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FISTA3d_tomobar(
         (angles_total, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1007,6 +1008,65 @@ def test_recon_FISTA3d_tomobar_nonOS_memoryhook(
     # the resulting percent value should not deviate from max_mem on more than 20%
     assert estimated_memory_mb >= max_mem_mb
     assert percents_relative_maxmem <= 100
+
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("slices", [3, 5])
+@pytest.mark.parametrize("recon_size_it", [2560])
+@pytest.mark.parametrize("padding", [0, 100, 200, True])
+@pytest.mark.parametrize("subsets", [1, 6])
+@pytest.mark.parametrize("initialisation", ["FBP", None])
+def test_recon_ADMM3d_tomobar_memoryhook(
+    slices, recon_size_it, padding, subsets, initialisation, ensure_clean_memory
+):
+    angles_total = 901
+    detX_size = 2560
+    data = cp.random.random_sample((angles_total, slices, detX_size), dtype=np.float32)
+
+    hook = MaxMemoryHook()
+    with hook:
+        recon_data = ADMM3d_tomobar(
+            cp.copy(data),
+            np.linspace(0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]),
+            center=1200,
+            recon_size=recon_size_it,
+            iterations=1,
+            subsets_number=subsets,
+            regularisation_iterations=2,
+            nonnegativity=True,
+            detector_pad=padding,
+            initialisation=initialisation,
+        )
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_ADMM3d_tomobar(
+        (angles_total, detX_size),
+        dtype=np.float32(),
+        center=1200,
+        recon_size=recon_size_it,
+        iterations=1,
+        subsets_number=subsets,
+        regularisation_iterations=2,
+        nonnegativity=True,
+        detector_pad=padding,
+        initialisation=initialisation,
+    )
+    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
+    max_mem -= subtract_bytes
+    max_mem_mb = round(max_mem / (1024**2), 2)
+
+    # now we compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 50
 
 
 @pytest.mark.cupy
@@ -1041,7 +1101,7 @@ def test_recon_FISTA3d_tomobar_OS_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_FISTA3d_tomobar(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FISTA3d_tomobar(
         (angles_total, detX_size), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1080,7 +1140,7 @@ def test_rescale_to_int_memoryhook(
     max_mem_mb = round(max_mem / (1024**2), 2)
 
     # now we estimate how much of the total memory required for this data
-    (estimated_memory_bytes, subtract_bytes) = _calc_memory_bytes_rescale_to_int(
+    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_rescale_to_int(
         (data.shape[0], data.shape[2]), dtype=np.float32(), **kwargs
     )
     estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
@@ -1115,7 +1175,7 @@ def test_sino_360_to_180_memoryhook(
         sino_360_to_180(cp.copy(data), overlap)
 
     # Call memory estimator to estimate memory usage
-    (estimated_bytes, subtract_bytes) = _calc_memory_bytes_sino_360_to_180(
+    estimated_bytes, subtract_bytes = _calc_memory_bytes_sino_360_to_180(
         non_slice_dims_shape=(shape[0], shape[2]),
         dtype=np.float32(),
         overlap=overlap,
@@ -1141,3 +1201,94 @@ def test_FBP2d_astra_output_dim():
         recon_size=recon_size,
     )
     assert output_dims == (recon_size, recon_size)
+
+
+def test_remove_outlier_padding_calculator_fetches_default_param_value():
+    try:
+        _calc_padding_remove_outlier(**{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_median_filter_padding_calculator_fetches_default_param_value():
+    try:
+        _calc_padding_median_filter(**{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_data_resampler_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_data_resampler((2, 2), np.float32(), **{"newshape": (1, 1)})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_sino_360_to_180_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_sino_360_to_180((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_sino_360_to_180_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_sino_360_to_180((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_rescale_to_int_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_rescale_to_int((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_raven_filter_memory_estimator_fetches_default_param_value():
+    try:
+        _calc_memory_bytes_raven_filter((1, 1), np.float32(), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_FBP2d_astra_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_FBP2d_astra((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_FBP3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_FBP3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_LPRec3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_LPRec3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_SIRT3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_SIRT3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_CGLS3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_CGLS3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
+
+
+def test_FISTA3d_tomobar_output_dims_calculator_fetches_default_param_value():
+    try:
+        _calc_output_dim_FISTA3d_tomobar((1, 1), **{})
+    except KeyError as e:
+        pytest.fail(f"Failed to get default value for {e} parameter")
