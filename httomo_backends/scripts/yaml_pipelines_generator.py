@@ -25,12 +25,12 @@
 Please run the generator as:
     python -m yaml_pipelines_generator -i /path/to/pipelines.yml -o /path/to/output/
 """
+
 import argparse
 import os
 import ruamel.yaml
 import httomo_backends
 import yaml
-
 
 CS = ruamel.yaml.comments.CommentedSeq  # defaults to block style
 
@@ -289,7 +289,7 @@ def yaml_pipelines_generator(
                 pipeline_full += yaml_template_method
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="center",
-                    comment="Reference to center of rotation side output above OR a float number.",
+                    comment="Reference to center of rotation side output, a float number or 'null' for a middle of the horizontal dimension.",
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="detector_pad",

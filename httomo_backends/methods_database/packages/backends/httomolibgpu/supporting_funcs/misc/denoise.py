@@ -1,6 +1,5 @@
 from typing import Tuple
 
-
 __all__ = [
     "_calc_padding_total_variation_ROF",
     "_calc_padding_total_variation_PD",
