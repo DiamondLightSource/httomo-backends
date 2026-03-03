@@ -1,0 +1,76 @@
+- method: CGLS3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    recon_size: null
+    recon_mask_radius: 0.95
+    iterations: 20
+    nonnegativity: true
+- method: SIRT3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    recon_size: null
+    recon_mask_radius: 0.95
+    iterations: 300
+    nonnegativity: true
+- method: ADMM3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    recon_size: null
+    recon_mask_radius: 0.95
+    iterations: 3
+    subsets_number: 24
+    initialisation: FBP
+    ADMM_rho_const: 1.0
+    ADMM_relax_par: 1.7
+    regularisation_type: PD_TV
+    regularisation_parameter: 0.0025
+    regularisation_iterations: 40
+    regularisation_half_precision: true
+    nonnegativity: false
+- method: FBP3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    filter_freq_cutoff: 0.35
+    recon_size: null
+    recon_mask_radius: 0.95
+- method: FBP2d_astra
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    filter_type: ram-lak
+    filter_parameter: null
+    filter_d: null
+    recon_size: null
+    recon_mask_radius: 0.95
+- method: LPRec3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    filter_type: shepp
+    filter_freq_cutoff: 1.0
+    recon_size: null
+    recon_mask_radius: 0.95
+- method: FISTA3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    recon_size: null
+    recon_mask_radius: 0.95
+    iterations: 20
+    subsets_number: 6
+    regularisation_type: PD_TV
+    regularisation_parameter: 1.0e-06
+    regularisation_iterations: 50
+    regularisation_half_precision: true
+    nonnegativity: true
