@@ -24,10 +24,12 @@ import math
 from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
-from httomolibgpu.recon.algorithm import ADMM3d_tomobar
+from httomolibgpu.recon.algorithm import ADMM3d_tomobar, LPRec3d_tomobar
+from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
+    "_calc_memory_bytes_for_slices_LPRec3d_tomobar",
     "_calc_memory_bytes_LPRec3d_tomobar",
     "_calc_memory_bytes_SIRT3d_tomobar",
     "_calc_memory_bytes_CGLS3d_tomobar",
@@ -186,6 +188,16 @@ def _calc_memory_bytes_FBP3d_tomobar(
 
     # this account for the memory used for filtration AND backprojection.
     return (tot_memory_bytes, fixed_amount)
+
+
+def _calc_memory_bytes_for_slices_LPRec3d_tomobar(
+    dims_shape: Tuple[int, int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> int:
+    with DeviceMemStack():
+        kwargs["data_dtype"] = dtype
+        return LPRec3d_tomobar(dims_shape, **kwargs)
 
 
 def _calc_memory_bytes_LPRec3d_tomobar(
@@ -471,7 +483,6 @@ def _calc_memory_bytes_SIRT3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-
     detector_pad = 0
     if "detector_pad" in kwargs:
         detector_pad = kwargs["detector_pad"]
