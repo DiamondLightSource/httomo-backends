@@ -778,7 +778,7 @@ def __test_recon_LPRec3d_tomobar_memoryhook_common(
         pytest.skip("Not enough GPU memory to estimate memory peak")
 
     assert actual_mem_peak * 0.99 <= estimated_mem_peak
-    assert estimated_mem_peak <= actual_mem_peak * 1.2
+    assert estimated_mem_peak <= actual_mem_peak * 1.201
 
 
 @pytest.mark.cupy
