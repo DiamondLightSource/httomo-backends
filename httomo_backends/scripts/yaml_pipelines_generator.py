@@ -170,7 +170,7 @@ def yaml_pipelines_generator(
                 )
                 pipeline_full[i]["parameters"].yaml_add_eol_comment(
                     key="side",
-                    comment="'None' corresponds to fully automated determination, 'left' to the left side, 'right' to the right side.",
+                    comment="Choose 'left' to stitch to the left side, 'right' to the right side, or null for automated determination",
                 )
                 pipeline_full[i]["side_outputs"].yaml_add_eol_comment(
                     key="cor",
