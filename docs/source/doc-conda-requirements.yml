@@ -2,10 +2,10 @@ name: httomo-backends-docs
 channels:
   - conda-forge
 dependencies:
-  - python>=3.10
+  - python==3.12
+  - sphinx>=9.0,<=9.1.0
   - numpy
-  - tomopy==1.15
-  - sphinx>=8.0,<8.2.0
+  - tomopy==1.15.3  
   - sphinx-book-theme
   - nbsphinx
   - pandoc
