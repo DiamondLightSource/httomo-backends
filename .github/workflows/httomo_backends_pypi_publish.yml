@@ -32,9 +32,10 @@ jobs:
           miniforge-version: latest
       - name: Install dependencies
         run: |        
-          conda install conda-forge::tomopy==1.15
+          conda install conda-forge::tomopy==1.15.3
           python -m pip install pyyaml setuptools wheel build httomolib
           python -m pip install --no-deps httomolibgpu
+          python -m pip install tomobar --no-deps
           conda list
       - name: Generate yaml templates
         run: |
