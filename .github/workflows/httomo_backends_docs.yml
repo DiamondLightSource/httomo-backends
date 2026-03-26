@@ -17,12 +17,12 @@ jobs:
         shell: bash -el {0}
     steps:
         - name: Checkout repository code
-          uses: actions/checkout@v4
+          uses: actions/checkout@v5
 
-        - name: Setup Python 3.10
-          uses: actions/setup-python@v4
+        - name: Setup Python 3.12
+          uses: actions/setup-python@v5
           with:
-            python-version: '3.10'
+            python-version: '3.12'
 
         - name: httomo-backends-docs
           uses: mamba-org/setup-micromamba@v2
@@ -37,9 +37,9 @@ jobs:
 
         - name: Install backends from PyPI
           run: |            
-            pip install httomolib
-            pip install tomobar --no-deps
-            pip install httomolibgpu --no-deps
+            python -m pip install httomolib
+            python -m pip install tomobar --no-deps
+            python -m pip install httomolibgpu --no-deps
 
         - name: Generate yaml templates
           run: |
