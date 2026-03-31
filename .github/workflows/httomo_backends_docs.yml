@@ -48,6 +48,10 @@ jobs:
             python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolib/httomolib_modules.yaml -o ./docs/build/yaml_templates/httomolib
             python ./httomo_backends/scripts/yaml_templates_generator.py -i ./httomo_backends/methods_database/packages/backends/httomolibgpu/httomolibgpu_modules.yaml -o ./docs/build/yaml_templates/httomolibgpu
 
+        - name: Create ZIP archive for all templates
+          run: |
+            zip -r yaml_templates_artifact.zip ./docs/build/yaml_templates/
+
         - name: Generate yml docs
           run: python ./docs/source/yaml_doc_generator.py
 
@@ -59,3 +63,9 @@ jobs:
           run: ghp-import -n -p -f ./docs/build
           env:
             GITHUB_TOKEN: ${{ github.token }}
+
+        - name: Upload artifact
+          uses: actions/upload-artifact@v4
+          with:
+            name: yaml_templates-artifact
+            path: yaml_templates_artifact.zip
