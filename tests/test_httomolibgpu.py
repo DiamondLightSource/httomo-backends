@@ -1157,16 +1157,17 @@ def test_rescale_to_int_memoryhook(
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("slices", [3, 8, 30, 50])
-@pytest.mark.parametrize("det_x", [600, 2160])
+@pytest.mark.parametrize("angles", [1800, 3600])
+@pytest.mark.parametrize("slices", [3, 5])
+@pytest.mark.parametrize("det_x", [1080, 2160])
 def test_sino_360_to_180_memoryhook(
     ensure_clean_memory,
     det_x: int,
     slices: int,
+    angles: int,
 ):
-    # Use a different overlap value for stitching based on the width of the 360 sinogram
-    overlap = 350 if det_x == 600 else 1950
-    shape = (1801, slices, det_x)
+    overlap = 1
+    shape = (angles, slices, det_x)
     data = cp.random.random_sample(shape, dtype=np.float32)
 
     # Run method to see actual memory usage
@@ -1190,7 +1191,7 @@ def test_sino_360_to_180_memoryhook(
     percentage_difference = round((difference / max_mem) * 100)
 
     assert estimated_bytes >= max_mem
-    assert percentage_difference <= 50
+    assert percentage_difference <= 20
 
 
 def test_FBP2d_astra_output_dim():

@@ -89,7 +89,7 @@ def _calc_memory_bytes_sino_360_to_180(
         kwargs["overlap"] = params["overlap"].default
     overlap: float = kwargs["overlap"]
 
-    original_sino_width = non_slice_dims_shape[1]
+    original_sino_width = non_slice_dims_shape[1] # detX
     stitched_sino_width = original_sino_width * 2 - math.ceil(overlap)
     stitched_sino_padded = original_sino_width * 2
 
@@ -123,4 +123,4 @@ def _calc_memory_bytes_sino_360_to_180(
         + 4 * summand_size
     )
 
-    return total_memory_bytes, 0
+    return int(1.1*total_memory_bytes), 0
