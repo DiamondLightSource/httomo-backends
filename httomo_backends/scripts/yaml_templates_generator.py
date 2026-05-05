@@ -227,6 +227,7 @@ def _get_discard_keys() -> List[str]:
         "min_mem_usage_filter",
         "min_mem_usage_ifft2",
         "calc_peak_gpu_mem",
+        "shift_seam_index",
     ]
     return discard_keys
 

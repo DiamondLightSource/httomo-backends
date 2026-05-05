@@ -210,6 +210,17 @@ def yaml_pipelines_generator(
                     key="metadata_path",
                     comment="Provide an absolute path to the text file with distortion coefficients.",
                 )
+            elif "seam_blend" in method_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Applying seam blending with ramp filter after data is stitched. --- ",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
+                pipeline_full[i]["parameters"].yaml_add_eol_comment(
+                    key="path_to_stiched_params_file",
+                    comment="Provide an absolute path to the text file with seam index and blending width.",
+                )                
             elif "data_resampler" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
