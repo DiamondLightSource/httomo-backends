@@ -1,5 +1,6 @@
 - httomolib.misc.utils
 - httomolib.misc.rescale
+- httomolib.misc.blend
 - httomolib.misc.morph
 - httomolib.misc.images
 - httomolib.misc.segm

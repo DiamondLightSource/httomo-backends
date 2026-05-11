@@ -15,6 +15,14 @@ misc:
       memory_gpu: None
       save_result_default: False
       padding: False
+  blend:
+    seam_blend_stitched_data:
+      pattern: projection
+      output_dims_change: True
+      implementation: cpu
+      memory_gpu: None
+      save_result_default: False
+      padding: False      
   morph:
     data_reducer:
       pattern: all
