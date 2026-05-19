@@ -1,0 +1,6 @@
+- method: seam_blend_stitched_data
+  module_path: httomolib.misc.blend
+  parameters:
+    seam_index: null
+    blending_width: null
+    path_to_stiched_params_file: null
