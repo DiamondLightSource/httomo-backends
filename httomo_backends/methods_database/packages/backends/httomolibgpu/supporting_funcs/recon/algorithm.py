@@ -24,7 +24,7 @@ import math
 from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
-from httomolibgpu.recon.algorithm import ADMM3d_tomobar, LPRec3d_tomobar
+from httomolibgpu.recon.algorithm import LPRec3d_tomobar
 from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
 __all__ = [
@@ -35,6 +35,7 @@ __all__ = [
     "_calc_memory_bytes_CGLS3d_tomobar",
     "_calc_memory_bytes_FISTA3d_tomobar",
     "_calc_memory_bytes_ADMM3d_tomobar",
+    "_calc_memory_bytes_OSEM3d_tomobar",
     "_calc_output_dim_FBP2d_astra",
     "_calc_output_dim_FBP3d_tomobar",
     "_calc_output_dim_LPRec3d_tomobar",
@@ -42,8 +43,10 @@ __all__ = [
     "_calc_output_dim_CGLS3d_tomobar",
     "_calc_output_dim_FISTA3d_tomobar",
     "_calc_output_dim_ADMM3d_tomobar",
+    "_calc_output_dim_OSEM3d_tomobar",    
     "_calc_padding_FISTA3d_tomobar",
     "_calc_padding_ADMM3d_tomobar",
+    "_calc_padding_OSEM3d_tomobar",
 ]
 
 
@@ -52,6 +55,9 @@ def _calc_padding_FISTA3d_tomobar(**kwargs) -> Tuple[int, int]:
 
 
 def _calc_padding_ADMM3d_tomobar(**kwargs) -> Tuple[int, int]:
+    return (5, 5)
+
+def _calc_padding_OSEM3d_tomobar(**kwargs) -> Tuple[int, int]:
     return (5, 5)
 
 
@@ -96,6 +102,9 @@ def _calc_output_dim_FISTA3d_tomobar(non_slice_dims_shape, **kwargs):
 def _calc_output_dim_ADMM3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
+
+def _calc_output_dim_OSEM3d_tomobar(non_slice_dims_shape, **kwargs):
+    return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
 
 def _calc_memory_bytes_FBP3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
@@ -626,6 +635,50 @@ def _calc_memory_bytes_FISTA3d_tomobar(
     tot_memory_bytes = int(fista_part + regul_part)
     return (tot_memory_bytes, 0)
 
+
+def _calc_memory_bytes_OSEM3d_tomobar(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    detector_pad = 0
+    if "detector_pad" in kwargs:
+        detector_pad = kwargs["detector_pad"]
+    if detector_pad is True:
+        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+    elif detector_pad is False:
+        detector_pad = 0
+
+    anglesnum = non_slice_dims_shape[0]
+    DetectorsLengthH_padded = non_slice_dims_shape[1] + 2 * detector_pad
+
+    # calculate the output shape
+    output_dims = _calc_output_dim_OSEM3d_tomobar(non_slice_dims_shape, **kwargs)
+    recon_data_size_original = (
+        np.prod(output_dims) * dtype.itemsize
+    )  # recon user-defined size
+
+    in_data_siz_pad = (anglesnum * DetectorsLengthH_padded) * dtype.itemsize
+    output_dims_larger_grid = (DetectorsLengthH_padded, DetectorsLengthH_padded)
+
+    out_data_size = np.prod(output_dims_larger_grid) * dtype.itemsize
+    normalisation = out_data_size
+    Ax = in_data_siz_pad
+    ratio = in_data_siz_pad
+    backproj = out_data_size
+
+    mlem_part = (
+        recon_data_size_original
+        + normalisation
+        + Ax
+        + ratio
+        + backproj
+        + out_data_size
+    )
+    regul_part = 8 * np.prod(output_dims_larger_grid) * dtype.itemsize
+
+    tot_memory_bytes = int(mlem_part + regul_part)
+    return (tot_memory_bytes, 0)
 
 def _calc_memory_bytes_ADMM3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
