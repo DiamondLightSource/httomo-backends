@@ -43,7 +43,7 @@ __all__ = [
     "_calc_output_dim_CGLS3d_tomobar",
     "_calc_output_dim_FISTA3d_tomobar",
     "_calc_output_dim_ADMM3d_tomobar",
-    "_calc_output_dim_OSEM3d_tomobar",    
+    "_calc_output_dim_OSEM3d_tomobar",
     "_calc_padding_FISTA3d_tomobar",
     "_calc_padding_ADMM3d_tomobar",
     "_calc_padding_OSEM3d_tomobar",
@@ -56,6 +56,7 @@ def _calc_padding_FISTA3d_tomobar(**kwargs) -> Tuple[int, int]:
 
 def _calc_padding_ADMM3d_tomobar(**kwargs) -> Tuple[int, int]:
     return (5, 5)
+
 
 def _calc_padding_OSEM3d_tomobar(**kwargs) -> Tuple[int, int]:
     return (5, 5)
@@ -105,6 +106,7 @@ def _calc_output_dim_ADMM3d_tomobar(non_slice_dims_shape, **kwargs):
 
 def _calc_output_dim_OSEM3d_tomobar(non_slice_dims_shape, **kwargs):
     return __calc_output_dim_recon(non_slice_dims_shape, **kwargs)
+
 
 def _calc_memory_bytes_FBP3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],
@@ -668,17 +670,13 @@ def _calc_memory_bytes_OSEM3d_tomobar(
     backproj = out_data_size
 
     mlem_part = (
-        recon_data_size_original
-        + normalisation
-        + Ax
-        + ratio
-        + backproj
-        + out_data_size
+        recon_data_size_original + normalisation + Ax + ratio + backproj + out_data_size
     )
     regul_part = 8 * np.prod(output_dims_larger_grid) * dtype.itemsize
 
     tot_memory_bytes = int(mlem_part + regul_part)
     return (tot_memory_bytes, 0)
+
 
 def _calc_memory_bytes_ADMM3d_tomobar(
     non_slice_dims_shape: Tuple[int, int],

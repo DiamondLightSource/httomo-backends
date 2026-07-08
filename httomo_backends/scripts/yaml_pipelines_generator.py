@@ -227,7 +227,7 @@ def yaml_pipelines_generator(
                     "--- Apply averaging of projection data in the angular dimension. --- ",
                     indent=0,
                 )
-                pipeline_full += yaml_template_method              
+                pipeline_full += yaml_template_method
             elif "data_resampler" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
