@@ -25,18 +25,33 @@ import math
 from typing import Tuple
 import numpy as np
 
-from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
+from httomolibgpu.misc.morph import (
+    data_resampler,
+    sino_360_to_180,
+    average_projection_frames,
+)
 
 __all__ = [
     "_calc_memory_bytes_data_resampler",
     "_calc_output_dim_data_resampler",
     "_calc_memory_bytes_sino_360_to_180",
     "_calc_output_dim_sino_360_to_180",
+    "_calc_output_dim_average_projection_frames",
 ]
 
 
 def _calc_output_dim_data_resampler(non_slice_dims_shape, **kwargs):
     return kwargs["newshape"]
+
+
+def _calc_output_dim_average_projection_frames(non_slice_dims_shape, **kwargs):
+    k: float = kwargs["projection_averaging_factor"]
+
+    n_proj = non_slice_dims_shape[0]
+    n_full = n_proj // k
+    remainder = n_proj % k
+    n_out = n_full + (remainder > 0)
+    return n_out, non_slice_dims_shape[1]
 
 
 def _calc_memory_bytes_data_resampler(

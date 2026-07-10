@@ -221,6 +221,13 @@ def yaml_pipelines_generator(
                     key="path_to_stiched_params_file",
                     comment="Provide an absolute path to the text file with seam index and blending width.",
                 )
+            elif "average_projection_frames" in method_name:
+                pipeline_full.yaml_set_comment_before_after_key(
+                    i,
+                    "--- Apply averaging of projection data in the angular dimension. --- ",
+                    indent=0,
+                )
+                pipeline_full += yaml_template_method
             elif "data_resampler" in method_name:
                 pipeline_full.yaml_set_comment_before_after_key(
                     i,
