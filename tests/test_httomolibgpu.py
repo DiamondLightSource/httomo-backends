@@ -1059,6 +1059,7 @@ def test_recon_MLEM3d_tomobar_nonOS_memoryhook(
     assert estimated_memory_mb >= max_mem_mb
     assert percents_relative_maxmem <= 100
 
+
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [3, 5])
 @pytest.mark.parametrize("recon_size_it", [2560])
