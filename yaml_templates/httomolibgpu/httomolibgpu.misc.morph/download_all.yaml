@@ -1,0 +1,15 @@
+- method: sino_360_to_180
+  module_path: httomolibgpu.misc.morph
+  parameters:
+    overlap: ${{centering.side_outputs.overlap}}
+    side: ${{centering.side_outputs.side}}
+- method: average_projection_frames
+  module_path: httomolibgpu.misc.morph
+  parameters:
+    projection_averaging_factor: 2
+- method: data_resampler
+  module_path: httomolibgpu.misc.morph
+  parameters:
+    newshape: REQUIRED
+    axis: auto
+    interpolation: linear
