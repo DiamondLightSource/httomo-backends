@@ -1,5 +1,6 @@
 - httomolibgpu.misc.utils
 - httomolibgpu.misc.corr
+- httomolibgpu.misc.blend
 - httomolibgpu.misc.denoise
 - httomolibgpu.misc.morph
 - httomolibgpu.misc.rescale

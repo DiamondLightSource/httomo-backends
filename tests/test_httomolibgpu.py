@@ -14,6 +14,8 @@ from httomo_backends.methods_database.query import MethodsDatabaseQuery
 
 from tomobar.supp.memory_estimator_helpers import DeviceMemStack
 
+from httomolibgpu.misc.blend import seam_blend_stitched_data
+
 from httomolibgpu.misc.morph import data_resampler, sino_360_to_180
 from httomolibgpu.prep.normalize import dark_flat_field_correction, minus_log
 from httomolibgpu.prep.phase import paganin_filter, paganin_filter_savu_legacy
@@ -38,6 +40,7 @@ from httomolibgpu.recon.algorithm import (
 )
 from httomolibgpu.misc.rescale import rescale_to_int
 
+from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.blend import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.corr import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.misc.morph import *
 from httomo_backends.methods_database.packages.backends.httomolibgpu.supporting_funcs.prep.phase import *
@@ -348,7 +351,10 @@ def test_distortion_correction_memoryhook(
     hook = MaxMemoryHook()
     with hook:
         data_corrected = distortion_correction_proj_discorpy(
-            cp.copy(data), distortion_coeffs_path, shift_xy, step_xy
+            cp.copy(data),
+            metadata_path=distortion_coeffs_path,
+            shift_xy=shift_xy,
+            step_xy=step_xy,
         ).get()
 
     # make sure estimator function is within range (80% min, 100% max)
@@ -584,6 +590,48 @@ def test_data_sampler_memoryhook(slices, newshape, interpolation, ensure_clean_m
     # for this function it is difficult to estimate the memory requirements as it works
     # slice by slice. Also the memory usage inside interpn/RegularGridInterpolator is
     # unknown. We should generally overestitmate the memory here.
+
+
+@pytest.mark.cupy
+@pytest.mark.parametrize("slices", [1, 3, 10])
+@pytest.mark.parametrize("angles", [100, 500, 1000])
+@pytest.mark.parametrize("detX", [221, 567, 1280])
+def test_seam_blend_memoryhook(slices, angles, detX, ensure_clean_memory):
+    data = cp.random.random_sample((angles, slices, detX), dtype=cp.float32)
+    kwargs = {}
+    kwargs["overlap"] = 20
+    kwargs["seam_index"] = detX // 2
+
+    hook = MaxMemoryHook()
+    with hook:
+        blended = seam_blend_stitched_data(cp.copy(data), **kwargs)
+
+    # make sure estimator function is within range (80% min, 100% max)
+    max_mem = (
+        hook.max_mem
+    )  # the amount of memory in bytes needed for the method according to memoryhook
+
+    # now we estimate how much of the total memory required for this data
+    method_query = MethodsDatabaseQuery(
+        "httomolibgpu.misc.blend", "seam_blend_stitched_data"
+    )
+    memory_requirements = method_query.get_memory_gpu_params()
+    assert memory_requirements is not None
+    assert memory_requirements.multiplier is not None
+    estimated_memory_bytes = (
+        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
+    )
+
+    estimated_memory_mb = float(round(estimated_memory_bytes / (1024**2), 2))
+
+    max_mem_mb = round(max_mem / (1024**2), 2)
+    # now compare both memory estimations
+    difference_mb = abs(estimated_memory_mb - max_mem_mb)
+    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
+    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
+    # the resulting percent value should not deviate from max_mem on more than 20%
+    assert estimated_memory_mb >= max_mem_mb
+    assert percents_relative_maxmem <= 25
 
 
 @pytest.mark.cupy

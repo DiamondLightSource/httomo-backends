@@ -28,6 +28,16 @@ misc:
       memory_gpu:
         multiplier: 2.5
         method: direct
+  blend:
+    seam_blend_stitched_data:
+      pattern: projection
+      output_dims_change: True
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: False
+      memory_gpu:
+        multiplier: 2.5
+        method: direct
   denoise:
     total_variation_ROF:
       pattern: all
