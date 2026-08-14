@@ -1,0 +1,9 @@
+- method: raven_filter
+  module_path: httomolibgpu.prep.stripe
+  parameters:
+    pad_y: 20
+    pad_x: 20
+    pad_method: edge
+    uvalue: 20
+    nvalue: 4
+    vvalue: 2

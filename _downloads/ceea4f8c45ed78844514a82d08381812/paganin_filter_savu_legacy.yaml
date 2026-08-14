@@ -1,0 +1,7 @@
+- method: paganin_filter_savu_legacy
+  module_path: httomolibgpu.prep.phase
+  parameters:
+    pixel_size: 1.28
+    distance: 1.0
+    energy: 53.0
+    ratio_delta_beta: 250

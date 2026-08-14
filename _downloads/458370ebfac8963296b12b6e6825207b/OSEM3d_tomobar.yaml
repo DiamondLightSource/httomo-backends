@@ -1,0 +1,14 @@
+- method: OSEM3d_tomobar
+  module_path: httomolibgpu.recon.algorithm
+  parameters:
+    center: ${{centering.side_outputs.centre_of_rotation}}
+    detector_pad: false
+    recon_size: null
+    recon_mask_radius: 0.95
+    iterations: 20
+    subsets_number: 12
+    regularisation_type: PD_TV
+    regularisation_parameter: 1.0
+    regularisation_iterations: 30
+    regularisation_half_precision: true
+    nonnegativity: true

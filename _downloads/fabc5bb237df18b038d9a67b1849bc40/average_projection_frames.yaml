@@ -1,0 +1,4 @@
+- method: average_projection_frames
+  module_path: httomolibgpu.misc.morph
+  parameters:
+    projection_averaging_factor: 2
