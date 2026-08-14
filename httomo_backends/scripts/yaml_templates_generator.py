@@ -162,7 +162,12 @@ def _set_dict_special_cases(method_dict: Dict, method_name: str):
         method_dict: Dictionary of modules and parameters
         method_name: Name of method
     """
-    if method_name in ["find_center", "find_center_vo", "find_center_pc"]:
+    if method_name in [
+        "find_center",
+        "find_center_vo",
+        "find_center_pc",
+        "find_center_metric_recon",
+    ]:
         method_dict["id"] = "centering"
         method_dict["side_outputs"] = {"cor": "centre_of_rotation"}
     if method_name in ["find_center_360"]:
