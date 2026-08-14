@@ -292,3 +292,12 @@ recon:
       memory_gpu:
         multiplier: 0
         method: direct
+    find_center_metric_recon:
+      pattern: projection
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: False
+      memory_gpu:
+        multiplier: 2
+        method: direct
