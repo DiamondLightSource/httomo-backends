@@ -47,7 +47,7 @@ requires-python = ">=3.12"
 dependencies = [
     "numpy==2.4.*",
     "pyyaml",
-    "cupy==14.0.*",
+    "cupy==14.2.*",
     "nvtx",
     "toml",
     "imageio",
