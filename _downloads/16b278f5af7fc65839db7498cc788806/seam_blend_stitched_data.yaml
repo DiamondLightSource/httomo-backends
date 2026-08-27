@@ -1,0 +1,5 @@
+- method: seam_blend_stitched_data
+  module_path: httomolibgpu.misc.blend
+  parameters:
+    overlap: REQUIRED
+    seam_index: 2560
