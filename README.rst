@@ -32,5 +32,5 @@ Conda environment
 
    $ conda create --name httomo-backends
    $ conda activate httomo-backends
-   $ conda install -c conda-forge cupy==14.0.*
+   $ conda install -c conda-forge cupy==14.2.*
    $ pip install httomo-backends
