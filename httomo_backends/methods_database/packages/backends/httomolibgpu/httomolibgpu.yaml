@@ -39,6 +39,15 @@ misc:
         multiplier: 2.5
         method: direct
   denoise:
+    non_local_means:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: None
+        method: module
     total_variation_ROF:
       pattern: all
       output_dims_change: False
