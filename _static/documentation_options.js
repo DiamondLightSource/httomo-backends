@@ -1,0 +1,13 @@
+const DOCUMENTATION_OPTIONS = {
+    VERSION: 'a1f97767bd2b14545c785a90f9eba92ce1f5c655',
+    LANGUAGE: 'en',
+    COLLAPSE_INDEX: false,
+    BUILDER: 'html',
+    FILE_SUFFIX: '.html',
+    LINK_SUFFIX: '.html',
+    HAS_SOURCE: true,
+    SOURCELINK_SUFFIX: '',
+    NAVIGATION_WITH_KEYS: false,
+    SHOW_SEARCH_SUMMARY: true,
+    ENABLE_SEARCH_SHORTCUTS: true,
+};

@@ -1,0 +1,9 @@
+- method: distortion_correction_proj_discorpy
+  module_path: httomolibgpu.prep.alignment
+  parameters:
+    metadata_path: null
+    xcenter: null
+    ycenter: null
+    list_fact: null
+    order: 3
+    mode: constant

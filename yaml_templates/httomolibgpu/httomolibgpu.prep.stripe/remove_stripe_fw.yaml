@@ -1,0 +1,6 @@
+- method: remove_stripe_fw
+  module_path: httomolibgpu.prep.stripe
+  parameters:
+    sigma: 2
+    wname: db5
+    level: null

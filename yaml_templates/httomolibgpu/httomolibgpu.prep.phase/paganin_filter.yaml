@@ -1,0 +1,9 @@
+- method: paganin_filter
+  module_path: httomolibgpu.prep.phase
+  parameters:
+    pixel_size: 1.28
+    distance: 1.0
+    energy: 53.0
+    ratio_delta_beta: 250
+    calculate_padding_value_method: next_power_of_2
+    pad_x_y: null
