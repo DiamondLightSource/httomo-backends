@@ -59,8 +59,8 @@ def _calc_memory_bytes_for_slices_remove_stripe_fw(
     dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> int:
-    return remove_stripe_fw(dims_shape, calc_peak_gpu_mem=True, **kwargs)
+) -> Tuple[int, bool]:
+    return remove_stripe_fw(dims_shape, calc_peak_gpu_mem=True, **kwargs), False
 
 
 def _calc_memory_bytes_remove_all_stripe(

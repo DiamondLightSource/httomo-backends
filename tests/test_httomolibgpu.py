@@ -284,7 +284,7 @@ def test_paganin_filter_memoryhook(slices, dim_x, dim_y, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    estimated_memory_bytes = _calc_memory_bytes_for_slices_paganin_filter(
+    estimated_memory_bytes, uses_gpu = _calc_memory_bytes_for_slices_paganin_filter(
         (slices, dim_x, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
@@ -317,8 +317,10 @@ def test_paganin_filter_savu_legacy_memoryhook(
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    estimated_memory_bytes = _calc_memory_bytes_for_slices_paganin_filter_savu_legacy(
-        (slices, dim_x, dim_y), dtype=np.float32()
+    estimated_memory_bytes, uses_gpu = (
+        _calc_memory_bytes_for_slices_paganin_filter_savu_legacy(
+            (slices, dim_x, dim_y), dtype=np.float32()
+        )
     )
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
     max_mem_mb = round(max_mem / (1024**2), 2)
@@ -469,7 +471,7 @@ def test_remove_stripe_fw_memoryhook(slices, ensure_clean_memory):
     )  # the amount of memory in bytes needed for the method according to memoryhook
 
     # now we estimate how much of the total memory required for this data
-    estimated_memory_bytes = _calc_memory_bytes_for_slices_remove_stripe_fw(
+    estimated_memory_bytes, uses_gpu = _calc_memory_bytes_for_slices_remove_stripe_fw(
         (slices, dim_x, dim_y), dtype=np.float32()
     )
     estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)

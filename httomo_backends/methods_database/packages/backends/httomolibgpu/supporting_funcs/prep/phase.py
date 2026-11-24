@@ -35,13 +35,16 @@ def _calc_memory_bytes_for_slices_paganin_filter(
     dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> int:
-    return paganin_filter(dims_shape, calc_peak_gpu_mem=True, **kwargs)
+) -> Tuple[int, bool]:
+    return paganin_filter(dims_shape, calc_peak_gpu_mem=True, **kwargs), True
 
 
 def _calc_memory_bytes_for_slices_paganin_filter_savu_legacy(
     dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> int:
-    return paganin_filter_savu_legacy(dims_shape, calc_peak_gpu_mem=True, **kwargs)
+) -> Tuple[int, bool]:
+    return (
+        paganin_filter_savu_legacy(dims_shape, calc_peak_gpu_mem=True, **kwargs),
+        True,
+    )
