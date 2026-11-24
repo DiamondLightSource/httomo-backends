@@ -205,10 +205,10 @@ def _calc_memory_bytes_for_slices_LPRec3d_tomobar(
     dims_shape: Tuple[int, int, int],
     dtype: np.dtype,
     **kwargs,
-) -> int:
+) -> Tuple[int, bool]:
     with DeviceMemStack():
         kwargs["data_dtype"] = dtype
-        return LPRec3d_tomobar(dims_shape, **kwargs)
+        return LPRec3d_tomobar(dims_shape, **kwargs), True
 
 
 def _calc_memory_bytes_LPRec3d_tomobar(
