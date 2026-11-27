@@ -26,6 +26,7 @@ import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
 from httomolibgpu.recon.algorithm import LPRec3d_tomobar
 from tomobar.reconstruction.memory import DeviceMemStack
+from tomobar._filters.ramlak import ramlak_fft_length
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
@@ -113,94 +114,85 @@ def _calc_memory_bytes_FBP3d_tomobar(
     dtype: np.dtype,
     **kwargs,
 ) -> Tuple[int, int]:
-    detector_pad = 0
-    if "detector_pad" in kwargs:
-        detector_pad = kwargs["detector_pad"]
+    """Estimate FBP's peak live buffers as per-slice bytes and fixed overhead.
+
+    Reserve float32 packing even for C-contiguous input, since its layout is
+    unknown here. FFT plans remain cached through reconstruction/output packing.
+    ASTRA workspace retains a conservative one-projection/one-volume allowance;
+    it is not measured by CuPy allocation hooks. cuFFT workspace is normalised
+    from a representative 200-slice batch, as in the other FFT estimates.
+    CUDA context, kernel compilation and unused pool blocks are not modelled.
+    """
+    angles, width = (int(size) for size in non_slice_dims_shape)
+    detector_pad = kwargs.get("detector_pad", False)
     if detector_pad is True:
-        detector_pad = __estimate_detectorHoriz_padding(non_slice_dims_shape[1])
+        detector_pad = __estimate_detectorHoriz_padding(width)
     elif detector_pad is False:
         detector_pad = 0
+    padded_width = width + 2 * detector_pad
+    fft_length = ramlak_fft_length(padded_width)
+    float_bytes = np.dtype(np.float32).itemsize
 
-    angles_tot = non_slice_dims_shape[0]
-    det_width = non_slice_dims_shape[1] + 2 * detector_pad
-    SLICES = 200  # dummy multiplier+divisor to pass large batch size threshold
+    # Original input stays live in the wrapper throughout the call. Preparation
+    # may convert/pack it and then edge-pad it in a separate float32 allocation.
+    input_bytes = angles * width * dtype.itemsize
+    packed_input = angles * width * float_bytes
+    projection = angles * padded_width * float_bytes
+    preparation = packed_input + (projection if detector_pad else 0)
 
-    # 1. input
-    input_slice_size = (angles_tot * det_width) * dtype.itemsize
-
-    ########## FFT / filter / IFFT (filtersync_cupy)
-
-    # 2. RFFT plan (R2C transform)
-    fftplan_slice_size = (
-        cufft_estimate_1d(
-            nx=det_width,
-            fft_type=CufftType.CUFFT_R2C,
-            batch=angles_tot * SLICES,
+    slices = 200
+    fft_workspace = (
+        sum(
+            cufft_estimate_1d(nx=fft_length, fft_type=kind, batch=angles * slices)
+            for kind in (CufftType.CUFFT_R2C, CufftType.CUFFT_C2R)
         )
-        / SLICES
+        / slices
     )
+    spectrum = angles * (fft_length // 2 + 1) * np.dtype(np.complex64).itemsize
+    real_fft = angles * fft_length * float_bytes
+    response = (fft_length // 2 + 1) * float_bytes
 
-    # 3. RFFT output size (proj_f in code)
-    proj_f_slice = angles_tot * (det_width // 2 + 1) * np.complex64().itemsize
+    # The prepared input, spectrum, padded inverse result and cropped result
+    # coexist. This also bounds the forward FFT's zero-padded real input.
+    filtering = projection + spectrum + real_fft + projection
+    # Packing (angles, rows, columns) into (rows, angles, columns) happens
+    # before the prepared input is released.
+    projection_layout = 3 * projection
 
-    # 4. Filter size (independent of number of slices)
-    filter_size = (det_width // 2 + 1) * np.float32().itemsize
+    output_dims = _calc_output_dim_FBP3d_tomobar(non_slice_dims_shape, **kwargs)
+    output_pixels = math.prod(int(size) for size in output_dims)
+    volume = output_pixels * float_bytes
+    astra_workspace = projection + volume
+    backprojection = projection + volume + astra_workspace
+    masking = projection + volume
+    # The wrapper packs the final (Y, detector rows, X) transpose while the
+    # original reconstruction and cached FFT plans still exist.
+    output_layout = 2 * volume
 
-    # 5. IRFFT plan size
-    ifftplan_slice_size = (
-        cufft_estimate_1d(
-            nx=det_width,
-            fft_type=CufftType.CUFFT_C2R,
-            batch=angles_tot * SLICES,
+    mask_workspace = 0
+    if kwargs.get("recon_mask_radius", 0.95) is not None:
+        # sqrt holds an int64 distance plane and a float64 result together.
+        # Reserve coordinate vectors/temporaries too; masking itself is in-place.
+        mask_workspace = (
+            2 * output_pixels + 3 * sum(int(size) for size in output_dims)
+        ) * np.dtype(np.int64).itemsize
+
+    per_slice = math.ceil(
+        input_bytes
+        + fft_workspace
+        + max(
+            preparation,
+            filtering,
+            projection_layout,
+            backprojection,
+            masking,
+            output_layout,
         )
-        / SLICES
     )
-
-    # 6. output of filtersync call
-    filtersync_output_slice_size = input_slice_size
-
-    # since the FFT plans, proj_f, and input data is dropped after the filtersync call, we track it here
-    # separate
-    filtersync_size = (
-        input_slice_size + fftplan_slice_size + proj_f_slice + ifftplan_slice_size
-    )
-
-    # 6. we swap the axes before passing data to Astra in ToMoBAR
-    # https://github.com/dkazanc/ToMoBAR/blob/54137829b6326406e09f6ef9c95eb35c213838a7/tomobar/methodsDIR_CuPy.py#L135
-    pre_astra_input_swapaxis_slice = (angles_tot * det_width) * np.float32().itemsize
-
-    # 7. ASTRA backprojection generates an output array. The reference below
-    # is pinned to the historical implementation used to derive this estimate;
-    # current ToMoBAR backend code lives in tomobar.projectors._astra.
-    # https://github.com/dkazanc/ToMoBAR/blob/54137829b6326406e09f6ef9c95eb35c213838a7/tomobar/astra_wrappers/astra_base.py#L524
-    output_dims = _calc_output_dim_FBP3d_tomobar((angles_tot, det_width), **kwargs)
-    recon_output_size = np.prod(output_dims) * np.float32().itemsize
-
-    # 7. astra backprojection makes a copy of the input
-    astra_input_slice_size = (angles_tot * det_width) * np.float32().itemsize
-
-    ## now we calculate back projection memory (2 copies of the input + reconstruction output)
-    projection_mem_size = (
-        pre_astra_input_swapaxis_slice + astra_input_slice_size + recon_output_size
-    )
-
-    # 9. apply_circular_mask memory (fixed amount, not per slice)
-    circular_mask_size = np.prod(output_dims) * np.int64().itemsize
-
-    fixed_amount = max(filter_size, circular_mask_size)
-
-    # 9. this swapaxis makes another copy of the output data
-    # https://github.com/DiamondLightSource/httomolibgpu/blob/72d98ec7ac44e06ee0318043934fb3f68667d203/httomolibgpu/recon/algorithm.py#L118
-    # BUT: this swapaxis happens after the cudaArray inputs and the input swapaxis arrays are dropped,
-    #      so it does not add to the memory overall
-
-    # We assume for safety here that one FFT plan is not freed and one is freed
-    tot_memory_bytes = int(
-        projection_mem_size + filtersync_size - ifftplan_slice_size + recon_output_size
-    )
-
-    # this account for the memory used for filtration AND backprojection.
-    return (tot_memory_bytes, fixed_amount)
+    # Fixed masks and filter responses belong to separate stages. Combining
+    # the largest per-slice and fixed terms is a conservative linear bound.
+    fixed = max(response, mask_workspace) + 32 * 512
+    return per_slice, int(fixed)
 
 
 def _calc_memory_bytes_for_slices_LPRec3d_tomobar(

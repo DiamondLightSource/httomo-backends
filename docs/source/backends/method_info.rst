@@ -46,3 +46,24 @@ Below is a list of library files for the currently supported backends.
 .. dropdown:: Httomolib
 
     .. literalinclude:: ../../../httomo_backends/methods_database/packages/backends/httomolib/httomolib.yaml
+
+
+FBP3d memory estimate
+---------------------
+
+The ``FBP3d_tomobar`` module estimator returns per-slice bytes and fixed
+workspace. For a slab of ``rows`` detector rows, the estimate is
+``rows * per_slice + fixed``.
+
+It reserves the original input, float32 conversion/packing and detector padding,
+then uses the largest live-buffer requirement across preparation, filtering,
+backprojection, masking and final output packing. FFT plans remain included
+throughout the call. The default reconstruction width is the original detector
+width; ``recon_size`` overrides it. Mask workspace is omitted when
+``recon_mask_radius`` is ``None``.
+
+The estimator includes allocation rounding and a conservative ASTRA workspace
+allowance. CuPy allocation-hook tests cover array and FFT workspace allocations;
+ASTRA's internal device allocations require separate profiling. cuFFT workspace
+uses a representative 200-slice batch, so the estimate remains an approximation.
+CUDA context, compilation and unused memory-pool blocks are outside this model.

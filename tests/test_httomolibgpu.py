@@ -803,62 +803,63 @@ def test_seam_blend_memoryhook(slices, angles, detX, ensure_clean_memory):
 
 
 @pytest.mark.cupy
-@pytest.mark.parametrize("padding_detx", [0, 10, 100, 200])
-@pytest.mark.parametrize("projections", [1801, 3601])
-@pytest.mark.parametrize("slices", [7, 11, 15])
-@pytest.mark.parametrize("detectorX", [1200, 2560])
+@pytest.mark.parametrize("detectorX", [64, 65, 96, 129])
+@pytest.mark.parametrize("padding_detx", [False, True, 7])
+@pytest.mark.parametrize("dtype", [np.float32, np.uint16])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
+@pytest.mark.parametrize(
+    "recon_size,recon_mask_radius", [(None, 0.8), (32, None), (192, 0.8)]
+)
 def test_recon_FBP3d_tomobar_memoryhook(
-    slices,
     detectorX,
-    projections,
     padding_detx,
+    dtype,
+    non_c_contiguous,
+    recon_size,
+    recon_mask_radius,
     ensure_clean_memory,
-    mocker: MockerFixture,
 ):
-    data = cp.random.random_sample((projections, slices, detectorX), dtype=np.float32)
-    kwargs = {}
-    kwargs["angles"] = np.linspace(
-        0.0 * np.pi / 180.0, 180.0 * np.pi / 180.0, data.shape[0]
+    projections, slices = 180, 3
+    shape = (projections, slices, detectorX)
+    kwargs = dict(
+        angles=np.linspace(0, np.pi, projections, endpoint=False),
+        detector_pad=padding_detx,
+        recon_size=recon_size,
+        recon_mask_radius=recon_mask_radius,
     )
-    kwargs["detector_pad"] = padding_detx
-    kwargs["center"] = 500
-    kwargs["recon_size"] = detectorX
-    kwargs["recon_mask_radius"] = 0.8
+    warm = cp.ones(shape, dtype=dtype)
+    result = FBP3d_tomobar(warm, **kwargs)
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+    cp.fft.config.get_plan_cache().clear()
 
     hook = MaxMemoryHook()
-    p1 = mocker.patch(
-        "astra.data3d.delete",
-        side_effect=lambda id: hook.free_postprocess(0, data.nbytes, 0, 0),
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            if non_c_contiguous:
+                data = cp.ones((projections, detectorX, slices), dtype=dtype).swapaxes(
+                    1, 2
+                )
+            else:
+                data = cp.ones(shape, dtype=dtype)
+            result = FBP3d_tomobar(data, **kwargs)
+            cp.cuda.get_current_stream().synchronize()
+            output_size = detectorX if recon_size is None else recon_size
+            assert result.shape == (output_size, slices, output_size)
+            assert result.dtype == cp.float32
+            assert result.flags.c_contiguous
+            del data, result
+        cp.fft.config.get_plan_cache().clear()
+        pool.free_all_blocks()
+
+    per_slice, fixed = _calc_memory_bytes_FBP3d_tomobar(
+        (projections, detectorX), np.dtype(dtype), **kwargs
     )
-
-    with hook:
-        recon_data = FBP3d_tomobar(cp.copy(data), **kwargs)
-
-    p1.assert_called_once()
-
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = (
-        hook.max_mem
-    )  # the amount of memory in bytes needed for the method according to memoryhook
-
-    # now we estimate how much of the total memory required for this data
-    estimated_memory_bytes, subtract_bytes = _calc_memory_bytes_FBP3d_tomobar(
-        (projections, detectorX), dtype=np.float32(), **kwargs
-    )
-    estimated_memory_mb = round(slices * estimated_memory_bytes / (1024**2), 2)
-    max_mem -= subtract_bytes
-    max_mem_mb = round(max_mem / (1024**2), 2)
-
-    # now we compare both memory estimations
-    difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
-    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
-    # the resulting percent value should not deviate from max_mem on more than 20%
-    assert estimated_memory_mb >= max_mem_mb
-    assert (
-        percents_relative_maxmem <= 100
-    )  # overestimation happens here because of the ASTRA's part
-
+    # The hook measures CuPy arrays and FFT workspace. ASTRA's internal device
+    # allocations are outside this hook, so this verifies a lower bound on
+    # total GPU memory rather than estimator tightness.
+    assert slices * per_slice + fixed >= hook.max_mem
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("min_mem_usage_filter_ifft2", [(False, False)])
