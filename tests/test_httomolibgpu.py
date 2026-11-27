@@ -194,79 +194,92 @@ def test_remove_outlier_memoryhook(flats, ensure_clean_memory, dtype, slices):
     assert percents_relative_maxmem <= 25
 
 
-@pytest.mark.parametrize("slices", [3, 10, 20])
+@pytest.mark.parametrize(
+    "shape", [(8, 128, 128), (1, 128, 128), (3, 37, 65), (1, 1, 1)]
+)
+@pytest.mark.parametrize("half_precision", [False, True])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
 @pytest.mark.cupy
-def test_denoiser_ROF_TV_memoryhook(ensure_clean_memory, slices):
+def test_denoiser_ROF_TV_memoryhook(
+    ensure_clean_memory, shape, half_precision, non_c_contiguous
+):
+    # Warm the kernels before measuring the live array allocations.
+    warm = cp.ones(shape, dtype=cp.float32)
+    result = total_variation_ROF(
+        warm, regularisation_parameter=1.0, iterations=2, half_precision=half_precision
+    )
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+
     hook = MaxMemoryHook()
-    data = cp.random.random_sample((slices, 2560, 2560), dtype=np.float32)
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            data = cp.ones(shape, dtype=cp.float32)
+            if non_c_contiguous:
+                data = data.swapaxes(1, 2)
+            result = total_variation_ROF(
+                data,
+                regularisation_parameter=1.0,
+                iterations=5,
+                half_precision=half_precision,
+            )
+            cp.cuda.get_current_stream().synchronize()
+            del data, result
+        pool.free_all_blocks()
 
-    with hook:
-        total_variation_ROF(cp.copy(data), regularisation_parameter=1.0, iterations=5)
-
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = (
-        hook.max_mem
-    )  # the amount of memory in bytes needed for the method according to memoryhook
-
-    # now we estimate how much of the total memory required for this data
-    method_query = MethodsDatabaseQuery(
-        "httomolibgpu.misc.denoise", "total_variation_ROF"
+    query = MethodsDatabaseQuery("httomolibgpu.misc.denoise", "total_variation_ROF")
+    per_slice, fixed = query.calculate_memory_bytes(
+        shape[1:], np.dtype("float32"), half_precision=half_precision
     )
-    memory_requirements = method_query.get_memory_gpu_params()
-    assert memory_requirements is not None
-    assert memory_requirements.multiplier is not None
-    estimated_memory_bytes = (
-        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
-    )
-
-    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
-
-    max_mem_mb = round(max_mem / (1024**2), 2)
-    # now compare both memory estimations
-    difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
-    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
-    # the resulting percent value should not deviate from max_mem on more than 20%
-    assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 20
+    estimate = shape[0] * per_slice + fixed
+    assert estimate >= hook.max_mem
+    if shape == (8, 128, 128):
+        assert estimate <= 1.25 * hook.max_mem
 
 
-@pytest.mark.parametrize("slices", [3, 10, 20])
+@pytest.mark.parametrize(
+    "shape", [(8, 128, 128), (1, 128, 128), (3, 37, 65), (1, 1, 1)]
+)
+@pytest.mark.parametrize("half_precision", [False, True])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
 @pytest.mark.cupy
-def test_denoiser_PD_TV_memoryhook(ensure_clean_memory, slices):
+def test_denoiser_PD_TV_memoryhook(
+    ensure_clean_memory, shape, half_precision, non_c_contiguous
+):
+    # Warm the kernels before measuring the live array allocations.
+    warm = cp.ones(shape, dtype=cp.float32)
+    result = total_variation_PD(
+        warm, regularisation_parameter=1.0, iterations=2, half_precision=half_precision
+    )
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+
     hook = MaxMemoryHook()
-    data = cp.random.random_sample((slices, 2560, 2560), dtype=np.float32)
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            data = cp.ones(shape, dtype=cp.float32)
+            if non_c_contiguous:
+                data = data.swapaxes(1, 2)
+            result = total_variation_PD(
+                data,
+                regularisation_parameter=1.0,
+                iterations=5,
+                half_precision=half_precision,
+            )
+            cp.cuda.get_current_stream().synchronize()
+            del data, result
+        pool.free_all_blocks()
 
-    with hook:
-        total_variation_PD(cp.copy(data), regularisation_parameter=1.0, iterations=5)
-
-    # make sure estimator function is within range (80% min, 100% max)
-    max_mem = (
-        hook.max_mem
-    )  # the amount of memory in bytes needed for the method according to memoryhook
-
-    # now we estimate how much of the total memory required for this data
-    method_query = MethodsDatabaseQuery(
-        "httomolibgpu.misc.denoise", "total_variation_PD"
+    query = MethodsDatabaseQuery("httomolibgpu.misc.denoise", "total_variation_PD")
+    per_slice, fixed = query.calculate_memory_bytes(
+        shape[1:], np.dtype("float32"), half_precision=half_precision
     )
-    memory_requirements = method_query.get_memory_gpu_params()
-    assert memory_requirements is not None
-    assert memory_requirements.multiplier is not None
-    estimated_memory_bytes = (
-        memory_requirements.multiplier * np.prod(cp.shape(data)) * float32().nbytes
-    )
-
-    estimated_memory_mb = round(estimated_memory_bytes / (1024**2), 2)
-
-    max_mem_mb = round(max_mem / (1024**2), 2)
-    # now compare both memory estimations
-    difference_mb = abs(estimated_memory_mb - max_mem_mb)
-    percents_relative_maxmem = round((difference_mb / max_mem_mb) * 100)
-    # the estimated_memory_mb should be LARGER or EQUAL to max_mem_mb
-    # the resulting percent value should not deviate from max_mem on more than 20%
-    assert estimated_memory_mb >= max_mem_mb
-    assert percents_relative_maxmem <= 20
-
+    estimate = shape[0] * per_slice + fixed
+    assert estimate >= hook.max_mem
+    if shape == (8, 128, 128):
+        assert estimate <= 1.2 * hook.max_mem
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [64, 128])

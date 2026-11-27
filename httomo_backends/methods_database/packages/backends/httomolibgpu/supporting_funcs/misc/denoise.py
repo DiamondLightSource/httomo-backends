@@ -8,7 +8,9 @@ from httomolibgpu.misc.denoise import non_local_means
 
 __all__ = [
     "_calc_padding_total_variation_ROF",
+    "_calc_memory_bytes_total_variation_ROF",
     "_calc_padding_total_variation_PD",
+    "_calc_memory_bytes_total_variation_PD",
     "_calc_padding_non_local_means",
     "_calc_memory_bytes_non_local_means",
 ]
@@ -20,6 +22,52 @@ def _calc_padding_total_variation_ROF(**kwargs) -> Tuple[int, int]:
 
 def _calc_padding_total_variation_PD(**kwargs) -> Tuple[int, int]:
     return (5, 5)
+
+
+def _calc_memory_bytes_total_variation_ROF(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    """Reserve input, a packed copy, two image and three auxiliary buffers.
+
+    Use the 3D buffer count also for single-slice processing, since slab depth
+    is unknown here. Packing is reserved even for C-contiguous input. Only the
+    auxiliary buffers use half precision. Fixed overhead covers pool rounding
+    of the seven buffers to 512-byte allocation units; CUDA context/kernel
+    compilation memory is outside this array-memory estimate.
+    """
+    pixels = math.prod(int(size) for size in non_slice_dims_shape)
+    auxiliary_dtype = np.float16 if kwargs.get("half_precision", False) else np.float32
+    bytes_per_pixel = (
+        np.dtype(dtype).itemsize
+        + 3 * np.dtype(np.float32).itemsize
+        + 3 * np.dtype(auxiliary_dtype).itemsize
+    )
+    return pixels * bytes_per_pixel, 7 * 512
+
+
+def _calc_memory_bytes_total_variation_PD(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    """Reserve input, a packed copy, three primal and six dual buffers.
+
+    Use the 3D buffer count also for single-slice processing, since slab depth
+    is unknown here. Packing is reserved even for C-contiguous input. Only the
+    dual buffers use half precision. Fixed overhead covers pool rounding of
+    the eleven buffers to 512-byte allocation units; CUDA context/kernel
+    compilation memory is outside this array-memory estimate.
+    """
+    pixels = math.prod(int(size) for size in non_slice_dims_shape)
+    dual_dtype = np.float16 if kwargs.get("half_precision", False) else np.float32
+    bytes_per_pixel = (
+        np.dtype(dtype).itemsize
+        + 4 * np.dtype(np.float32).itemsize
+        + 6 * np.dtype(dual_dtype).itemsize
+    )
+    return pixels * bytes_per_pixel, 11 * 512
 
 
 def _calc_padding_non_local_means(**kwargs) -> Tuple[int, int]:
@@ -40,8 +88,8 @@ def _calc_memory_bytes_non_local_means(
 ) -> Tuple[int, int]:
     """Estimate per-slice bytes and fixed overhead for float32 NLM.
 
-    Reserve input, output and a contiguous input copy (needed for strided
-    views). There is no volume-sized patch array or neighbour graph.
+    Reserve input, output and a C-contiguous input copy (needed for non-C-contiguous
+    input). There is no volume-sized patch array or neighbour graph.
     Positive num_neighbours uses two float32 arrays per CUDA thread. Their
     placement in registers/local memory depends on the compiler and GPU;
     charging their full size per voxel is a conservative workspace allowance,

@@ -109,7 +109,7 @@ def nlm_memory_measurement():
         def free_postprocess(self, device_id, mem_size, mem_ptr, pmem_id):
             self.current -= mem_size
 
-    def measure(shape, *, strided=False, **kwargs):
+    def measure(shape, *, non_c_contiguous=False, **kwargs):
         per_slice, fixed = _calc_memory_bytes_non_local_means(
             shape[1:], np.dtype("float32"), **kwargs
         )
@@ -132,9 +132,11 @@ def nlm_memory_measurement():
 
             hook = PeakMemoryHook()
             with hook:
-                storage_shape = (shape[0], shape[2], shape[1]) if strided else shape
+                storage_shape = (
+                    (shape[0], shape[2], shape[1]) if non_c_contiguous else shape
+                )
                 storage = cp.ones(storage_shape, dtype=cp.float32)
-                data = storage.swapaxes(1, 2) if strided else storage
+                data = storage.swapaxes(1, 2) if non_c_contiguous else storage
                 result = non_local_means(data, **kwargs)
                 cp.cuda.get_current_stream().synchronize()
                 assert result.shape == shape
@@ -145,7 +147,7 @@ def nlm_memory_measurement():
             pool.free_all_blocks()
 
         assert estimated >= hook.peak, (
-            f"NLM memory underestimated for {shape}, {strided=}, {kwargs=}: "
+            f"NLM memory underestimated for {shape}, {non_c_contiguous=}, {kwargs=}: "
             f"estimated {estimated}, measured {hook.peak} bytes"
         )
         return estimated, hook.peak
@@ -155,7 +157,7 @@ def nlm_memory_measurement():
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("shape", [(8, 9, 11), (31, 64, 47), (64, 32, 128)])
-@pytest.mark.parametrize("strided", [False, True])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
 @pytest.mark.parametrize("full_3d", [False, True])
 @pytest.mark.parametrize("num_neighbours", [0, 4])
 @pytest.mark.parametrize(
@@ -164,7 +166,7 @@ def nlm_memory_measurement():
 def test_nlm_memory_scales_against_gpu_allocations(
     nlm_memory_measurement,
     shape,
-    strided,
+    non_c_contiguous,
     full_3d,
     num_neighbours,
     search_radius,
@@ -173,7 +175,7 @@ def test_nlm_memory_scales_against_gpu_allocations(
 ):
     estimated_bytes, max_mem = nlm_memory_measurement(
         shape,
-        strided=strided,
+        non_c_contiguous=non_c_contiguous,
         full_3d=full_3d,
         search_radius=search_radius,
         patch_radius=patch_radius,
@@ -186,7 +188,7 @@ def test_nlm_memory_scales_against_gpu_allocations(
     assert estimated_bytes >= max_mem
     # Selection arrays may reside in registers or CUDA local memory, which
     # CuPy allocation hooks do not measure. The model reserves them conservatively.
-    if strided and num_neighbours == 0:
+    if non_c_contiguous and num_neighbours == 0:
         assert percentage_difference <= 20, f"{percentage_difference=:.2f}%"
 
 
@@ -211,12 +213,12 @@ def test_nlm_memory_scales_3d_shape_grid(
     search_radius, patch_radius = radius_pairs[sum(indices) % len(radius_pairs)]
     estimated_bytes, max_mem = nlm_memory_measurement(
         (depth, height, width),
-        strided=True,
+        non_c_contiguous=True,
         search_radius=search_radius,
         patch_radius=patch_radius,
         full_3d=True,
     )
-    # Strided input exercises all three arrays reserved by the model. Start at
+    # Non-C-contiguous input exercises all three arrays reserved by the model. Start at
     # 32 cubed so the fixed buffer reserve does not dominate the percentage.
     percentage_difference = 100 * (estimated_bytes - max_mem) / max_mem
     record_property("search_radius", search_radius)
