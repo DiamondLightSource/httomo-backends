@@ -20,10 +20,6 @@ PACKAGES = ("httomolib", "httomolibgpu")
 # Public APIs awaiting the later memory/padding and alignment integration stages.
 # Keep explicit reasons so newly exported methods cannot silently go unregistered.
 DEFERRED_METHODS = {
-    "httomolibgpu.misc.denoise.total_variation_SB": "Needs memory and padding support.",
-    "httomolibgpu.misc.denoise.total_variation_FGP": "Needs memory and padding support.",
-    "httomolibgpu.misc.denoise.total_generalised_variation": "Needs memory and padding support.",
-    "httomolibgpu.misc.denoise.nonlinear_diffusion": "Needs memory and padding support.",
     "httomolibgpu.recon.algorithm.iterative_alignment": (
         "Needs volume/shift side outputs and processing/memory support."
     ),

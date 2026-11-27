@@ -28,7 +28,14 @@ from httomolibgpu.prep.stripe import (
     raven_filter,
 )
 from httomolibgpu.misc.corr import remove_outlier
-from httomolibgpu.misc.denoise import total_variation_ROF, total_variation_PD
+from httomolibgpu.misc.denoise import (
+    total_variation_ROF,
+    total_variation_PD,
+    total_variation_SB,
+    total_variation_FGP,
+    total_generalised_variation,
+    nonlinear_diffusion,
+)
 from httomolibgpu.recon.algorithm import (
     FBP3d_tomobar,
     SIRT3d_tomobar,
@@ -280,6 +287,185 @@ def test_denoiser_PD_TV_memoryhook(
     assert estimate >= hook.max_mem
     if shape == (8, 128, 128):
         assert estimate <= 1.2 * hook.max_mem
+
+
+@pytest.mark.parametrize(
+    "shape", [(8, 128, 128), (1, 128, 128), (3, 37, 65), (1, 1, 1)]
+)
+@pytest.mark.parametrize("half_precision", [False, True])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
+@pytest.mark.cupy
+def test_denoiser_SB_TV_memoryhook(
+    ensure_clean_memory, shape, half_precision, non_c_contiguous
+):
+    # Warm the kernels before measuring the live array allocations.
+    warm = cp.ones(shape, dtype=cp.float32)
+    result = total_variation_SB(
+        warm, regularisation_parameter=1.0, iterations=2, half_precision=half_precision
+    )
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+
+    hook = MaxMemoryHook()
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            data = cp.ones(shape, dtype=cp.float32)
+            if non_c_contiguous:
+                data = data.swapaxes(1, 2)
+            result = total_variation_SB(
+                data,
+                regularisation_parameter=1.0,
+                iterations=5,
+                half_precision=half_precision,
+            )
+            cp.cuda.get_current_stream().synchronize()
+            del data, result
+        pool.free_all_blocks()
+
+    query = MethodsDatabaseQuery("httomolibgpu.misc.denoise", "total_variation_SB")
+    per_slice, fixed = query.calculate_memory_bytes(
+        shape[1:], np.dtype("float32"), half_precision=half_precision
+    )
+    estimate = shape[0] * per_slice + fixed
+    assert estimate >= hook.max_mem
+    if shape == (8, 128, 128):
+        assert estimate <= 1.2 * hook.max_mem
+
+
+@pytest.mark.parametrize(
+    "shape", [(8, 128, 128), (1, 128, 128), (3, 37, 65), (1, 1, 1)]
+)
+@pytest.mark.parametrize("half_precision", [False, True])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
+@pytest.mark.cupy
+def test_denoiser_FGP_TV_memoryhook(
+    ensure_clean_memory, shape, half_precision, non_c_contiguous
+):
+    # Warm the kernels before measuring the live array allocations.
+    warm = cp.ones(shape, dtype=cp.float32)
+    result = total_variation_FGP(
+        warm, regularisation_parameter=1.0, iterations=2, half_precision=half_precision
+    )
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+
+    hook = MaxMemoryHook()
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            data = cp.ones(shape, dtype=cp.float32)
+            if non_c_contiguous:
+                data = data.swapaxes(1, 2)
+            result = total_variation_FGP(
+                data,
+                regularisation_parameter=1.0,
+                iterations=5,
+                half_precision=half_precision,
+            )
+            cp.cuda.get_current_stream().synchronize()
+            del data, result
+        pool.free_all_blocks()
+
+    query = MethodsDatabaseQuery("httomolibgpu.misc.denoise", "total_variation_FGP")
+    per_slice, fixed = query.calculate_memory_bytes(
+        shape[1:], np.dtype("float32"), half_precision=half_precision
+    )
+    estimate = shape[0] * per_slice + fixed
+    assert estimate >= hook.max_mem
+    if shape == (8, 128, 128):
+        assert estimate <= 1.2 * hook.max_mem
+
+
+@pytest.mark.parametrize(
+    "shape", [(8, 128, 128), (1, 128, 128), (3, 37, 65), (1, 1, 1)]
+)
+@pytest.mark.parametrize("half_precision", [False, True])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
+@pytest.mark.cupy
+def test_denoiser_TGV_memoryhook(
+    ensure_clean_memory, shape, half_precision, non_c_contiguous
+):
+    # Warm the kernels before measuring the live array allocations.
+    warm = cp.ones(shape, dtype=cp.float32)
+    result = total_generalised_variation(
+        warm, regularisation_parameter=1.0, iterations=2, half_precision=half_precision
+    )
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+
+    hook = MaxMemoryHook()
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            data = cp.ones(shape, dtype=cp.float32)
+            if non_c_contiguous:
+                data = data.swapaxes(1, 2)
+            result = total_generalised_variation(
+                data,
+                regularisation_parameter=1.0,
+                iterations=5,
+                half_precision=half_precision,
+            )
+            cp.cuda.get_current_stream().synchronize()
+            del data, result
+        pool.free_all_blocks()
+
+    query = MethodsDatabaseQuery(
+        "httomolibgpu.misc.denoise", "total_generalised_variation"
+    )
+    per_slice, fixed = query.calculate_memory_bytes(
+        shape[1:], np.dtype("float32"), half_precision=half_precision
+    )
+    estimate = shape[0] * per_slice + fixed
+    assert estimate >= hook.max_mem
+    if shape == (8, 128, 128):
+        assert estimate <= 1.2 * hook.max_mem
+
+
+@pytest.mark.parametrize(
+    "shape", [(8, 128, 128), (1, 128, 128), (3, 37, 65), (1, 1, 1)]
+)
+@pytest.mark.parametrize("penalty_type", [1, 2, 3, 4, 5])
+@pytest.mark.parametrize("non_c_contiguous", [False, True])
+@pytest.mark.cupy
+def test_denoiser_NDF_memoryhook(
+    ensure_clean_memory, shape, penalty_type, non_c_contiguous
+):
+    # Warm the kernels before measuring the live array allocations.
+    warm = cp.ones(shape, dtype=cp.float32)
+    result = nonlinear_diffusion(
+        warm, regularisation_parameter=1.0, iterations=2, penalty_type=penalty_type
+    )
+    cp.cuda.get_current_stream().synchronize()
+    del warm, result
+
+    hook = MaxMemoryHook()
+    pool = cp.cuda.MemoryPool()
+    with cp.cuda.using_allocator(pool.malloc):
+        with hook:
+            data = cp.ones(shape, dtype=cp.float32)
+            if non_c_contiguous:
+                data = data.swapaxes(1, 2)
+            result = nonlinear_diffusion(
+                data,
+                regularisation_parameter=1.0,
+                iterations=5,
+                penalty_type=penalty_type,
+            )
+            cp.cuda.get_current_stream().synchronize()
+            del data, result
+        pool.free_all_blocks()
+
+    query = MethodsDatabaseQuery("httomolibgpu.misc.denoise", "nonlinear_diffusion")
+    per_slice, fixed = query.calculate_memory_bytes(
+        shape[1:], np.dtype("float32"), penalty_type=penalty_type
+    )
+    estimate = shape[0] * per_slice + fixed
+    assert estimate >= hook.max_mem
+    if shape == (8, 128, 128):
+        assert estimate <= 1.35 * hook.max_mem
+
 
 @pytest.mark.cupy
 @pytest.mark.parametrize("slices", [64, 128])

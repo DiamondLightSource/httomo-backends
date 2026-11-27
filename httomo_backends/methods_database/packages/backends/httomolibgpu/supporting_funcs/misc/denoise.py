@@ -11,6 +11,14 @@ __all__ = [
     "_calc_memory_bytes_total_variation_ROF",
     "_calc_padding_total_variation_PD",
     "_calc_memory_bytes_total_variation_PD",
+    "_calc_padding_total_variation_SB",
+    "_calc_memory_bytes_total_variation_SB",
+    "_calc_padding_total_variation_FGP",
+    "_calc_memory_bytes_total_variation_FGP",
+    "_calc_padding_total_generalised_variation",
+    "_calc_memory_bytes_total_generalised_variation",
+    "_calc_padding_nonlinear_diffusion",
+    "_calc_memory_bytes_nonlinear_diffusion",
     "_calc_padding_non_local_means",
     "_calc_memory_bytes_non_local_means",
 ]
@@ -22,6 +30,121 @@ def _calc_padding_total_variation_ROF(**kwargs) -> Tuple[int, int]:
 
 def _calc_padding_total_variation_PD(**kwargs) -> Tuple[int, int]:
     return (5, 5)
+
+
+def _calc_padding_total_variation_SB(**kwargs) -> Tuple[int, int]:
+    """support for approximate slab processing."""
+    return (5, 5)
+
+
+def _calc_padding_total_variation_FGP(**kwargs) -> Tuple[int, int]:
+    """Use the existing TV five-slice overlap policy for approximate slab processing."""
+    return (5, 5)
+
+
+def _calc_padding_total_generalised_variation(**kwargs) -> Tuple[int, int]:
+    """Use the existing TV five-slice overlap policy for approximate slab processing."""
+    return (5, 5)
+
+
+def _calc_padding_nonlinear_diffusion(**kwargs) -> Tuple[int, int]:
+    """Use the existing five-slice overlap policy for approximate slab processing."""
+    return (5, 5)
+
+
+def _calc_memory_bytes_nonlinear_diffusion(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    """Reserve input, packing, two image buffers and a boolean finite mask.
+
+    NDF supports float32 only. Reserve packing even for C-contiguous input.
+    Fixed overhead covers rounding of the arrays and small reduction buffers;
+    CUDA context/kernel compilation memory is outside this array-memory estimate.
+    """
+    if kwargs.get("half_precision", False):
+        raise ValueError("nonlinear_diffusion requires half_precision=False")
+    pixels = math.prod(int(size) for size in non_slice_dims_shape)
+    bytes_per_pixel = (
+        np.dtype(dtype).itemsize
+        + 3 * np.dtype(np.float32).itemsize
+        + np.dtype(np.bool_).itemsize
+    )
+    return pixels * bytes_per_pixel, 6 * 512
+
+
+def _calc_memory_bytes_total_generalised_variation(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    """Reserve input, packing, primal/dual storage and finite-check workspace.
+
+    The 3D solver holds three scalar primal volumes and three vector primal
+    buffers (nine volume components), all float32. Its vector and symmetric
+    tensor dual fields have nine components in total; only these use half
+    precision. Reserve another float32 volume for the three-component boolean
+    finite mask and reduction workspace. Keep this 3D bound for single slices
+    and reserve packing even for C-contiguous input. Fixed overhead covers
+    allocation rounding and small reduction buffers. CUDA context/kernel
+    compilation memory is outside this array-memory estimate.
+    """
+    pixels = math.prod(int(size) for size in non_slice_dims_shape)
+    auxiliary_dtype = np.float16 if kwargs.get("half_precision", False) else np.float32
+    bytes_per_pixel = (
+        np.dtype(dtype).itemsize
+        + 14 * np.dtype(np.float32).itemsize
+        + 9 * np.dtype(auxiliary_dtype).itemsize
+    )
+    return pixels * bytes_per_pixel, 24 * 512
+
+
+def _calc_memory_bytes_total_variation_FGP(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    """Reserve input, a packed copy, one image and twelve auxiliary buffers.
+
+    Use the 3D buffer count also for single-slice processing, since slab depth
+    is unknown here. Packing is reserved even for C-contiguous input. The four
+    sets of three dual fields use half precision when requested; the image
+    remains float32. Fixed overhead covers pool rounding of the fifteen buffers
+    to 512-byte allocation units; CUDA context/kernel compilation memory is
+    outside this array-memory estimate.
+    """
+    pixels = math.prod(int(size) for size in non_slice_dims_shape)
+    auxiliary_dtype = np.float16 if kwargs.get("half_precision", False) else np.float32
+    bytes_per_pixel = (
+        np.dtype(dtype).itemsize
+        + 2 * np.dtype(np.float32).itemsize
+        + 12 * np.dtype(auxiliary_dtype).itemsize
+    )
+    return pixels * bytes_per_pixel, 15 * 512
+
+
+def _calc_memory_bytes_total_variation_SB(
+    non_slice_dims_shape: Tuple[int, int],
+    dtype: np.dtype,
+    **kwargs,
+) -> Tuple[int, int]:
+    """Reserve input, a packed copy, two image and six split/Bregman buffers.
+
+    Use the 3D buffer count also for single-slice processing, since slab depth
+    is unknown here. Packing is reserved even for C-contiguous input. Only the
+    split/Bregman buffers use half precision. Fixed overhead covers pool rounding
+    of the ten buffers to 512-byte allocation units; CUDA context/kernel
+    compilation memory is outside this array-memory estimate.
+    """
+    pixels = math.prod(int(size) for size in non_slice_dims_shape)
+    auxiliary_dtype = np.float16 if kwargs.get("half_precision", False) else np.float32
+    bytes_per_pixel = (
+        np.dtype(dtype).itemsize
+        + 3 * np.dtype(np.float32).itemsize
+        + 6 * np.dtype(auxiliary_dtype).itemsize
+    )
+    return pixels * bytes_per_pixel, 10 * 512
 
 
 def _calc_memory_bytes_total_variation_ROF(

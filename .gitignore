@@ -177,3 +177,6 @@ cython_debug/
 
 # Generated method templates
 yaml_templates/
+
+# Generated API documentation
+/docs/source/api/

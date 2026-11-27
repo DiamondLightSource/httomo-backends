@@ -73,12 +73,20 @@ and reports methods without a registration or an explicit deferral. The pytest
 checks skip a library only when it is not installed; the command fails if a
 requested library is missing. Neither check runs reconstruction or GPU kernels.
 
-The following public GPU methods are explicitly deferred until their execution
-requirements are supported:
+Split Bregman TV, Fast Gradient Projection TV, Total Generalised Variation and
+nonlinear diffusion are available as ``httomolibgpu.misc.denoise.total_variation_SB``,
+``httomolibgpu.misc.denoise.total_variation_FGP``,
+``httomolibgpu.misc.denoise.total_generalised_variation`` and
+``httomolibgpu.misc.denoise.nonlinear_diffusion``.
+Their module memory estimates account for a possible non-C-contiguous input
+copy and, for the TV methods, half precision. Nonlinear diffusion requires
+``half_precision: false``. They follow the existing TV five-slice overlap
+policy for slab processing. This overlap is an approximation: it does not
+guarantee the same result as processing the whole volume at once.
 
-* ``total_variation_SB``, ``total_variation_FGP``,
-  ``total_generalised_variation`` and ``nonlinear_diffusion`` need memory and
-  padding support.
+The remaining public GPU method is deferred until its execution requirements
+are supported:
+
 * ``iterative_alignment`` needs processing and memory support, plus handling of
   the reconstructed volume, detector shifts and optional diagnostics.
 

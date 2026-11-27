@@ -66,6 +66,42 @@ misc:
       memory_gpu:
         multiplier: null
         method: module
+    total_variation_SB:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: null
+        method: module
+    total_variation_FGP:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: null
+        method: module
+    total_generalised_variation:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: null
+        method: module
+    nonlinear_diffusion:
+      pattern: all
+      output_dims_change: False
+      implementation: gpu_cupy
+      save_result_default: False
+      padding: True
+      memory_gpu:
+        multiplier: null
+        method: module
   morph:
     sino_360_to_180:
       pattern: sinogram
