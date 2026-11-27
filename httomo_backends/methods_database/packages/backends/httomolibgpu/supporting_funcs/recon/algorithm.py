@@ -25,7 +25,7 @@ from typing import Tuple
 import numpy as np
 from httomo_backends.cufft import CufftType, cufft_estimate_1d, cufft_estimate_2d
 from httomolibgpu.recon.algorithm import LPRec3d_tomobar
-from tomobar.supp.memory_estimator_helpers import DeviceMemStack
+from tomobar.reconstruction.memory import DeviceMemStack
 
 __all__ = [
     "_calc_memory_bytes_FBP3d_tomobar",
@@ -169,7 +169,9 @@ def _calc_memory_bytes_FBP3d_tomobar(
     # https://github.com/dkazanc/ToMoBAR/blob/54137829b6326406e09f6ef9c95eb35c213838a7/tomobar/methodsDIR_CuPy.py#L135
     pre_astra_input_swapaxis_slice = (angles_tot * det_width) * np.float32().itemsize
 
-    # 7. astra backprojection will generate an output array
+    # 7. ASTRA backprojection generates an output array. The reference below
+    # is pinned to the historical implementation used to derive this estimate;
+    # current ToMoBAR backend code lives in tomobar.projectors._astra.
     # https://github.com/dkazanc/ToMoBAR/blob/54137829b6326406e09f6ef9c95eb35c213838a7/tomobar/astra_wrappers/astra_base.py#L524
     output_dims = _calc_output_dim_FBP3d_tomobar((angles_tot, det_width), **kwargs)
     recon_output_size = np.prod(output_dims) * np.float32().itemsize
@@ -724,6 +726,14 @@ def _calc_memory_bytes_ADMM3d_tomobar(
         + out_data_size
         + arithmetic
     )
+    # Extra native full-data work for the optional CG/weighted objectives.
+    if kwargs.get("data_solver", "linearised") == "cg":
+        admm_part += 3 * out_data_size
+    if kwargs.get("data_fidelity", "LS") in ("PWLS", "SWLS"):
+        admm_part += in_data_siz_pad  # Owned, padded normalised weights.
+    if kwargs.get("data_fidelity", "LS") == "SWLS":
+        admm_part += 3 * DetectorsLengthH_padded * dtype.itemsize
+
     regul_part = 8 * np.prod(output_dims_larger_grid) * dtype.itemsize
 
     tot_memory_bytes = int(admm_part + regul_part)

@@ -23,11 +23,10 @@
 from typing import Tuple
 import numpy as np
 
-from httomolibgpu.prep.phase import paganin_filter, paganin_filter_savu_legacy
+from httomolibgpu.prep.phase import paganin_filter
 
 __all__ = [
     "_calc_memory_bytes_for_slices_paganin_filter",
-    "_calc_memory_bytes_for_slices_paganin_filter_savu_legacy",
 ]
 
 
@@ -37,11 +36,3 @@ def _calc_memory_bytes_for_slices_paganin_filter(
     **kwargs,
 ) -> int:
     return paganin_filter(dims_shape, calc_peak_gpu_mem=True, **kwargs)
-
-
-def _calc_memory_bytes_for_slices_paganin_filter_savu_legacy(
-    dims_shape: Tuple[int, int, int],
-    dtype: np.dtype,
-    **kwargs,
-) -> int:
-    return paganin_filter_savu_legacy(dims_shape, calc_peak_gpu_mem=True, **kwargs)

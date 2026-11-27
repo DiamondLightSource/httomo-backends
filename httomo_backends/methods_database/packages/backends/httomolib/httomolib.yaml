@@ -48,6 +48,14 @@ misc:
       save_result_default: False
       padding: False
 prep:
+  normalize:
+    dark_flat_field_correction:
+      pattern: projection
+      output_dims_change: False
+      implementation: cpu
+      memory_gpu: None
+      save_result_default: False
+      padding: False
   phase:
     paganin_filter:
       pattern: projection

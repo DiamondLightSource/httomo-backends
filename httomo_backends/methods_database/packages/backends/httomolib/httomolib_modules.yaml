@@ -5,3 +5,4 @@
 - httomolib.misc.images
 - httomolib.misc.segm
 - httomolib.prep.phase
+- httomolib.prep.normalize

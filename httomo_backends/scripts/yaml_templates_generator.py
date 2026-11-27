@@ -22,84 +22,108 @@
 """Script that exposes all functions of a given software package as YAML templates.
 
 Please run the generator as:
-    python -m yaml_templates_generator -i /path/to/modules.yml -o /path/to/output/
+    python -m httomo_backends.scripts.yaml_templates_generator -i /path/to/modules.yml -o /path/to/output/
 """
 
 import argparse
+import sys
 import importlib
 import inspect
-import os
+from pathlib import Path
 from typing import Any, List, Dict
 
 import yaml
 
+# Direct execution puts scripts/, rather than the checkout root, on sys.path.
+# Prefer this checkout over an older installed copy of httomo_backends.
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-def yaml_generator(path_to_modules: str, output_folder: str) -> int:
+from httomo_backends.scripts._yaml_utils import (
+    atomic_write,
+    validate_name,
+)  # noqa: E402
+
+
+def yaml_generator(
+    path_to_modules: str, output_folder: str, supported_only: bool = False
+) -> int:
     """function that exposes all method of a given software package as YAML templates
 
     Args:
         path_to_modules: path to the list of modules yaml file
         output_folder: path to output folder with saved templates
+        supported_only: generate only methods registered in the method database
 
     Returns:
         returns zero if the processing is succesfull
     """
-    discard_keys = _get_discard_keys()
-    no_data_out_modules = _get_discard_data_out()
-
-    # open YAML file with modules to inspect
     with open(path_to_modules, "r") as stream:
-        try:
-            modules_list = yaml.safe_load(stream)
-        except yaml.YAMLError as exc:
-            print(exc)
+        modules_list = yaml.safe_load(stream)
 
-    # a loop over modules in the file
-    modules_no = len(modules_list)
-    for i in range(modules_no):
-        module_name = modules_list[i]
-        try:
-            imported_module = importlib.import_module(str(module_name))
-        except NameError:
-            print(
-                "Import of the module {} has failed, check if software installed".format(
-                    module_name
-                )
+    if not isinstance(modules_list, list) or not modules_list:
+        raise ValueError("Module input must be a nonempty list of module names")
+    for module_name in modules_list:
+        validate_name(module_name, dotted=True)
+    templates = []
+    for module_name in modules_list:
+        imported_module = importlib.import_module(module_name)
+        exports = getattr(imported_module, "__all__", None)
+        if not isinstance(exports, (list, tuple)):
+            raise ValueError(f"{module_name}: expected an __all__ list of method names")
+        for method_name in exports:
+            validate_name(method_name)
+            if supported_only and not _is_registered(module_name, method_name):
+                continue
+            method = getattr(imported_module, method_name)
+            method_dict = build_method_template(module_name, method_name, method)
+            # Serialise before touching any existing output files.
+            text = yaml.safe_dump([method_dict], sort_keys=False)
+            templates.append(
+                (Path(output_folder) / module_name / f"{method_name}.yaml", text)
             )
-        methods_list = imported_module.__all__  # get all the methods in the module
-        methods_no = len(methods_list)
-
-        # a loop over all methods in the module
-        for m in range(methods_no):
-            method_name = methods_list[m]
-            print("Inspecting the signature of the {} method".format(method_name))
-            get_method_params = inspect.signature(
-                getattr(imported_module, methods_list[m])
-            )
-            # get method docstrings
-            get_method_docs = inspect.getdoc(getattr(imported_module, methods_list[m]))
-
-            # put the parameters in the dictionary
-            params_list: List = []
-            params_dict: Dict = {}
-            for name, value in get_method_params.parameters.items():
-                if value is not None:
-                    append = True
-                    for x in discard_keys:
-                        if name == x:
-                            append = False
-                            break
-                    if append:
-                        _set_param_value(name, method_name, value, params_dict)
-            method_dict = {
-                "method": method_name,
-                "module_path": module_name,
-                "parameters": params_dict,
-            }
-            _set_dict_special_cases(method_dict, method_name)
-            params_list = [method_dict]
-            _save_yaml(module_name, method_name, params_list)
+    if supported_only and not templates:
+        raise ValueError("No registered methods found in the requested modules")
+    for path, text in templates:
+        atomic_write(path, text)
     return 0
+
+
+def _is_registered(module_name: str, method_name: str) -> bool:
+    from httomo_backends.methods_database.query import MethodsDatabaseQuery
+
+    try:
+        MethodsDatabaseQuery(module_name, method_name).get_pattern()
+    except (FileNotFoundError, KeyError):
+        return False
+    return True
+
+
+def build_method_template(module_name: str, method_name: str, method) -> Dict:
+    """Build a template from a callable, applying HTTomo parameter conventions."""
+    validate_name(module_name, dotted=True)
+    validate_name(method_name)
+    if not callable(method):
+        raise ValueError(f"{module_name}.{method_name}: export is not callable")
+    params_dict: Dict[str, Any] = {}
+    for name, value in inspect.signature(method).parameters.items():
+        if name in _get_discard_keys() or value.kind in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        ):
+            continue
+        if value.kind == inspect.Parameter.POSITIONAL_ONLY:
+            raise ValueError(
+                f"{module_name}.{method_name}: positional-only parameter {name!r} cannot be a YAML keyword"
+            )
+        _set_param_value(name, method_name, value, params_dict)
+    method_dict = {
+        "method": method_name,
+        "module_path": module_name,
+        "parameters": params_dict,
+    }
+    _set_dict_special_cases(method_dict, method_name)
+    return method_dict
 
 
 def _set_param_value(
@@ -112,15 +136,11 @@ def _set_param_value(
         value: Parameter value
         params_dict: Dict containing method's parameter names and values
     """
-    if value.default is inspect.Parameter.empty and name != "kwargs":
+    if value.default is inspect.Parameter.empty:
         if name in ["proj1", "proj2"]:
             params_dict[name] = "auto"
         else:
             params_dict[name] = "REQUIRED"
-    elif name == "kwargs":
-        # params_dict["#additional parameters"] = "AVAILABLE"
-        # parsing hashtag to yaml comes with quotes, for now we simply ignore the field
-        pass
     elif name == "axis":
         params_dict[name] = "auto"
     elif name == "asynchronous":
@@ -138,21 +158,17 @@ def _set_param_value(
         params_dict[name] = value.default
 
 
-def _save_yaml(module_name: str, method_name: str, params_list: List[str]):
+def _save_yaml(
+    module_name: str, method_name: str, params_list: List[Dict], output_folder: str
+):
     """Save the list as a YAML file
     Args:
         module_name: Name of module
         method_name: Name of method
         params_list: List of parameters
     """
-    path_dir = output_folder + "/" + module_name
-    path_file = path_dir + "/" + str(method_name) + ".yaml"
-
-    if not os.path.exists(path_dir):
-        os.makedirs(path_dir)
-
-    with open(path_file, "w") as file:
-        outputs = yaml.dump(params_list, file, sort_keys=False)
+    path = Path(output_folder) / module_name / f"{method_name}.yaml"
+    atomic_write(path, yaml.safe_dump(params_list, sort_keys=False))
 
 
 def _set_dict_special_cases(method_dict: Dict, method_name: str):
@@ -246,7 +262,7 @@ def get_args():
         "-i",
         "--input",
         type=str,
-        default=None,
+        required=True,
         help="A path to the list of modules yaml file"
         "which is needed to be inspected and functions extracted.",
     )
@@ -257,14 +273,18 @@ def get_args():
         default="./",
         help="Directory to save the yaml templates in.",
     )
+    parser.add_argument(
+        "--supported-only",
+        action="store_true",
+        help="Generate only methods registered in the method database.",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
-    current_dir = os.path.basename(os.path.abspath(os.curdir))
     args = get_args()
     path_to_modules = args.input
     output_folder = args.output
-    return_val = yaml_generator(path_to_modules, output_folder)
+    return_val = yaml_generator(path_to_modules, output_folder, args.supported_only)
     if return_val == 0:
         print("The methods as YAML templates have been successfully generated!")
